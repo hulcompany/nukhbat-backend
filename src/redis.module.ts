@@ -15,7 +15,7 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
         });
 
         redis.on('connect', () => {
-          console.log('Redis connected');
+          console.log('-- Redis connected --');
         });
 
         redis.on('error', (err) => {
