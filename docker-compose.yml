@@ -13,6 +13,8 @@ services:
         condition: service_started
     env_file:
       - .env
+    volumes:
+      - /var/www/nukhba/uploads:/app/uploads  
 
   postgres-server:
     image: postgres:16

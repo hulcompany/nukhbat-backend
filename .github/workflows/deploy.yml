@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      
       - name: Run deploy script on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -17,4 +16,4 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            /opt/nukhba_alawael_backend/deploy.sh
+            /opt/nukhbat-backend/deploy.sh

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /opt/nukhba_alawael_backend || exit
+cd /opt/nukhbat-backend || exit
 
 git pull origin main
 

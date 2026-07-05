@@ -1,4 +1,6 @@
 - docker file volumes
+- admin get all content
+- daily wisement
 
 - Key Management
 - Audit initiate
