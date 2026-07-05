@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>nukhba API workbench</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f2f4f7; --card: #ffffff; --ink: #17233a; --mut: #5a6578;
+    --line: #dfe3ea; --warnbg: #fdeeee;
+    --get: #2f6fdb; --post: #2e9e5b; --patch: #c77d0a; --del: #c43d3d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
+    padding-bottom: 270px;
+  }
+  code, .mono { font-family: ui-monospace, Consolas, monospace; }
+
+  /* ---------- header ---------- */
+  #top {
+    background: var(--ink); color: #fff; padding: 10px 20px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  #top h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  #top h1 small { display: block; font-size: 11px; font-weight: 400; opacity: .65; }
+  #a-env {
+    margin-left: auto; font-size: 12px; padding: 4px 8px; border-radius: 6px;
+    background: #26324a; color: #d7dde7; border: 1px solid #3a4a68;
+  }
+  #a-status {
+    font-size: 12px; padding: 3px 12px; border-radius: 12px;
+    background: #3a4a68; white-space: nowrap;
+  }
+  #a-status.in { background: #2e9e5b; }
+
+  /* ---------- path bar ---------- */
+  #path {
+    display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap;
+    background: #fbfcfe; padding: 8px 20px; border-bottom: 1px solid var(--line);
+  }
+  .hop { display: flex; flex-direction: column; gap: 2px; }
+  .hop label { font-size: 10px; color: var(--mut); text-transform: uppercase; letter-spacing: .05em; }
+  .hop select { min-width: 150px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .hop select:disabled { background: #f2f4f7; color: #9aa3b2; }
+  .sep { color: #b8c0cc; padding-bottom: 7px; }
+  #path .hint { font-size: 12px; color: var(--mut); padding-bottom: 7px; }
+
+  /* ---------- sidebar + panel ---------- */
+  #layout { display: flex; align-items: flex-start; }
+  #side {
+    width: 210px; flex: none; padding: 14px 0 14px 14px;
+    position: sticky; top: 0;
+  }
+  #side .group { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: var(--mut); margin: 14px 8px 4px; }
+  #side button {
+    display: block; width: 100%; text-align: left; padding: 8px 12px; margin: 1px 0;
+    border: none; border-radius: 7px; background: none; cursor: pointer; font-size: 13px; color: var(--ink);
+  }
+  #side button:hover { background: #e6eaf1; }
+  #side button.on { background: var(--ink); color: #fff; }
+  #panel { flex: 1; padding: 14px 20px 0 14px; min-width: 0; }
+  section.panel { display: none; }
+  section.panel.on { display: block; }
+
+  .card {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 14px; background: var(--card);
+  }
+  .card > h2 { margin: 0 0 3px; font-size: 14px; }
+  .card > p.sub { margin: 0 0 10px; font-size: 12px; color: var(--mut); }
+  .cols { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  .cols > .card { flex: 1 1 330px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 7px 0; }
+  input, select, textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; }
+  textarea { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+
+  /* ---------- buttons ---------- */
+  button { cursor: pointer; font-size: 13px; }
+  .act {
+    display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
+    padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line);
+    background: #fff; text-align: left;
+  }
+  .act .route { font-family: ui-monospace, Consolas, monospace; font-size: 10px; opacity: .75; }
+  .act.v-GET    { border-color: var(--get);   color: var(--get); }
+  .act.v-POST   { border-color: var(--post);  color: var(--post); }
+  .act.v-PATCH  { border-color: var(--patch); color: var(--patch); }
+  .act.v-DELETE { border-color: var(--del);   color: var(--del); }
+  .act:hover { background: #f4f7fb; }
+  .plain { padding: 6px 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+  .plain:hover { background: #f4f7fb; }
+  .mini { padding: 3px 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 5px; background: #fff; }
+  .mini.warn { color: var(--del); border-color: #d9a0a0; }
+  button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--get); outline-offset: 1px;
+  }
+
+  /* ---------- tables ---------- */
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--mut); }
+  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: start; vertical-align: middle; }
+  tr.warn td { background: var(--warnbg); }
+  .empty { padding: 16px; text-align: center; color: var(--mut); font-size: 13px; border: 1px dashed var(--line); border-radius: 8px; }
+
+  .chip {
+    display: inline-block; font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+    padding: 1px 7px; border-radius: 4px; color: #fff;
+  }
+  .chip.GET { background: var(--get); } .chip.POST { background: var(--post); }
+  .chip.PATCH { background: var(--patch); } .chip.PUT { background: var(--patch); }
+  .chip.DELETE { background: var(--del); }
+  .chip.s2 { background: #2e9e5b; } .chip.s4 { background: #c77d0a; } .chip.s5, .chip.sX { background: #c43d3d; }
+
+  /* ---------- log ---------- */
+  #logwrap {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 250px;
+    background: #10141c; color: #d7dde7; display: flex; flex-direction: column;
+  }
+  #loghead {
+    display: flex; align-items: center; gap: 10px; padding: 5px 16px;
+    font-size: 12px; border-bottom: 1px solid #263042; color: #8fa0b8;
+  }
+  #loghead button { background: none; border: 1px solid #3a4a68; color: #8fa0b8; border-radius: 5px; padding: 2px 10px; }
+  #log { overflow: auto; flex: 1; padding: 4px 16px 10px; }
+  .entry { border-bottom: 1px solid #1d2635; padding: 5px 0; font-size: 12px; }
+  .entry .head { cursor: pointer; display: flex; gap: 8px; align-items: center; font-family: ui-monospace, Consolas, monospace; }
+  .entry .head .t { color: #5c6b84; }
+  .entry pre { margin: 6px 0 2px; white-space: pre-wrap; word-break: break-word; color: #b9c6d8; display: none; }
+  .entry.open pre { display: block; }
+</style>
+</head>
+<body>
+
+<header id="top">
+  <h1>nukhba API workbench<small>everything is sent as typed, backend does the validating</small></h1>
+  <select id="a-env" title="target API">
+    <option value="dev">dev — localhost:3000</option>
+    <option value="prod">prod — alnokhba-app.com</option>
+  </select>
+  <span id="a-status">signed out</span>
+</header>
+
+<div id="path">
+  <div class="hop"><label>Track</label><select id="c-track"></select></div>
+  <span class="sep">›</span>
+  <div class="hop"><label>Course</label><select id="c-course"></select></div>
+  <span class="sep">›</span>
+  <div class="hop"><label>Unit</label><select id="c-unit"></select></div>
+  <span class="sep">›</span>
+  <div class="hop"><label>Lesson</label><select id="c-lesson"></select></div>
+  <span id="s-reload"></span>
+  <span class="hint" id="path-hint">sign in first — the tree loads by itself</span>
+</div>
+
+<div id="layout">
+<aside id="side">
+  <div class="group">Session</div>
+  <button data-p="start" class="on" onclick="panel('start')">Sign in</button>
+  <div class="group">School content</div>
+  <button data-p="tree" onclick="panel('tree')">Units &amp; lessons</button>
+  <button data-p="questions" onclick="panel('questions')">Questions</button>
+  <button data-p="dc" onclick="panel('dc')">Daily challenge</button>
+  <button data-p="books" onclick="panel('books')">Books</button>
+  <div class="group">Users</div>
+  <button data-p="me" onclick="panel('me')">My account</button>
+  <button data-p="users" onclick="panel('users')">Manage users (admin)</button>
+  <div class="group">Platform</div>
+  <button data-p="access" onclick="panel('access')">Track access (admin)</button>
+  <button data-p="raw" onclick="panel('raw')">Raw request</button>
+</aside>
+
+<div id="panel">
+
+<!-- ============ START ============ -->
+<section class="panel on" id="p-start">
+  <div class="card">
+    <h2>Sign in</h2>
+    <p class="sub">Pick a seeded account or type your own. The password box is remembered on this browser.</p>
+    <div class="row">
+      <button class="plain" onclick="preset('content@hul.com')">school owner — content@hul.com</button>
+      <button class="plain" onclick="preset('admin@hul.com')">admin — admin@hul.com</button>
+    </div>
+    <div class="row">
+      <input id="a-email" placeholder="email" style="width:220px">
+      <input id="a-pass" placeholder="password" type="password" style="width:160px">
+      <span id="s-login"></span>
+    </div>
+    <div class="row">
+      <span id="s-refresh"></span>
+      <span id="s-whoami"></span>
+      <button class="plain" onclick="doLogout()">Log out (forget tokens)</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TREE ============ -->
+<section class="panel" id="p-tree">
+  <div class="cols">
+    <div class="card">
+      <h2>Units <span style="font-weight:400;font-size:12px;color:var(--mut)">of the selected course</span></h2>
+      <div class="row"><input id="u-title" placeholder="new unit title" dir="auto"><span id="s-ucreate"></span></div>
+      <table id="u-table"><thead><tr><th>#</th><th>unit</th><th style="width:290px">actions</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="u-empty">Pick a course in the bar above.</div>
+      <div class="row"><span id="s-uorder"></span>
+        <small style="color:var(--mut)">order = rows as arranged with Up/Down</small></div>
+    </div>
+    <div class="card">
+      <h2>Lessons <span style="font-weight:400;font-size:12px;color:var(--mut)">of the selected unit</span></h2>
+      <div class="row">
+        <input id="l-title" placeholder="title" style="width:130px" dir="auto">
+        <input id="l-desc" placeholder="description" style="width:150px" dir="auto">
+        <span id="s-lcreate"></span>
+      </div>
+      <table id="l-table"><thead><tr><th>#</th><th>lesson</th><th>status</th><th style="width:290px">actions</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="l-empty">Pick a unit in the bar above.</div>
+      <div class="row"><span id="s-lorder"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ QUESTIONS ============ -->
+<section class="panel" id="p-questions">
+  <div class="card">
+    <h2>Questions</h2>
+    <p class="sub">Paginated. Choosing a lesson in the bar loads its page 1 automatically; “pool of selected course” switches to that course's daily-challenge questions.</p>
+    <div class="row">
+      <button class="plain" onclick="useSelectedLesson()">questions of selected lesson</button>
+      <button class="plain" onclick="useSelectedCourse()">pool of selected course</button>
+      <button class="plain" onclick="clearQFilter()">whole school (allowed tracks)</button>
+    </div>
+    <div class="row">
+      <input id="qf-lesson" placeholder="lessonId" class="mono" style="width:280px">
+      <input id="qf-course" placeholder="courseId" class="mono" style="width:280px">
+      <input id="qf-title" placeholder="title contains…" style="width:150px" dir="auto">
+    </div>
+    <div class="row">
+      <span id="s-qload"></span>
+      <label>page size <input id="qf-limit" value="10" style="width:60px"></label>
+      <button class="plain" onclick="qPage(-1)">‹ prev</button>
+      <span id="q-pageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="qPage(1)">next ›</button>
+    </div>
+    <table id="q-table">
+      <thead><tr><th></th><th>#</th><th>question</th><th>type</th><th>purpose</th><th style="width:320px">actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty" id="q-empty">Nothing loaded — use one of the three buttons above.</div>
+    <div class="row">
+      <span id="s-qorder"></span>
+      <span id="s-qbulkdel"></span>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>Add one question</h2>
+      <p class="sub">Empty fields are omitted. An image switches the request to multipart.</p>
+      <div class="row">
+        <input id="qc-title" placeholder="title" style="width:200px" dir="auto">
+        <select id="qc-type"><option value="">type — omit</option></select>
+        <select id="qc-purpose"><option value="">purpose — omit</option></select>
+      </div>
+      <div class="row">
+        <input id="qc-lesson" placeholder="lessonId — empty omits" class="mono" style="width:280px">
+        <input id="qc-course" placeholder="courseId — empty omits" class="mono" style="width:280px">
+      </div>
+      <div class="row">
+        <button class="plain" onclick="qcUseLesson()">← selected lesson</button>
+        <button class="plain" onclick="qcUseCourse()">← selected course</button>
+        <input id="qc-image" type="file">
+      </div>
+      <div class="row"><b style="font-size:12px">options</b><button class="plain" onclick="addOptRow()">add option</button></div>
+      <table id="qc-opts"></table>
+      <div class="row"><b style="font-size:12px">matchingItems</b><button class="plain" onclick="addMatchRow()">add item</button></div>
+      <table id="qc-matches"></table>
+      <div class="row"><span id="s-qcreate"></span></div>
+    </div>
+    <div class="card">
+      <h2>Add many (JSON, all-or-nothing)</h2>
+      <p class="sub">Sent byte-for-byte. One bad question should cancel the whole batch.</p>
+      <textarea id="qb-json" rows="15"></textarea>
+      <div class="row"><span id="s-qbulk"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DAILY CHALLENGE ============ -->
+<section class="panel" id="p-dc">
+  <div class="row">
+    <span id="s-dcget"></span>
+    <span id="s-dcpost"></span>
+  </div>
+  <div id="dc-challenges"></div>
+  <div class="card">
+    <h2>Question stock per course</h2>
+    <p class="sub">Unused pool questions left. A red row (&lt; 2) will make its whole track skip tomorrow.</p>
+    <table id="dc-report"><thead><tr><th>track</th><th>course</th><th>questions left</th><th>courseId</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="dc-empty">Press “Fetch today”.</div>
+  </div>
+</section>
+
+<!-- ============ BOOKS ============ -->
+<section class="panel" id="p-books">
+  <div class="card">
+    <h2>Books <span style="font-weight:400;font-size:12px;color:var(--mut)">of my school</span></h2>
+    <div class="row"><span id="s-bload"></span></div>
+    <table id="b-table"><thead><tr><th>name</th><th>id</th><th style="width:180px">actions</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="b-empty">Press “Load books”.</div>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <h2>Create book</h2>
+      <p class="sub">Image is required by the backend — try without one to see it refuse.</p>
+      <div class="row">
+        <input id="bc-name" placeholder="name" dir="auto">
+        <input id="bc-image" type="file">
+        <span id="s-bcreate"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Edit book</h2>
+      <p class="sub">Use “edit” on a row to fill the id. New image swaps the old one.</p>
+      <div class="row">
+        <input id="be-id" placeholder="bookId" class="mono" style="width:280px">
+        <input id="be-name" placeholder="new name — empty omits" dir="auto">
+        <input id="be-image" type="file">
+        <span id="s-bedit"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MY ACCOUNT ============ -->
+<section class="panel" id="p-me">
+  <div class="cols">
+    <div class="card">
+      <h2>Profile</h2>
+      <div class="row"><span id="s-mine"></span><span id="s-umeta"></span></div>
+      <div class="row">
+        <input id="me-name" placeholder="new name — empty omits" style="width:170px" dir="auto">
+        <input id="me-image" type="file">
+        <span id="s-mepatch"></span>
+      </div>
+      <div class="row"><span id="s-medelimg"></span></div>
+      <div class="row">
+        <input id="me-cname" placeholder="name" style="width:130px">
+        <input id="me-cpass" placeholder="password" style="width:130px">
+        <span id="s-mecomplete"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Email verify &amp; password (OTP via Redis)</h2>
+      <div class="row"><span id="s-reqverify"></span>
+        <input id="me-code" placeholder="code" style="width:90px"><span id="s-verify"></span></div>
+      <div class="row">
+        <input id="fp-email" placeholder="email" style="width:190px"><span id="s-forget"></span>
+      </div>
+      <div class="row">
+        <input id="rp-email" placeholder="email" style="width:160px">
+        <input id="rp-code" placeholder="code" style="width:80px">
+        <input id="rp-pass" placeholder="new password" style="width:130px">
+        <span id="s-reset"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ USERS (ADMIN) ============ -->
+<section class="panel" id="p-users">
+  <div class="card">
+    <h2>Users <span style="font-weight:400;font-size:12px;color:var(--mut)">admin role required</span></h2>
+    <div class="row">
+      <input id="uf-name" placeholder="name contains…" style="width:150px">
+      <input id="uf-email" placeholder="email contains…" style="width:170px">
+      <label>page size <input id="uf-limit" value="10" style="width:60px"></label>
+      <span id="s-uload"></span>
+      <button class="plain" onclick="uPage(-1)">‹ prev</button>
+      <span id="u-pageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="uPage(1)">next ›</button>
+    </div>
+    <table id="usr-table"><thead><tr><th>name</th><th>email</th><th>role</th><th style="width:250px">actions</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="usr-empty">Press “Load users”.</div>
+  </div>
+  <div class="card">
+    <h2>Create user <span style="font-weight:400;font-size:12px;color:var(--mut)">backend makes it an admin</span></h2>
+    <div class="row">
+      <input id="uc-name" placeholder="name" style="width:140px">
+      <input id="uc-email" placeholder="email" style="width:190px">
+      <input id="uc-pass" placeholder="password" style="width:130px">
+      <span id="s-ucreateuser"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACCESS (ADMIN) ============ -->
+<section class="panel" id="p-access">
+  <div class="card">
+    <h2>Track access</h2>
+    <p class="sub">Grant or revoke a school's track. The juicy test: revoke after today's challenge exists — today survives, tomorrow doesn't.</p>
+    <div class="row">
+      <span id="s-admschools"></span>
+      <select id="adm-school"><option value="">— school —</option></select>
+      <select id="adm-track"><option value="">— track —</option></select>
+    </div>
+    <div class="row">
+      <span id="s-admallow"></span>
+      <span id="s-admrevoke"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RAW ============ -->
+<section class="panel" id="p-raw">
+  <div class="card">
+    <h2>Send anything</h2>
+    <p class="sub">Path is relative to <code>/api</code>. Body goes out exactly as typed with <code>Content-Type: application/json</code> — broken JSON included.</p>
+    <div class="row">
+      <select id="raw-method"><option>GET</option><option>POST</option><option>PATCH</option><option>PUT</option><option>DELETE</option></select>
+      <input id="raw-path" placeholder="/school/me/questions" class="mono" style="width:430px">
+      <button class="plain" onclick="rawSend()">Send</button>
+    </div>
+    <textarea id="raw-body" rows="12" placeholder='{"anything": "goes"}'></textarea>
+  </div>
+</section>
+
+</div><!-- /panel -->
+</div><!-- /layout -->
+
+<div id="logwrap">
+  <div id="loghead">
+    <b>Response log</b><span>newest first — click a line for the body</span>
+    <button onclick="document.getElementById('log').innerHTML=''" style="margin-left:auto">Clear</button>
+  </div>
+  <div id="log"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

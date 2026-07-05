@@ -1,0 +1,38 @@
+services:
+  nukhba-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-server:
+        condition: service_healthy
+      redis-server:
+        condition: service_started
+    env_file:
+      - .env
+
+  postgres-server:
+    image: postgres:16
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: nukhba_alawael
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-server:
+    image: redis:7
+
+volumes:
+  pgdata:

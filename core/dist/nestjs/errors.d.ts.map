@@ -1,0 +1,1 @@
+{"version":3,"file":"errors.d.ts","sourceRoot":"","sources":["../../src/nestjs/errors.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,aAAa,EAAE,MAAM,gBAAgB,CAAC;AAG/C,qBAAa,kBAAmB,SAAQ,aAAa;gBACvC,IAAI,CAAC,EAAE,MAAM,EAAE,WAAW,CAAC,EAAE,MAAM;CAYhD;AAED,qBAAa,kBAAmB,SAAQ,aAAa;gBACvC,IAAI,CAAC,EAAE,MAAM,EAAE,KAAK,CAAC,EAAE,MAAM,EAAE;CAW5C"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"errors.js","sourceRoot":"","sources":["../../src/casl/errors.ts"],"names":[],"mappings":";;;AAAA,2CAA+C;AAE/C,MAAa,wBAAyB,SAAQ,sBAAa;IACvD,YAAY,MAAiB;QACzB,KAAK,CAAC,MAAM,CAAC,CAAC,CAAC,qBAAqB,MAAM,CAAC,IAAI,CAAC,IAAI,CAAC,EAAE,CAAC,CAAC,CAAC,kBAAkB,EAAG,GAAG,CAAC,CAAA;IACvF,CAAC;CACJ;AAJD,4DAIC"}

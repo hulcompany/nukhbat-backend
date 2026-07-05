@@ -1,0 +1,1 @@
+{"version":3,"file":"or.dto.d.ts","sourceRoot":"","sources":["../../src/dto/or.dto.ts"],"names":[],"mappings":"AAAA,OAAO,EAEL,4BAA4B,EAC5B,mBAAmB,EACpB,MAAM,iBAAiB,CAAC;AAEzB,qBACa,WAAY,YAAW,4BAA4B;IAC9D,QAAQ,CAAC,CAAC,EAAE,GAAG,EAAE,IAAI,EAAE,mBAAmB;IAoB1C,cAAc,CAAC,IAAI,EAAE,mBAAmB;CAQzC"}

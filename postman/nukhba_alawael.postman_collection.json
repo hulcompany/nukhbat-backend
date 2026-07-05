@@ -1,0 +1,936 @@
+{
+  "info": {
+    "name": "Nukhba Alawael API",
+    "description": "Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.\n\nAuth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.\n\nRoles: admin (user/manage, school/manage, learning/admin, public-content writes), contentWriter (school/me tree), public (auth, files, learning metaData/tracks, public-content reads).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/ping", "host": ["{{baseUrl}}"], "path": ["api", "ping"] }
+          }
+        },
+        {
+          "name": "Error catalog",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/errors", "host": ["{{baseUrl}}"], "path": ["api", "errors"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body?.data?.accessToken) pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "if (body?.data?.refreshToken) pm.collectionVariables.set('refreshToken', body.data.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Sign up",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/signUp", "host": ["{{baseUrl}}"], "path": ["api", "auth", "signUp"] }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body?.data?.accessToken) pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "if (body?.data?.refreshToken) pm.collectionVariables.set('refreshToken', body.data.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/refreshToken", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refreshToken"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User — profile",
+      "item": [
+        {
+          "name": "Meta data",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/user/metaData", "host": ["{{baseUrl}}"], "path": ["api", "user", "metaData"] }
+          }
+        },
+        {
+          "name": "Get mine",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/user/mine", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine"] }
+          }
+        },
+        {
+          "name": "Request verify",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/api/user/mine/request-verify", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine", "request-verify"] }
+          }
+        },
+        {
+          "name": "Verify",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/user/mine/verify", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine", "verify"] }
+          }
+        },
+        {
+          "name": "Forget password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/user/mine/forget-password", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine", "forget-password"] }
+          }
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"newPassword123\",\n  \"confirmPassword\": \"newPassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/user/mine/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine", "reset-password"] }
+          }
+        },
+        {
+          "name": "Complete profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Full Name\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/user/mine/complete-profile", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine", "complete-profile"] }
+          }
+        },
+        {
+          "name": "Update mine (multipart)",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "New Name", "type": "text" },
+                { "key": "password", "value": "newPassword123", "type": "text", "disabled": true },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/user/mine", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine"] }
+          }
+        },
+        {
+          "name": "Delete mine image",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/user/mine/image", "host": ["{{baseUrl}}"], "path": ["api", "user", "mine", "image"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User — admin",
+      "description": "Requires role: admin.",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/user?skip=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "limit", "value": "10" },
+                { "key": "sort", "value": "DESC", "disabled": true },
+                { "key": "name", "value": "", "disabled": true },
+                { "key": "role", "value": "student", "description": "admin | contentWriter | student", "disabled": true },
+                { "key": "email", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Full Name\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/user", "host": ["{{baseUrl}}"], "path": ["api", "user"] }
+          }
+        },
+        {
+          "name": "Get user by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/user/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Update user (multipart)",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "New Name", "type": "text" },
+                { "key": "password", "value": "newPassword123", "type": "text", "disabled": true },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Remove user image",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/user/:id/image",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", ":id", "image"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "School — admin (manage)",
+      "description": "Requires role: admin.",
+      "item": [
+        {
+          "name": "List schools",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/school/manage?skip=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "school", "manage"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "limit", "value": "10" },
+                { "key": "name", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get school by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/school/manage/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "school", "manage", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Create school (multipart)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Owner Name", "type": "text" },
+                { "key": "email", "value": "owner@example.com", "type": "text" },
+                { "key": "password", "value": "password123", "type": "text" },
+                { "key": "schoolName", "value": "My School", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/school/manage", "host": ["{{baseUrl}}"], "path": ["api", "school", "manage"] }
+          }
+        },
+        {
+          "name": "Edit school (multipart)",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "New School Name", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/school/manage/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "school", "manage", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "School — owner (me)",
+      "description": "Requires role: contentWriter (school owner). All routes under /api/school/me.",
+      "item": [
+        {
+          "name": "Get my school",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/school/me", "host": ["{{baseUrl}}"], "path": ["api", "school", "me"] }
+          }
+        },
+        {
+          "name": "Edit my school (multipart)",
+          "request": {
+            "method": "PATCH",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "New School Name", "type": "text" },
+                { "key": "image", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/school/me", "host": ["{{baseUrl}}"], "path": ["api", "school", "me"] }
+          }
+        },
+        {
+          "name": "Books",
+          "item": [
+            {
+              "name": "List books",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/school/me/books", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "books"] }
+              }
+            },
+            {
+              "name": "Create book (multipart, image required)",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "name", "value": "Book Name", "type": "text" },
+                    { "key": "image", "type": "file", "src": [] }
+                  ]
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/books", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "books"] }
+              }
+            },
+            {
+              "name": "Edit book (multipart)",
+              "request": {
+                "method": "PATCH",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "name", "value": "New Book Name", "type": "text" },
+                    { "key": "image", "type": "file", "src": [] }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/books/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "books", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Delete book",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/books/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "books", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Courses",
+          "item": [
+            {
+              "name": "List courses of track",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/courses/:trackId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "courses", ":trackId"],
+                  "query": [{ "key": "title", "value": "", "disabled": true }],
+                  "variable": [{ "key": "trackId", "value": "" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Units",
+          "item": [
+            {
+              "name": "List units of course",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/units/:courseId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "units", ":courseId"],
+                  "query": [{ "key": "title", "value": "", "disabled": true }],
+                  "variable": [{ "key": "courseId", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Create unit",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Unit 1\",\n  \"courseId\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/units", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "units"] }
+              }
+            },
+            {
+              "name": "Update unit",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"New Unit Title\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/units/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "units", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Delete unit",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/units/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "units", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Reorder units",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/units/order/:courseId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "units", "order", ":courseId"],
+                  "variable": [{ "key": "courseId", "value": "" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Lessons",
+          "item": [
+            {
+              "name": "List lessons of unit",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/lessons/:unitId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "lessons", ":unitId"],
+                  "variable": [{ "key": "unitId", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Create lesson",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Lesson 1\",\n  \"description\": \"Optional description\",\n  \"unitId\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/lessons", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "lessons"] }
+              }
+            },
+            {
+              "name": "Update lesson",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"New Lesson Title\",\n  \"description\": \"New description\",\n  \"status\": \"active\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/lessons/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "lessons", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                },
+                "description": "status: active | draft | unActive"
+              }
+            },
+            {
+              "name": "Delete lesson",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/lessons/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "lessons", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Reorder lessons",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/lessons/order/:unitId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "lessons", "order", ":unitId"],
+                  "variable": [{ "key": "unitId", "value": "" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Questions",
+          "item": [
+            {
+              "name": "List questions",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions?skip=0&limit=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "questions"],
+                  "query": [
+                    { "key": "skip", "value": "0" },
+                    { "key": "limit", "value": "10" },
+                    { "key": "courseId", "value": "", "disabled": true },
+                    { "key": "lessonId", "value": "", "disabled": true },
+                    { "key": "title", "value": "", "disabled": true }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get question by id",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "questions", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Create question (options type)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"What is 2 + 2?\",\n  \"type\": \"options\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n  \"options\": [\n    { \"text\": \"4\", \"isCorrect\": true },\n    { \"text\": \"5\", \"isCorrect\": false }\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/questions", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "questions"] },
+                "description": "type: options | match. purpose: lesson | dailyChallenge (dailyChallenge requires courseId instead of lessonId). To attach an image switch body to form-data with an `image` file field."
+              }
+            },
+            {
+              "name": "Create question (match type)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Match the pairs\",\n  \"type\": \"match\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n  \"matchingItems\": [\n    { \"text\": \"Cat\", \"type\": \"base\", \"correctIndex\": 0 },\n    { \"text\": \"Meow\", \"type\": \"match\" },\n    { \"text\": \"Bark\", \"type\": \"match\" }\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/questions", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "questions"] },
+                "description": "matchingItems types: base (needs correctIndex, index into the match rows) | match. Minimum 3 items."
+              }
+            },
+            {
+              "name": "Bulk create questions (JSON only)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"questions\": [\n    {\n      \"title\": \"What is 2 + 2?\",\n      \"type\": \"options\",\n      \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n      \"options\": [\n        { \"text\": \"4\", \"isCorrect\": true },\n        { \"text\": \"5\", \"isCorrect\": false }\n      ]\n    }\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/questions/bulk", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "questions", "bulk"] }
+              }
+            },
+            {
+              "name": "Update question",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated title\",\n  \"type\": \"options\",\n  \"options\": [\n    { \"text\": \"4\", \"isCorrect\": true },\n    { \"text\": \"5\", \"isCorrect\": false }\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "questions", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                },
+                "description": "To attach an image switch body to form-data with an `image` file field."
+              }
+            },
+            {
+              "name": "Delete question",
+              "request": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "questions", ":id"],
+                  "variable": [{ "key": "id", "value": "" }]
+                }
+              }
+            },
+            {
+              "name": "Bulk delete questions",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/school/me/questions/bulk-delete", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "questions", "bulk-delete"] }
+              }
+            },
+            {
+              "name": "Reorder questions",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"ids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/order/:lessonId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "school", "me", "questions", "order", ":lessonId"],
+                  "variable": [{ "key": "lessonId", "value": "" }]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Daily challenge",
+          "item": [
+            {
+              "name": "Get today's challenge",
+              "request": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/school/me/daily-challenge", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "daily-challenge"] }
+              }
+            },
+            {
+              "name": "Create today's challenge",
+              "request": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/api/school/me/daily-challenge", "host": ["{{baseUrl}}"], "path": ["api", "school", "me", "daily-challenge"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Learning — public",
+      "item": [
+        {
+          "name": "Meta data (enums)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/learning/metaData", "host": ["{{baseUrl}}"], "path": ["api", "learning", "metaData"] }
+          }
+        },
+        {
+          "name": "List tracks",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/learning/tracks", "host": ["{{baseUrl}}"], "path": ["api", "learning", "tracks"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Learning — admin",
+      "description": "Requires role: admin.",
+      "item": [
+        {
+          "name": "Grant track access to school",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/admin/schoolAccess/:schoolId/:trackId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning", "admin", "schoolAccess", ":schoolId", ":trackId"],
+              "variable": [
+                { "key": "schoolId", "value": "" },
+                { "key": "trackId", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Revoke track access from school",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/admin/schoolAccess/:schoolId/:trackId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning", "admin", "schoolAccess", ":schoolId", ":trackId"],
+              "variable": [
+                { "key": "schoolId", "value": "" },
+                { "key": "trackId", "value": "" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public content",
+      "item": [
+        {
+          "name": "Get info",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/public-content/info", "host": ["{{baseUrl}}"], "path": ["api", "public-content", "info"] }
+          }
+        },
+        {
+          "name": "Set info (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"googlePlay\": \"https://play.google.com/store/apps/details?id=app\",\n  \"appStore\": \"https://apps.apple.com/app/id000000\",\n  \"phone\": \"+963900000000\",\n  \"location\": \"Damascus\",\n  \"position\": { \"lat\": 33.5138, \"lng\": 36.2765 }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/public-content/info", "host": ["{{baseUrl}}"], "path": ["api", "public-content", "info"] }
+          }
+        },
+        {
+          "name": "List FAQs",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/public-content/faqs", "host": ["{{baseUrl}}"], "path": ["api", "public-content", "faqs"] }
+          }
+        },
+        {
+          "name": "Create FAQ (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"How do I sign up?\",\n  \"description\": \"Use the mobile app sign up screen.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/public-content/faqs", "host": ["{{baseUrl}}"], "path": ["api", "public-content", "faqs"] }
+          }
+        },
+        {
+          "name": "Edit FAQ",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated title\",\n  \"description\": \"Updated description\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/public-content/faqs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public-content", "faqs", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        },
+        {
+          "name": "Delete FAQ",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/public-content/faqs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public-content", "faqs", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Get file by id",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/files/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
