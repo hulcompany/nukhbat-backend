@@ -20,7 +20,7 @@ __exportStar(require("./or.dto"), exports);
 __exportStar(require("./base.pagination.dto"), exports);
 __exportStar(require("./string.filter.dto"), exports);
 __exportStar(require("./numeric.filter.dto"), exports);
-// export * from './oxor.dto';
+__exportStar(require("./oxor.dto"), exports);
 __exportStar(require("./with.dto"), exports);
 __exportStar(require("./match.dto"), exports);
 //# sourceMappingURL=index.js.map

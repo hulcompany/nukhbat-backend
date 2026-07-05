@@ -8,6 +8,7 @@ import { Unit } from './entity/unit.entity';
 import {
   DataSource,
   DeepPartial,
+  FindOptionsRelations,
   FindOptionsWhere,
   ILike,
   In,
@@ -45,12 +46,19 @@ export class UnitService {
     });
   }
 
-  async find(params: FindOptionsWhere<Unit>) {
+  async find(
+    params: FindOptionsWhere<Unit>,
+    relations?: FindOptionsRelations<Unit>,
+  ) {
     let filters = params;
     if (filters.title) {
       filters.title = ILike(`%${params.title}%`);
     }
-    return await this.repo.find({ where: filters, order: { index: 'ASC' } });
+    return await this.repo.find({
+      where: filters,
+      order: { index: 'ASC' },
+      relations: relations,
+    });
   }
 
   async existsOrFail(params: FindOptionsWhere<Unit>) {

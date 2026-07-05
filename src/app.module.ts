@@ -12,6 +12,7 @@ import { SchoolModule } from './school/school.module';
 import { ContextModule } from './context';
 import { LearningModule } from './learning/learning.module';
 import { PublicContentModule } from './public-content/public-content.module';
+import { DailyWisementModule } from './daily_wisement/daily-wisement.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -30,6 +31,7 @@ import { PublicContentModule } from './public-content/public-content.module';
     SchoolModule,
 
     PublicContentModule,
+    DailyWisementModule,
   ],
   providers: [
     {

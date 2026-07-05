@@ -803,8 +803,75 @@
     },
     {
       "name": "Learning — admin",
-      "description": "Requires role: admin.",
+      "description": "Requires role: admin. Read routes span all schools — no track-access checks.",
       "item": [
+        {
+          "name": "List courses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/admin/courses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning", "admin", "courses"],
+              "query": [
+                { "key": "title", "value": "", "description": "contains, case-insensitive", "disabled": true }
+              ]
+            },
+            "description": "Not paginated. Includes the track relation."
+          }
+        },
+        {
+          "name": "List units",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/admin/units",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning", "admin", "units"],
+              "query": [
+                { "key": "schoolId", "value": "", "disabled": true },
+                { "key": "title", "value": "", "description": "contains, case-insensitive", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List lessons",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/admin/lessons",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning", "admin", "lessons"],
+              "query": [
+                { "key": "unitId", "value": "", "disabled": true },
+                { "key": "courseId", "value": "", "description": "via unit.courseId", "disabled": true },
+                { "key": "schoolId", "value": "", "disabled": true },
+                { "key": "title", "value": "", "description": "contains, case-insensitive", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List questions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/admin/questions?skip=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "learning", "admin", "questions"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "limit", "value": "10" },
+                { "key": "courseId", "value": "", "disabled": true },
+                { "key": "lessonId", "value": "", "disabled": true },
+                { "key": "schoolId", "value": "", "disabled": true },
+                { "key": "title", "value": "", "description": "contains, case-insensitive", "disabled": true }
+              ]
+            },
+            "description": "Paginated like the school route, but without track-access scoping."
+          }
+        },
         {
           "name": "Grant track access to school",
           "request": {
@@ -910,6 +977,111 @@
               "path": ["api", "public-content", "faqs", ":id"],
               "variable": [{ "key": "id", "value": "" }]
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily wisement",
+      "description": "Rotating daily wisement. Public: today. Admin: CRUD + bulk. The selected one cannot be edited or deleted; a midnight cron rotates the selection.",
+      "item": [
+        {
+          "name": "Get today (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/daily-wisement/today", "host": ["{{baseUrl}}"], "path": ["api", "daily-wisement", "today"] },
+            "description": "Returns the selected wisement; when none is selected yet it picks one on the spot."
+          }
+        },
+        {
+          "name": "List (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/daily-wisement?skip=0&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "daily-wisement"],
+              "query": [
+                { "key": "skip", "value": "0" },
+                { "key": "limit", "value": "10" },
+                { "key": "sort", "value": "DESC", "description": "by createdAt: ASC | DESC", "disabled": true },
+                { "key": "text", "value": "", "description": "regexp contains", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"A word of wisdom for the day.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/daily-wisement", "host": ["{{baseUrl}}"], "path": ["api", "daily-wisement"] }
+          }
+        },
+        {
+          "name": "Bulk create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"text\": \"First wisement\" },\n    { \"text\": \"Second wisement\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/daily-wisement/bulk", "host": ["{{baseUrl}}"], "path": ["api", "daily-wisement", "bulk"] },
+            "description": "All-or-nothing: one invalid item drops the whole batch."
+          }
+        },
+        {
+          "name": "Update (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Updated wisement text\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/daily-wisement/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "daily-wisement", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            },
+            "description": "Fails with 400 when the target is the currently selected wisement."
+          }
+        },
+        {
+          "name": "Delete (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/daily-wisement/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "daily-wisement", ":id"],
+              "variable": [{ "key": "id", "value": "" }]
+            },
+            "description": "Fails with 400 when the target is the currently selected wisement."
+          }
+        },
+        {
+          "name": "Bulk delete (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/daily-wisement/bulk-delete", "host": ["{{baseUrl}}"], "path": ["api", "daily-wisement", "bulk-delete"] },
+            "description": "All-or-nothing: a missing id or the currently selected wisement in the list fails the whole batch."
           }
         }
       ]

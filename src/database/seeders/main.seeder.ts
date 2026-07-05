@@ -16,6 +16,7 @@ import { QuestionMatch } from '../../learning/questions/entity/question-match.en
 import { QuestionType } from '../../learning/questions/entity/enum/question.type';
 import { QuestionPurpose } from '../../learning/questions/entity/enum/question-purpose.type';
 import { QuestionMatchType } from '../../learning/questions/entity/enum/question-match.type';
+import { DailyWisement } from '../../daily_wisement/entity/daily-wisement.entity';
 import { UUID } from 'crypto';
 
 export class MainSeeder implements Seeder {
@@ -23,10 +24,10 @@ export class MainSeeder implements Seeder {
     dataSource: DataSource,
     factoryManager: SeederFactoryManager,
   ): Promise<any> {
-    await dataSource.dropDatabase();
+    // await dataSource.dropDatabase();
     await dataSource.synchronize();
     await dataSource.runMigrations();
-    let admin = await dataSource.getRepository(User).save({
+    await dataSource.getRepository(User).save({
       name: 'admin',
       email: 'admin@hul.com',
       password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
@@ -40,10 +41,21 @@ export class MainSeeder implements Seeder {
       emailVerfied: true,
       role: 'contentWriter',
     });
+    let content2 = await dataSource.getRepository(User).save({
+      name: 'content-writer-2',
+      email: 'content2@hul.com',
+      password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
+      emailVerfied: true,
+      role: 'contentWriter',
+    });
     await factoryManager.get(User).saveMany(20);
     let school = await dataSource.getRepository(School).save({
       owner: content,
       name: 'Content School',
+    });
+    let school2 = await dataSource.getRepository(School).save({
+      owner: content2,
+      name: 'Content School 2',
     });
     const data = learningFactory();
     // courses of the FIRST track — the units below hang off these; the
@@ -54,14 +66,17 @@ export class MainSeeder implements Seeder {
       const savedTrack = await dataSource.getRepository(Track).save({
         name: track.name,
       });
-      await dataSource.getRepository(SchoolAccess).save({
-        school: {
-          id: school.id,
-        },
-        track: {
-          id: savedTrack.id,
-        },
-      });
+      // both schools get all three tracks
+      for (const s of [school, school2]) {
+        await dataSource.getRepository(SchoolAccess).save({
+          school: {
+            id: s.id,
+          },
+          track: {
+            id: savedTrack.id,
+          },
+        });
+      }
       for (const course of track.courses) {
         const savedCourse = await dataSource.getRepository(Course).save({
           title: course.name,
@@ -75,10 +90,17 @@ export class MainSeeder implements Seeder {
     }
     await factoryManager.get(Faq).saveMany(30);
     await factoryManager.get(Info).saveMany(1);
+    await factoryManager.get(DailyWisement).saveMany(30);
 
     await this.seedSchoolContent(
       dataSource,
       school.id,
+      firstTrackCourses,
+      allCourses,
+    );
+    await this.seedSchoolContent(
+      dataSource,
+      school2.id,
       firstTrackCourses,
       allCourses,
     );

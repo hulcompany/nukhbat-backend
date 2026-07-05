@@ -1,4 +1,4 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { BadRequestException, Injectable, Scope } from '@nestjs/common';
 import { BookService } from './books/book.services';
 import { CourseService } from './course/course.service';
 import { LessonService } from './lessons/lessons.service';
@@ -188,6 +188,14 @@ export class LearningSchoolService {
   // paginated; with an explicit target we assert access first, without
   // one the service itself hides questions of revoked tracks
   async getQuestions(params: QuestionGetDto) {
+    if (
+      (!params.lessonId && !params.courseId) ||
+      (params.lessonId && params.courseId)
+    ) {
+      throw new BadRequestException(
+        'Exactly on of lessonId , courseId must be provided.',
+      );
+    }
     if (params.lessonId) {
       await this.SchoolAccessService.assertLessonAccess(
         this.context.school.id,

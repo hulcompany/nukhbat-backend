@@ -5,7 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Lesson } from './entity/lesson.entity';
-import { DataSource, DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  DataSource,
+  DeepPartial,
+  FindOptionsRelations,
+  FindOptionsWhere,
+  ILike,
+  Repository,
+} from 'typeorm';
 import { LessonEditDto } from './dto/lessons.dto';
 import { LessonStatusType } from './entity/lesson.status.type';
 import { transaction } from 'core';
@@ -31,8 +38,20 @@ export class LessonService {
     return await this.repo.save(params);
   }
 
-  async find(params: FindOptionsWhere<Lesson>) {
-    return await this.repo.find({ where: params, order: { index: 'ASC' } , relations: {questions: true} });
+  async find(
+    params: FindOptionsWhere<Lesson>,
+    relations?: FindOptionsRelations<Lesson>,
+  ) {
+    if (params.title) {
+      params.title = ILike(`%${params.title}%`);
+    }
+    return await this.repo.find({
+      where: params,
+      order: { index: 'ASC' },
+      relations: relations
+        ? { ...relations, questions: true }
+        : { questions: true },
+    });
   }
 
   async findOneOrFail(params: FindOptionsWhere<Lesson>) {

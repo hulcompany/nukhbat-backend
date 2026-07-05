@@ -49,6 +49,15 @@ export class SchoolAccessService {
     ).map((e) => e.track);
   }
 
+  async getSchoolTracks(id: UUID) {
+    return (
+      await this.repo.find({
+        where: { school: { id: id } },
+        relations: { track: true },
+      })
+    ).map((e) => e.track);
+  }
+
   async allow(params: SchoolAccessDto) {
     let e1 = await this.ds
       .getRepository(Track)

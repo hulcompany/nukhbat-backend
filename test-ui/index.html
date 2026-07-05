@@ -168,6 +168,8 @@
   <button data-p="users" onclick="panel('users')">Manage users (admin)</button>
   <div class="group">Platform</div>
   <button data-p="access" onclick="panel('access')">Track access (admin)</button>
+  <button data-p="adm" onclick="panel('adm')">Content browse (admin)</button>
+  <button data-p="wis" onclick="panel('wis')">Daily wisement</button>
   <button data-p="raw" onclick="panel('raw')">Raw request</button>
 </aside>
 
@@ -407,6 +409,114 @@
     <div class="row">
       <span id="s-admallow"></span>
       <span id="s-admrevoke"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ADMIN CONTENT BROWSE ============ -->
+<section class="panel" id="p-adm">
+  <div class="card">
+    <h2>Admin content browse</h2>
+    <p class="sub">Read-only, spans every school, no track-access checks. Pick a school to scope units/lessons/questions — or leave it on “all schools”.</p>
+    <div class="row">
+      <span id="s-abschools"></span>
+      <select id="ab-school"><option value="">— all schools —</option></select>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <h2>Courses <span style="font-weight:400;font-size:12px;color:var(--mut)">not paginated, ignores the school</span></h2>
+      <div class="row">
+        <input id="ab-ctitle" placeholder="title contains…" dir="auto" style="width:160px">
+        <span id="s-abcourses"></span>
+      </div>
+      <table id="ab-ctable"><thead><tr><th>course</th><th>track</th><th style="width:170px">use as filter</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="ab-cempty">Press “Load courses”.</div>
+    </div>
+    <div class="card">
+      <h2>Units</h2>
+      <div class="row">
+        <input id="ab-utitle" placeholder="title contains…" dir="auto" style="width:160px">
+        <span id="s-abunits"></span>
+      </div>
+      <table id="ab-utable"><thead><tr><th>#</th><th>unit</th><th>school</th><th style="width:110px">use as filter</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="ab-uempty">Press “Load units”.</div>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <h2>Lessons</h2>
+      <div class="row">
+        <input id="ab-lunit" placeholder="unitId — empty omits" class="mono" style="width:280px">
+        <input id="ab-lcourse" placeholder="courseId — empty omits" class="mono" style="width:280px">
+      </div>
+      <div class="row">
+        <input id="ab-ltitle" placeholder="title contains…" dir="auto" style="width:160px">
+        <span id="s-ablessons"></span>
+      </div>
+      <table id="ab-ltable"><thead><tr><th>#</th><th>lesson</th><th>status</th><th>qs</th><th>school</th><th style="width:110px">use as filter</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="ab-lempty">Press “Load lessons”.</div>
+    </div>
+    <div class="card">
+      <h2>Questions <span style="font-weight:400;font-size:12px;color:var(--mut)">paginated</span></h2>
+      <div class="row">
+        <input id="ab-qlesson" placeholder="lessonId — empty omits" class="mono" style="width:280px">
+        <input id="ab-qcourse" placeholder="courseId — empty omits" class="mono" style="width:280px">
+      </div>
+      <div class="row">
+        <input id="ab-qtitle" placeholder="title contains…" dir="auto" style="width:150px">
+        <label>page size <input id="ab-qlimit" value="10" style="width:60px"></label>
+        <span id="s-abquestions"></span>
+        <button class="plain" onclick="abQPage(-1)">‹ prev</button>
+        <span id="ab-qpageinfo" style="font-size:12px;color:var(--mut)">—</span>
+        <button class="plain" onclick="abQPage(1)">next ›</button>
+      </div>
+      <table id="ab-qtable"><thead><tr><th>#</th><th>question</th><th>type</th><th>purpose</th></tr></thead><tbody></tbody></table>
+      <div class="empty" id="ab-qempty">Press “Load questions”.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DAILY WISEMENT ============ -->
+<section class="panel" id="p-wis">
+  <div class="card">
+    <h2>Today's wisement <span style="font-weight:400;font-size:12px;color:var(--mut)">public — no auth needed</span></h2>
+    <p class="sub">Nothing selected yet → the GET itself picks one (same logic as the midnight rotation). Empty table → null.</p>
+    <div class="row"><span id="s-wtoday"></span></div>
+    <div id="w-today" class="empty">Press “Fetch today”.</div>
+  </div>
+  <div class="card">
+    <h2>All wisements <span style="font-weight:400;font-size:12px;color:var(--mut)">admin role required</span></h2>
+    <p class="sub">The juicy test: Edit/Delete on the ✓ selected row must be refused with 400; bulk delete containing it must cancel the whole batch.</p>
+    <div class="row">
+      <input id="wf-text" placeholder="text contains…" dir="auto" style="width:170px">
+      <select id="wf-sort"><option value="">sort — omit (DESC)</option><option>DESC</option><option>ASC</option></select>
+      <label>page size <input id="wf-limit" value="10" style="width:60px"></label>
+      <span id="s-wload"></span>
+      <button class="plain" onclick="wPage(-1)">‹ prev</button>
+      <span id="w-pageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="wPage(1)">next ›</button>
+    </div>
+    <table id="w-table">
+      <thead><tr><th></th><th>text</th><th>selected</th><th>used</th><th>created</th><th style="width:150px">actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="empty" id="w-empty">Press “Load wisements”.</div>
+    <div class="row"><span id="s-wbulkdel"></span></div>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <h2>Add one</h2>
+      <div class="row">
+        <input id="wc-text" placeholder="text — empty omits" dir="auto" style="width:300px">
+        <span id="s-wcreate"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Add many (JSON, all-or-nothing)</h2>
+      <p class="sub">Sent byte-for-byte — one bad item should cancel the whole batch.</p>
+      <textarea id="wb-json" rows="8"></textarea>
+      <div class="row"><span id="s-wbulk"></span></div>
     </div>
   </div>
 </section>

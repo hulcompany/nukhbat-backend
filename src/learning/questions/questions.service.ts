@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  Brackets,
   DataSource,
   EntityManager,
   FindOptionsWhere,
@@ -31,7 +30,6 @@ import { LessonStatusType } from '../lessons/entity/lesson.status.type';
 import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { Course } from '../course/entity/course.entity';
 import { Lesson } from '../lessons/entity/lesson.entity';
-import { SchoolAccess } from '../school-access/entity/school-access.entity';
 import { ReqContext } from '../../context';
 import { QuestionPurpose } from './entity/enum/question-purpose.type';
 import { DailyChallengeUsedQuestions } from '../daily-challenge/entity/daily-challenge-used-questions.entity';
@@ -60,10 +58,17 @@ export class QuestionService {
   // paginated list. With an explicit lessonId/courseId the caller has
   // already asserted access; without one, every school question is
   // returned EXCEPT those hanging off a track the school can't use
-  // (lesson OR course must be null or lead to an allowed track)
-  async getByCriteria(params: { params: QuestionGetDto; ctxt?: ReqContext }) {
+  // (lesson OR course must be null or lead to an allowed track).
+  // Admin callers pass schoolId directly (no ctxt) — school scoping is
+  // then a plain filter and the track-access clauses are skipped.
+  async getByCriteria(params: {
+    params: QuestionGetDto;
+    ctxt?: ReqContext;
+    schoolId?: UUID;
+    filter?: any;
+  }) {
     const query = params.params;
-    const schoolId = params.ctxt?.school?.id;
+    const schoolId = params.ctxt?.school?.id ?? params.schoolId;
 
     // eager relations don't load through a query builder — join them so
     // list items keep the same shape as findOne
@@ -71,6 +76,7 @@ export class QuestionService {
       .createQueryBuilder('q')
       .leftJoinAndSelect('q.options', 'options')
       .leftJoinAndSelect('q.matchingItems', 'matchingItems')
+      .leftJoinAndSelect('q.school', 'school')
       .orderBy('q.index', 'ASC');
 
     if (schoolId) {
@@ -82,40 +88,6 @@ export class QuestionService {
     if (query.courseId) {
       qb.andWhere('q.course = :courseId', { courseId: query.courseId });
     }
-
-    if (!query.lessonId && !query.courseId && schoolId) {
-      let access = await this.ds.getRepository(SchoolAccess).find({
-        where: { school: { id: schoolId } },
-        relations: { track: true },
-      });
-      let trackIds = access.map((a) => a.track.id);
-      qb.leftJoin('q.course', 'course')
-        .leftJoin('q.lesson', 'lesson')
-        .leftJoin('lesson.unit', 'unit')
-        .leftJoin('unit.course', 'lessonCourse');
-      if (trackIds.length) {
-        qb.andWhere(
-          new Brackets((w) =>
-            w
-              .where('q.course IS NULL')
-              .orWhere('course.trackId IN (:...trackIds)', { trackIds }),
-          ),
-        );
-        qb.andWhere(
-          new Brackets((w) =>
-            w
-              .where('q.lesson IS NULL')
-              .orWhere('lessonCourse.trackId IN (:...trackIds)', { trackIds }),
-          ),
-        );
-      } else {
-        // no accessible tracks: only unattached legacy pool rows remain
-        qb.andWhere('q.course IS NULL').andWhere('q.lesson IS NULL');
-      }
-    }
-
-    // title contains (case-insensitive) + skip/take; ids are handled by
-    // the explicit clauses above, never as raw column equality
     applyPsqlFilter({
       queryBuilder: qb,
       query: query,
@@ -123,6 +95,8 @@ export class QuestionService {
         title: { regExp: { regexp: 'contains' } },
         lessonId: { skip: true },
         courseId: { skip: true },
+        // virtual @RelationId — already applied as q.school above
+        schoolId: { skip: true },
       },
     });
 
@@ -150,10 +124,7 @@ export class QuestionService {
     ctxt: ReqContext;
   }) {
     const purpose = params.params.purpose ?? QuestionPurpose.lesson;
-    if (
-      purpose == QuestionPurpose.dailyChallenge &&
-      params.params.lessonId
-    ) {
+    if (purpose == QuestionPurpose.dailyChallenge && params.params.lessonId) {
       throw new BadRequestException(
         'Daily challenge questions cannot have a lesson',
       );
@@ -184,9 +155,7 @@ export class QuestionService {
     }
     // dailyChallenge questions never attach to a lesson, even if one was sent
     const lessonRef =
-      purpose == QuestionPurpose.lesson
-        ? { id: params.params.lessonId }
-        : null;
+      purpose == QuestionPurpose.lesson ? { id: params.params.lessonId } : null;
     // and only they attach to a course
     const courseRef =
       purpose == QuestionPurpose.dailyChallenge
@@ -689,7 +658,6 @@ export class QuestionService {
 
   private async insertOptions(
     em: EntityManager,
-
     options: QuestionOptionDto[],
     questionId: UUID,
     schoolId?: UUID,

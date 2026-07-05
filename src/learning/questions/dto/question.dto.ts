@@ -6,12 +6,13 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Validate,
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UUID } from 'crypto';
-import { BasePaginationDto } from 'core';
+import { BasePaginationDto, OXorValidator, XorValidator } from 'core';
 import { QuestionType } from '../entity/enum/question.type';
 import { QuestionPurpose } from '../entity/enum/question-purpose.type';
 import { QuestionOptionDto } from './question-option.dto';
