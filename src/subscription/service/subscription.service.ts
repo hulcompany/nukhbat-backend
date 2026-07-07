@@ -10,6 +10,7 @@ import { LearningService } from '../../learning/learning.service';
 import { UserService } from '../../core/user/service/user.service';
 import { RoleType } from '../../core';
 import { SchoolService } from '../../school/school.service';
+import { CoreService } from '../../core/core.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -17,7 +18,7 @@ export class SubscriptionService {
     private readonly keys: SubscriptionKeyService,
     private readonly profiles: StudentProfileService,
     private readonly learningService: LearningService,
-    private readonly userService: UserService,
+    private readonly coreService: CoreService,
     private readonly schoolService: SchoolService,
     private readonly ds: DataSource,
   ) {}
@@ -26,7 +27,7 @@ export class SubscriptionService {
   // (single use) in one transaction — a concurrent redeem of the same
   // key hits 0 affected rows on the delete and rolls back
   async freeTrial(userId: UUID, trackId: UUID) {
-    let user = await this.userService.findOneAndFail({ id: userId });
+    let user = await this.coreService.findUserById(userId);
     if (user.role != RoleType.student) {
       throw new BadRequestException('Only Student are allowed to join.');
     }
