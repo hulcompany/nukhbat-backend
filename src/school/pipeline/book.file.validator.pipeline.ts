@@ -5,7 +5,7 @@ export class BookFileValidatorPipeline extends FileValidationPipeline {
     super({
       size: 100 * 1024 * 1024,
       required: required,
-      types: ['application/pdf', 'application/x-pdf'],
+      types: ['application/pdf', 'application/x-pdf', 'application/acrobat'],
     });
   }
 }

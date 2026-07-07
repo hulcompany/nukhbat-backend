@@ -12,6 +12,7 @@ import { LearningController } from './learning.controller';
 import { LearningSchoolService } from './learning-school.service';
 import { QuestionModule } from './questions/questions.module';
 import { DailyChallengeModule } from './daily-challenge/daily-challenge.module';
+import { LearningService } from './learning.service';
 
 @Module({
   imports: [
@@ -30,7 +31,7 @@ import { DailyChallengeModule } from './daily-challenge/daily-challenge.module';
     // LearningSchoolController,
     LearningController,
   ],
-  providers: [LearningSchoolService],
-  exports: [LearningSchoolService],
+  providers: [LearningSchoolService, LearningService],
+  exports: [LearningSchoolService, LearningService],
 })
 export class LearningModule {}

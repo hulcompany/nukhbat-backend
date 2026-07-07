@@ -1,0 +1,149 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+  DataSource,
+  EntityManager,
+  FindOptionsWhere,
+  In,
+  Repository,
+} from 'typeorm';
+import { randomBytes } from 'crypto';
+import { UUID } from 'crypto';
+import { SubscriptionKey } from '../entity/subscription-key.entity';
+import {
+  SubscriptionKeyCreateDto,
+  SubscriptionKeyCreateManyDto,
+} from '../dto/subscription.dto';
+import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
+import { SubscriptionKeyGetDto } from '../dto/subscription.dto';
+
+// no 0/O/1/I — keys get typed by hand
+const KEY_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const KEY_GROUPS = 6;
+const KEY_GROUP_LEN = 4;
+
+@Injectable()
+export class SubscriptionKeyService {
+  constructor(
+    @InjectRepository(SubscriptionKey)
+    private readonly repo: Repository<SubscriptionKey>,
+    private readonly ds: DataSource,
+  ) {}
+
+  // every function takes an optional EntityManager so callers can join
+  // an outer transaction()
+  private getRepo(em?: EntityManager) {
+    return em?.getRepository(SubscriptionKey) ?? this.repo;
+  }
+
+  async find(filter: FindOptionsWhere<SubscriptionKey>, em?: EntityManager) {
+    return await this.getRepo(em).find({
+      where: filter,
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getByCriteria(params: SubscriptionKeyGetDto) {
+    const qb = this.repo
+      .createQueryBuilder('sk')
+      .leftJoinAndSelect('sk.school', 'school')
+      .leftJoinAndSelect('sk.track', 'track');
+    qb.orderBy('sk.createdAt', params.sort);
+
+    applyPsqlFilter({
+      queryBuilder: qb,
+      query: params,
+    });
+
+    const [data, count] = await qb.getManyAndCount();
+    return new BasePaginationModel({
+      list: data,
+      totalRecords: count,
+      skip: params.skip,
+      limit: params.limit,
+    });
+  }
+
+  async findOneOrFail(
+    filter: FindOptionsWhere<SubscriptionKey>,
+    em?: EntityManager,
+  ) {
+    let key = await this.getRepo(em).findOne({ where: filter });
+    if (!key) {
+      throw new NotFoundException('Subscription key not found');
+    }
+    return key;
+  }
+
+  async create(params: SubscriptionKeyCreateDto, em?: EntityManager) {
+    let [key] = await this.createMany({ ...params, count: 1 }, em);
+    return key;
+  }
+
+  // `count` keys for the same school+track in one call
+  async createMany(params: SubscriptionKeyCreateManyDto, em?: EntityManager) {
+    // optional in the shared DTO — callers must have resolved it by now
+    if (!params.schoolId) {
+      throw new BadRequestException('schoolId is required');
+    }
+    let repo = this.getRepo(em);
+    let keys: SubscriptionKey[] = [];
+    for (let i = 0; i < params.count; i++) {
+      keys.push(
+        await repo.save(
+          repo.create({
+            key: this.generateKey(),
+            track: { id: params.trackId },
+            school: { id: params.schoolId },
+          }),
+        ),
+      );
+    }
+    return keys;
+  }
+
+  async delete(filter: FindOptionsWhere<SubscriptionKey>, em?: EntityManager) {
+    let res = await this.getRepo(em).delete(filter);
+    if (!res.affected) {
+      throw new NotFoundException('Subscription key not found');
+    }
+  }
+
+  // all-or-nothing: every id must exist (within the filter scope) or
+  // nothing is deleted — the transaction makes that atomic
+  async deleteMany(
+    ids: UUID[],
+    filter?: FindOptionsWhere<SubscriptionKey>,
+    em?: EntityManager,
+  ) {
+    ids = [...new Set(ids)];
+    await transaction(em?.connection || this.ds, async (em) => {
+      let res = await em.getRepository(SubscriptionKey).delete({
+        ...filter,
+        id: In(ids),
+      });
+      if (res.affected !== ids.length) {
+        throw new NotFoundException('Subscription key not found');
+      }
+    });
+  }
+
+  // XXXX-XXXX-XXXX from a 31-char alphabet (~59 bits) — collisions are
+  // negligible, and the unique column rejects one anyway
+  private generateKey() {
+    let groups: string[] = [];
+    for (let g = 0; g < KEY_GROUPS; g++) {
+      let bytes = randomBytes(KEY_GROUP_LEN);
+      let group = '';
+      for (let i = 0; i < KEY_GROUP_LEN; i++) {
+        group += KEY_ALPHABET[bytes[i] % KEY_ALPHABET.length];
+      }
+      groups.push(group);
+    }
+    return groups.join('-');
+  }
+}

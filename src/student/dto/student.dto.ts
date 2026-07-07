@@ -1,0 +1,26 @@
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { OmitType } from '@nestjs/mapped-types';
+import { BasePaginationDto } from 'core';
+import { UUID } from 'crypto';
+
+export class StudentProfileGetDto extends BasePaginationDto {
+  @IsUUID()
+  @IsOptional()
+  trackId?: UUID;
+
+  @IsUUID()
+  @IsOptional()
+  schoolId?: UUID;
+
+  @IsString()
+  @IsOptional()
+  @IsNotEmpty()
+  name?: string;
+}
+
+// owner route: schoolId comes from the context — a real class (not a TS
+// Omit<>) so ValidationPipe still validates and whitelists the query
+export class StudentProfileSchoolGetDto extends OmitType(
+  StudentProfileGetDto,
+  ['schoolId'] as const,
+) {}

@@ -170,6 +170,8 @@
   <button data-p="access" onclick="panel('access')">Track access (admin)</button>
   <button data-p="adm" onclick="panel('adm')">Content browse (admin)</button>
   <button data-p="wis" onclick="panel('wis')">Daily wisement</button>
+  <button data-p="sub" onclick="panel('sub')">Subscriptions</button>
+  <button data-p="stu" onclick="panel('stu')">Students</button>
   <button data-p="raw" onclick="panel('raw')">Raw request</button>
 </aside>
 
@@ -522,6 +524,107 @@
       <textarea id="wb-json" rows="8"></textarea>
       <div class="row"><span id="s-wbulk"></span></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ SUBSCRIPTIONS ============ -->
+<section class="panel" id="p-sub">
+  <div class="card">
+    <h2>Subscription keys</h2>
+    <p class="sub">Single-use keys, 6 groups (XXXX-XXXX-…). Owner lists own school under <code>keys/school</code>; minting and deleting are admin-only. The school/track selects feed the admin filter <em>and</em> the mint target.</p>
+    <div class="row">
+      <span id="s-subrefs"></span>
+      <select id="sb-school"><option value="">— school (admin) —</option></select>
+      <select id="sb-track"><option value="">— track —</option></select>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <h2>Redeem <span style="font-weight:400;font-size:12px;color:var(--mut)">student role</span></h2>
+      <p class="sub">The juicy tests: redeem twice (400 until expiry), redeem a key from another school/track (400), two students on one key (second must fail).</p>
+      <div class="row">
+        <input id="sb-key" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" class="mono" style="width:300px">
+        <span id="s-subredeem"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Mint keys <span style="font-weight:400;font-size:12px;color:var(--mut)">admin role</span></h2>
+      <p class="sub">Target = the school + track selects above. count 1–500.</p>
+      <div class="row">
+        <label>count <input id="sb-count" value="5" style="width:60px"></label>
+        <span id="s-subcreate"></span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>My school keys <span style="font-weight:400;font-size:12px;color:var(--mut)">owner role</span></h2>
+    <div class="row">
+      <label>page size <input id="sb-olimit" value="10" style="width:60px"></label>
+      <span id="s-subokeys"></span>
+      <button class="plain" onclick="subOPage(-1)">‹ prev</button>
+      <span id="sb-opageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="subOPage(1)">next ›</button>
+    </div>
+    <table id="sb-otable"><thead><tr><th>key</th><th>track</th><th>created</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="sb-oempty">Press “Load my keys”.</div>
+  </div>
+  <div class="card">
+    <h2>All keys <span style="font-weight:400;font-size:12px;color:var(--mut)">admin role</span></h2>
+    <div class="row">
+      <label>page size <input id="sb-alimit" value="10" style="width:60px"></label>
+      <span id="s-subakeys"></span>
+      <button class="plain" onclick="subAPage(-1)">‹ prev</button>
+      <span id="sb-apageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="subAPage(1)">next ›</button>
+    </div>
+    <table id="sb-atable"><thead><tr><th></th><th>key</th><th>school</th><th>track</th><th>created</th><th style="width:140px">actions</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="sb-aempty">Press “Load all keys”.</div>
+    <div class="row"><span id="s-subbulkdel"></span></div>
+  </div>
+</section>
+
+<!-- ============ STUDENTS ============ -->
+<section class="panel" id="p-stu">
+  <div class="card">
+    <h2>Students</h2>
+    <p class="sub">One profile per student — one school + one track, never changed. Profiles only exist through key redemption. School/track selects filter the lists below.</p>
+    <div class="row">
+      <span id="s-sturefs"></span>
+      <select id="stu-school"><option value="">— school (admin) —</option></select>
+      <select id="stu-track"><option value="">— track —</option></select>
+    </div>
+  </div>
+  <div class="card">
+    <h2>My profile <span style="font-weight:400;font-size:12px;color:var(--mut)">student role</span></h2>
+    <p class="sub">403 (StudentGuard) until this student has redeemed a key.</p>
+    <div class="row"><span id="s-stuprofile"></span></div>
+    <div id="stu-profile" class="empty">Press “My profile”.</div>
+  </div>
+  <div class="card">
+    <h2>My students <span style="font-weight:400;font-size:12px;color:var(--mut)">owner role — pinned to my school</span></h2>
+    <div class="row">
+      <input id="stu-oname" placeholder="name contains…" dir="auto" style="width:160px">
+      <label>page size <input id="stu-olimit" value="10" style="width:60px"></label>
+      <span id="s-stuown"></span>
+      <button class="plain" onclick="stuOPage(-1)">‹ prev</button>
+      <span id="stu-opageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="stuOPage(1)">next ›</button>
+    </div>
+    <table id="stu-otable"><thead><tr><th>student</th><th>email</th><th>track</th><th>expires</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="stu-oempty">Press “Load students”.</div>
+  </div>
+  <div class="card">
+    <h2>All students <span style="font-weight:400;font-size:12px;color:var(--mut)">admin role</span></h2>
+    <div class="row">
+      <input id="stu-aname" placeholder="name contains…" dir="auto" style="width:160px">
+      <label>page size <input id="stu-alimit" value="10" style="width:60px"></label>
+      <span id="s-stuadmin"></span>
+      <button class="plain" onclick="stuAPage(-1)">‹ prev</button>
+      <span id="stu-apageinfo" style="font-size:12px;color:var(--mut)">—</span>
+      <button class="plain" onclick="stuAPage(1)">next ›</button>
+    </div>
+    <table id="stu-atable"><thead><tr><th>student</th><th>email</th><th>school</th><th>track</th><th>expires</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
+    <div class="empty" id="stu-aempty">Press “Load students”.</div>
   </div>
 </section>
 

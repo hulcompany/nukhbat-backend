@@ -2388,6 +2388,388 @@
       ]
     },
     {
+      "name": "Student",
+      "description": "One profile per student — a single school and track, never changed. Profiles are created by redeeming subscription keys. /student/school*: contentWriter (own school). /student*: admin.",
+      "item": [
+        {
+          "name": "My profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/student/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "profile"
+              ]
+            },
+            "description": "Role: student. The single profile with school + track. 403 (StudentGuard) until the student has redeemed a subscription key."
+          }
+        },
+        {
+          "name": "List my students (owner)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/student/school?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "school"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "trackId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "name",
+                  "value": "",
+                  "description": "student name contains, case-insensitive",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "by createdAt",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Role: contentWriter. Pinned to the owner school. Paginated ({ list, totalRecords, skip, limit }) with user/school/track relations."
+          }
+        },
+        {
+          "name": "Get my student by id (owner)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/student/school/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "school",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: contentWriter. A foreign profile reads as 404."
+          }
+        },
+        {
+          "name": "List students (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/student?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "trackId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "schoolId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "name",
+                  "value": "",
+                  "description": "student name contains, case-insensitive",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "by createdAt",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Role: admin. Spans all schools; paginated."
+          }
+        },
+        {
+          "name": "Get student by id (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/student/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: admin."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "description": "Subscription keys (6 groups: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX, single use). Subscribe: student. keys/school: school owner. keys CRUD: admin.",
+      "item": [
+        {
+          "name": "Subscribe (redeem key)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"XXXX-XXXX-XXXX-XXXX-XXXX-XXXX\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "subscribe"
+              ]
+            },
+            "description": "Role: student. Creates the profile (expireDate = now + KEY_AGE_YEAR) and consumes the key in one transaction. 400 while a subscription is still running, or when the key belongs to a different school/track than the existing profile; renews in place after expiry."
+          }
+        },
+        {
+          "name": "List my keys (owner)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/keys/school?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "keys",
+                "school"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "trackId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "by createdAt",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Role: contentWriter. Pinned to the owner school. Paginated with school + track relations."
+          }
+        },
+        {
+          "name": "List keys (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/keys?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "keys"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "trackId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "schoolId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "by createdAt",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Role: admin. Spans all schools; paginated."
+          }
+        },
+        {
+          "name": "Create keys (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": \"\",\n  \"schoolId\": \"\",\n  \"count\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "keys"
+              ]
+            },
+            "description": "Role: admin. Mints `count` keys (1–500) for the school+track."
+          }
+        },
+        {
+          "name": "Delete key (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/keys/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "keys",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: admin."
+          }
+        },
+        {
+          "name": "Bulk delete keys (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/keys/bulk-delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "keys",
+                "bulk-delete"
+              ]
+            },
+            "description": "Role: admin. All-or-nothing: any missing id cancels the whole batch."
+          }
+        }
+      ]
+    },
+    {
       "name": "Files",
       "item": [
         {

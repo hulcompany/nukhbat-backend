@@ -36,6 +36,14 @@ const S = {
   wTotal: 0,
   abQSkip: 0,
   abQTotal: 0,
+  subOSkip: 0,
+  subOTotal: 0,
+  subASkip: 0,
+  subATotal: 0,
+  stuOSkip: 0,
+  stuOTotal: 0,
+  stuASkip: 0,
+  stuATotal: 0,
 };
 
 function el(id) { return document.getElementById(id); }
@@ -857,6 +865,210 @@ async function wBulkDeleteChecked() {
   loadWisements();
 }
 
+/* ================= subscriptions ================= */
+// owners can't hit /school/manage — swallow that and load tracks anyway
+async function refsInto(schoolSelId, trackSelId) {
+  try {
+    const schools = pickArray(await call('GET', '/school/manage'));
+    const sel = el(schoolSelId);
+    sel.length = 1;
+    for (const s of schools) {
+      const o = document.createElement('option');
+      o.value = s.id; o.textContent = s.name || s.id;
+      sel.add(o);
+    }
+  } catch { /* not admin — school select stays empty */ }
+  const tracks = pickArray(await call('GET', '/learning/tracks'));
+  const tsel = el(trackSelId);
+  tsel.length = 1;
+  for (const t of tracks) {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name || t.id;
+    tsel.add(o);
+  }
+}
+
+async function subRedeem() {
+  const body = {};
+  if (el('sb-key').value) body.key = el('sb-key').value;
+  await call('POST', '/subscription/subscribe', body);
+}
+
+async function subCreateKeys() {
+  const body = {};
+  if (el('sb-track').value) body.trackId = el('sb-track').value;
+  if (el('sb-school').value) body.schoolId = el('sb-school').value;
+  if (el('sb-count').value) body.count = Number(el('sb-count').value);
+  await call('POST', '/subscription/keys', body);
+  S.subASkip = 0;
+  subAdminKeys();
+}
+
+function subOPage(dir) {
+  S.subOSkip = Math.max(0, S.subOSkip + dir * (Number(el('sb-olimit').value) || 10));
+  subOwnerKeys();
+}
+
+async function subOwnerKeys() {
+  const p = new URLSearchParams();
+  if (el('sb-track').value) p.set('trackId', el('sb-track').value);
+  p.set('skip', S.subOSkip);
+  p.set('limit', el('sb-olimit').value);
+  const d = await call('GET', '/subscription/keys/school?' + p.toString());
+  const list = pickArray(d);
+  S.subOTotal = d?.totalRecords ?? list.length;
+  el('sb-opageinfo').textContent =
+    `${S.subOTotal ? S.subOSkip + 1 : 0}–${S.subOSkip + list.length} of ${S.subOTotal}`;
+  const tb = el('sb-otable').tBodies[0];
+  tb.innerHTML = '';
+  el('sb-oempty').style.display = list.length ? 'none' : '';
+  el('sb-otable').style.display = list.length ? '' : 'none';
+  for (const k of list) {
+    const tr = tb.insertRow();
+    const c = tr.insertCell(); c.className = 'mono'; c.textContent = k.key ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = k.track?.name ?? '';
+    tr.insertCell().textContent = (k.createdAt || '').slice(0, 10);
+    tr.insertCell().append(
+      miniBtn('use', () => { el('sb-key').value = k.key; }),
+    );
+  }
+}
+
+function subAPage(dir) {
+  S.subASkip = Math.max(0, S.subASkip + dir * (Number(el('sb-alimit').value) || 10));
+  subAdminKeys();
+}
+
+async function subAdminKeys() {
+  const p = new URLSearchParams();
+  if (el('sb-track').value) p.set('trackId', el('sb-track').value);
+  if (el('sb-school').value) p.set('schoolId', el('sb-school').value);
+  p.set('skip', S.subASkip);
+  p.set('limit', el('sb-alimit').value);
+  const d = await call('GET', '/subscription/keys?' + p.toString());
+  const list = pickArray(d);
+  S.subATotal = d?.totalRecords ?? list.length;
+  el('sb-apageinfo').textContent =
+    `${S.subATotal ? S.subASkip + 1 : 0}–${S.subASkip + list.length} of ${S.subATotal}`;
+  const tb = el('sb-atable').tBodies[0];
+  tb.innerHTML = '';
+  el('sb-aempty').style.display = list.length ? 'none' : '';
+  el('sb-atable').style.display = list.length ? '' : 'none';
+  for (const k of list) {
+    const tr = tb.insertRow();
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.dataset.kid = k.id;
+    tr.insertCell().append(cb);
+    const c = tr.insertCell(); c.className = 'mono'; c.textContent = k.key ?? '';
+    const s = tr.insertCell(); s.dir = 'auto'; s.textContent = k.school?.name ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = k.track?.name ?? '';
+    tr.insertCell().textContent = (k.createdAt || '').slice(0, 10);
+    tr.insertCell().append(
+      miniBtn('use', () => { el('sb-key').value = k.key; }),
+      ' ', miniBtn('Delete', () => call('DELETE', `/subscription/keys/${k.id}`).then(subAdminKeys), true),
+    );
+  }
+}
+
+async function subBulkDeleteChecked() {
+  const ids = [...document.querySelectorAll('#sb-atable input[type=checkbox]:checked')]
+    .map(c => c.dataset.kid);
+  await call('POST', '/subscription/keys/bulk-delete', { ids });
+  subAdminKeys();
+}
+
+/* ================= students ================= */
+async function stuMyProfile() {
+  const box = el('stu-profile');
+  let d;
+  try {
+    d = await call('GET', '/student/profile');
+  } catch {
+    box.className = 'empty';
+    box.textContent = 'no profile — the error is in the log (student role + a redeemed key required)';
+    return;
+  }
+  const expired = d.isExpired ? ' <span style="color:#c0392b">(expired)</span>' : '';
+  box.className = 'card';
+  box.innerHTML =
+    `<div dir="auto" style="font-size:15px"><b>${escapeHtml(d.school?.name ?? d.schoolId ?? '')}</b>` +
+    ` — ${escapeHtml(d.track?.name ?? d.trackId ?? '')}</div>` +
+    `<div style="margin-top:6px">expires <b>${(d.expireDate || '').slice(0, 10)}</b>${expired}</div>` +
+    `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id}</div>`;
+}
+
+function expiresCell(tr, p) {
+  const c = tr.insertCell();
+  c.textContent = (p.expireDate || '').slice(0, 10);
+  if (p.isExpired) { c.style.color = '#c0392b'; c.textContent += ' ✕'; }
+}
+
+function stuOPage(dir) {
+  S.stuOSkip = Math.max(0, S.stuOSkip + dir * (Number(el('stu-olimit').value) || 10));
+  stuOwnerList();
+}
+
+async function stuOwnerList() {
+  const p = new URLSearchParams();
+  if (el('stu-track').value) p.set('trackId', el('stu-track').value);
+  if (el('stu-oname').value) p.set('name', el('stu-oname').value);
+  p.set('skip', S.stuOSkip);
+  p.set('limit', el('stu-olimit').value);
+  const d = await call('GET', '/student/school?' + p.toString());
+  const list = pickArray(d);
+  S.stuOTotal = d?.totalRecords ?? list.length;
+  el('stu-opageinfo').textContent =
+    `${S.stuOTotal ? S.stuOSkip + 1 : 0}–${S.stuOSkip + list.length} of ${S.stuOTotal}`;
+  const tb = el('stu-otable').tBodies[0];
+  tb.innerHTML = '';
+  el('stu-oempty').style.display = list.length ? 'none' : '';
+  el('stu-otable').style.display = list.length ? '' : 'none';
+  for (const s of list) {
+    const tr = tb.insertRow();
+    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.user?.name ?? '';
+    tr.insertCell().textContent = s.user?.email ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
+    expiresCell(tr, s);
+    tr.insertCell().append(
+      miniBtn('view', () => call('GET', `/student/school/${s.id}`)),
+    );
+  }
+}
+
+function stuAPage(dir) {
+  S.stuASkip = Math.max(0, S.stuASkip + dir * (Number(el('stu-alimit').value) || 10));
+  stuAdminList();
+}
+
+async function stuAdminList() {
+  const p = new URLSearchParams();
+  if (el('stu-track').value) p.set('trackId', el('stu-track').value);
+  if (el('stu-school').value) p.set('schoolId', el('stu-school').value);
+  if (el('stu-aname').value) p.set('name', el('stu-aname').value);
+  p.set('skip', S.stuASkip);
+  p.set('limit', el('stu-alimit').value);
+  const d = await call('GET', '/student?' + p.toString());
+  const list = pickArray(d);
+  S.stuATotal = d?.totalRecords ?? list.length;
+  el('stu-apageinfo').textContent =
+    `${S.stuATotal ? S.stuASkip + 1 : 0}–${S.stuASkip + list.length} of ${S.stuATotal}`;
+  const tb = el('stu-atable').tBodies[0];
+  tb.innerHTML = '';
+  el('stu-aempty').style.display = list.length ? 'none' : '';
+  el('stu-atable').style.display = list.length ? '' : 'none';
+  for (const s of list) {
+    const tr = tb.insertRow();
+    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.user?.name ?? '';
+    tr.insertCell().textContent = s.user?.email ?? '';
+    const sc = tr.insertCell(); sc.dir = 'auto'; sc.textContent = s.school?.name ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
+    expiresCell(tr, s);
+    tr.insertCell().append(
+      miniBtn('view', () => call('GET', `/student/${s.id}`)),
+    );
+  }
+}
+
 /* ================= raw ================= */
 async function rawSend() {
   const body = el('raw-body').value;
@@ -930,6 +1142,16 @@ mountAction('s-wload', 'GET', '/daily-wisement', 'Load wisements', () => { S.wSk
 mountAction('s-wcreate', 'POST', '/daily-wisement', 'Create wisement', wCreate);
 mountAction('s-wbulk', 'POST', '/daily-wisement/bulk', 'Create batch', wBulkCreate);
 mountAction('s-wbulkdel', 'POST', '/daily-wisement/bulk-delete', 'Delete checked', wBulkDeleteChecked);
+mountAction('s-subrefs', 'GET', '/school/manage', 'Load schools + tracks', () => refsInto('sb-school', 'sb-track'));
+mountAction('s-subredeem', 'POST', '/subscription/subscribe', 'Redeem', subRedeem);
+mountAction('s-subcreate', 'POST', '/subscription/keys', 'Mint keys', subCreateKeys);
+mountAction('s-subokeys', 'GET', '/subscription/keys/school', 'Load my keys', () => { S.subOSkip = 0; subOwnerKeys(); });
+mountAction('s-subakeys', 'GET', '/subscription/keys', 'Load all keys', () => { S.subASkip = 0; subAdminKeys(); });
+mountAction('s-subbulkdel', 'POST', '/subscription/keys/bulk-delete', 'Delete checked', subBulkDeleteChecked);
+mountAction('s-sturefs', 'GET', '/school/manage', 'Load schools + tracks', () => refsInto('stu-school', 'stu-track'));
+mountAction('s-stuprofile', 'GET', '/student/profile', 'My profile', stuMyProfile);
+mountAction('s-stuown', 'GET', '/student/school', 'Load students', () => { S.stuOSkip = 0; stuOwnerList(); });
+mountAction('s-stuadmin', 'GET', '/student', 'Load students', () => { S.stuASkip = 0; stuAdminList(); });
 
 el('c-track').onchange = onTrack;
 el('c-course').onchange = onCourse;

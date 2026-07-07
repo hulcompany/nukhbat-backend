@@ -4,6 +4,7 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  NotFoundException,
 } from '@nestjs/common';
 import { AppHttpError, ErrorCommonCodes, mapExceptionToCommonCode } from 'core';
 import { Response } from 'express';
@@ -32,6 +33,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof TypeORMError) {
       if (exception.name == 'UpdateValuesMissingError') {
         throw new BadRequestException('At least one Field is Required');
+      }
+      if ((exception as any).code == 23503) {
+        throw new NotFoundException('Some Resources are not found');
       }
     }
     console.log(exception);
