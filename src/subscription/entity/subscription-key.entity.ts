@@ -1,7 +1,7 @@
-import { UUID } from 'crypto';
-import { Entity } from 'typeorm';
+// import { UUID } from 'crypto';
+// import { Entity } from 'typeorm';
 
-@Entity()
-export class SubscriptionKey {
-  id: UUID;
-}
+// @Entity()
+// export class SubscriptionKey {
+//   id: UUID;
+// }
