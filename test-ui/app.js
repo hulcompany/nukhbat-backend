@@ -661,11 +661,20 @@ async function abLoadSchools() {
     o.value = s.id; o.textContent = s.name || s.id;
     sel.add(o);
   }
+  const tracks = pickArray(await call('GET', '/learning/tracks'));
+  const tsel = el('ab-track');
+  tsel.length = 1;
+  for (const t of tracks) {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name || t.id;
+    tsel.add(o);
+  }
 }
 
 async function abCourses() {
   const p = new URLSearchParams();
   if (el('ab-ctitle').value) p.set('title', el('ab-ctitle').value);
+  if (el('ab-track').value) p.set('trackId', el('ab-track').value);
   const list = pickArray(await call('GET', '/learning/admin/courses?' + p.toString()));
   const tb = el('ab-ctable').tBodies[0];
   tb.innerHTML = '';
@@ -676,7 +685,8 @@ async function abCourses() {
     const t = tr.insertCell(); t.dir = 'auto'; t.textContent = c.title ?? '';
     const tk = tr.insertCell(); tk.dir = 'auto'; tk.textContent = c.track?.name ?? '';
     tr.insertCell().append(
-      miniBtn('lessons', () => { el('ab-lcourse').value = c.id; el('ab-lunit').value = ''; abLessons(); }),
+      miniBtn('units', () => { el('ab-ucourse').value = c.id; abUnits(); }),
+      ' ', miniBtn('lessons', () => { el('ab-lcourse').value = c.id; el('ab-lunit').value = ''; abLessons(); }),
       ' ', miniBtn('pool qs', () => { el('ab-qcourse').value = c.id; el('ab-qlesson').value = ''; S.abQSkip = 0; abQuestions(); }),
     );
   }
@@ -686,6 +696,8 @@ async function abUnits() {
   const p = new URLSearchParams();
   if (el('ab-school').value) p.set('schoolId', el('ab-school').value);
   if (el('ab-utitle').value) p.set('title', el('ab-utitle').value);
+  if (el('ab-ucourse').value) p.set('courseId', el('ab-ucourse').value);
+  if (el('ab-track').value) p.set('trackId', el('ab-track').value);
   const list = pickArray(await call('GET', '/learning/admin/units?' + p.toString()));
   const tb = el('ab-utable').tBodies[0];
   tb.innerHTML = '';
@@ -708,6 +720,7 @@ async function abLessons() {
   if (el('ab-lcourse').value) p.set('courseId', el('ab-lcourse').value);
   if (el('ab-school').value) p.set('schoolId', el('ab-school').value);
   if (el('ab-ltitle').value) p.set('title', el('ab-ltitle').value);
+  if (el('ab-track').value) p.set('trackId', el('ab-track').value);
   const list = pickArray(await call('GET', '/learning/admin/lessons?' + p.toString()));
   const tb = el('ab-ltable').tBodies[0];
   tb.innerHTML = '';
@@ -738,6 +751,7 @@ async function abQuestions() {
   if (el('ab-qcourse').value) p.set('courseId', el('ab-qcourse').value);
   if (el('ab-school').value) p.set('schoolId', el('ab-school').value);
   if (el('ab-qtitle').value) p.set('title', el('ab-qtitle').value);
+  if (el('ab-track').value) p.set('trackId', el('ab-track').value);
   p.set('skip', S.abQSkip);
   p.set('limit', el('ab-qlimit').value);
   const d = await call('GET', '/learning/admin/questions?' + p.toString());
@@ -905,7 +919,7 @@ mountAction('s-admschools', 'GET', '/school/manage', 'Load schools', admLoadScho
 mountAction('s-admallow', 'POST', '/learning/admin/schoolAccess/:schoolId/:trackId', 'Grant access', admAllow);
 mountAction('s-admrevoke', 'DELETE', '/learning/admin/schoolAccess/:schoolId/:trackId', 'Revoke access', admUnAllow);
 
-mountAction('s-abschools', 'GET', '/school/manage', 'Load schools', abLoadSchools);
+mountAction('s-abschools', 'GET', '/school/manage', 'Load schools + tracks', abLoadSchools);
 mountAction('s-abcourses', 'GET', '/learning/admin/courses', 'Load courses', abCourses);
 mountAction('s-abunits', 'GET', '/learning/admin/units', 'Load units', abUnits);
 mountAction('s-ablessons', 'GET', '/learning/admin/lessons', 'Load lessons', abLessons);

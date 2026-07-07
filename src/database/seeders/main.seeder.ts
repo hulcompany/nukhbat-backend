@@ -52,6 +52,7 @@ export class MainSeeder implements Seeder {
     let school = await dataSource.getRepository(School).save({
       owner: content,
       name: 'Content School',
+      default: true,
     });
     let school2 = await dataSource.getRepository(School).save({
       owner: content2,

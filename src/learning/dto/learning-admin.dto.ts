@@ -8,6 +8,10 @@ export class AdminCourseGetDto {
   @IsOptional()
   @IsNotEmpty()
   title?: string;
+
+  @IsUUID()
+  @IsOptional()
+  trackId?: UUID;
 }
 
 export class AdminUnitGetDto {
@@ -20,6 +24,14 @@ export class AdminUnitGetDto {
   @IsOptional()
   @IsNotEmpty()
   title?: string;
+
+  @IsUUID()
+  @IsOptional()
+  courseId?: UUID;
+
+  @IsUUID()
+  @IsOptional()
+  trackId?: UUID;
 }
 
 export class AdminLessonGetDto {
@@ -41,10 +53,18 @@ export class AdminLessonGetDto {
   @IsOptional()
   @IsNotEmpty()
   title?: string;
+
+  @IsUUID()
+  @IsOptional()
+  trackId?: UUID;
 }
 
 export class AdminQuestionGetDto extends QuestionGetDto {
   @IsUUID()
   @IsOptional()
   schoolId?: UUID;
+
+  @IsUUID()
+  @IsOptional()
+  trackId?: UUID;
 }

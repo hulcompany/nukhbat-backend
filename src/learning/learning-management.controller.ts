@@ -46,7 +46,10 @@ export class LearningManagementController {
 
   @Get('courses')
   async getCourses(@Query() query: AdminCourseGetDto) {
-    return await this.courses.find({ title: query.title });
+    return await this.courses.find({
+      title: query.title,
+      trackId: query.trackId,
+    });
   }
 
   @Get('units')
@@ -55,6 +58,8 @@ export class LearningManagementController {
       {
         schoolId: query.schoolId,
         title: query.title,
+        courseId: query.courseId,
+        ...(query.trackId ? { course: { trackId: query.trackId } } : {}),
       },
       { school: true },
     );
@@ -62,12 +67,17 @@ export class LearningManagementController {
 
   @Get('lessons')
   async getLessons(@Query() query: AdminLessonGetDto) {
+    // lessons carry no courseId/trackId columns — both go through the unit
+    const unitWhere = {
+      ...(query.courseId ? { courseId: query.courseId } : {}),
+      ...(query.trackId ? { course: { trackId: query.trackId } } : {}),
+    };
     return await this.lessons.find(
       {
         unitId: query.unitId,
         schoolId: query.schoolId,
         title: query.title,
-        ...(query.courseId ? { unit: { courseId: query.courseId } } : {}),
+        ...(Object.keys(unitWhere).length ? { unit: unitWhere } : {}),
       },
       { school: true },
     );
@@ -78,6 +88,7 @@ export class LearningManagementController {
     return await this.questions.getByCriteria({
       params: query,
       schoolId: query.schoolId,
+      trackId: query.trackId,
     });
   }
 

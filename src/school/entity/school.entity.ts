@@ -2,6 +2,7 @@ import { UUID } from 'crypto';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   OneToMany,
   OneToOne,
@@ -12,6 +13,10 @@ import { SchoolAccess } from '../../learning/school-access/entity/school-access.
 import { Exclude, Expose } from 'class-transformer';
 
 @Entity()
+@Index('uq_def_school', ['id', 'default'], {
+  unique: true,
+  where: '"default" IS NOT NULL AND "default" = True',
+})
 export class School {
   @PrimaryGeneratedColumn('uuid')
   id: UUID;
@@ -25,6 +30,8 @@ export class School {
   @OneToMany(() => SchoolAccess, (v) => v.school)
   @Exclude()
   schoolAccess: SchoolAccess[];
+  @Column('boolean', { default: false })
+  default: boolean;
 
   @Expose()
   get allowedTracks() {

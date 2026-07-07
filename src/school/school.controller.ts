@@ -38,6 +38,7 @@ import { LearningSchoolService } from '../learning/learning-school.service';
 import { SchoolEditDto } from './dto/school.dto';
 import { Context } from '../context';
 import { SchoolService } from './school.service';
+import { BookFileValidatorPipeline } from './pipeline/book.file.validator.pipeline';
 
 @Controller('school/me')
 @UseGuards(
@@ -82,23 +83,24 @@ export class SchoolController {
   }
 
   @Post('books')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('attachment'))
   async createBook(
     @Body() body: BookCreateDto,
-    @UploadedFile(new ImageFileValidatorPipeline(true))
-    image: Express.Multer.File,
+    @UploadedFile(new BookFileValidatorPipeline(true))
+    attachment: Express.Multer.File,
   ) {
-    return await this.service.createBook(body, image);
+    return await this.service.createBook(body, attachment);
   }
 
   @Patch('books/:id')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('attachment'))
   async editBook(
     @Param('id', ParseUUIDPipe) id: UUID,
     @Body() body: BookEditDto,
-    @UploadedFile() image?: Express.Multer.File,
+    @UploadedFile(new BookFileValidatorPipeline(false))
+    attachment?: Express.Multer.File,
   ) {
-    return await this.service.editBook(id, body, image);
+    return await this.service.editBook(id, body, attachment);
   }
 
   @Delete('books/:id')

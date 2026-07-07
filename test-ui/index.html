@@ -417,10 +417,11 @@
 <section class="panel" id="p-adm">
   <div class="card">
     <h2>Admin content browse</h2>
-    <p class="sub">Read-only, spans every school, no track-access checks. Pick a school to scope units/lessons/questions — or leave it on “all schools”.</p>
+    <p class="sub">Read-only, spans every school, no track-access checks. Pick a school to scope units/lessons/questions — or leave it on “all schools”. The track filter applies to all four lists (courses directly; units/lessons/questions through their course chain).</p>
     <div class="row">
       <span id="s-abschools"></span>
       <select id="ab-school"><option value="">— all schools —</option></select>
+      <select id="ab-track"><option value="">— all tracks —</option></select>
     </div>
   </div>
   <div class="cols">
@@ -435,6 +436,9 @@
     </div>
     <div class="card">
       <h2>Units</h2>
+      <div class="row">
+        <input id="ab-ucourse" placeholder="courseId — empty omits" class="mono" style="width:280px">
+      </div>
       <div class="row">
         <input id="ab-utitle" placeholder="title contains…" dir="auto" style="width:160px">
         <span id="s-abunits"></span>

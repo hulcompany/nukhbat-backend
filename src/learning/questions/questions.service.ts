@@ -34,6 +34,7 @@ import { ReqContext } from '../../context';
 import { QuestionPurpose } from './entity/enum/question-purpose.type';
 import { DailyChallengeUsedQuestions } from '../daily-challenge/entity/daily-challenge-used-questions.entity';
 import { todayDateString } from '../daily-challenge/daily-challenge.service';
+import { AdminQuestionGetDto } from '../dto/learning-admin.dto';
 
 type QuestionImages = {
   question?: Express.Multer.File | null;
@@ -62,9 +63,10 @@ export class QuestionService {
   // Admin callers pass schoolId directly (no ctxt) — school scoping is
   // then a plain filter and the track-access clauses are skipped.
   async getByCriteria(params: {
-    params: QuestionGetDto;
+    params: QuestionGetDto | AdminQuestionGetDto;
     ctxt?: ReqContext;
     schoolId?: UUID;
+    trackId?: UUID;
     filter?: any;
   }) {
     const query = params.params;
@@ -88,6 +90,18 @@ export class QuestionService {
     if (query.courseId) {
       qb.andWhere('q.course = :courseId', { courseId: query.courseId });
     }
+    if (params.trackId) {
+      // a question's track comes from its pool course (dailyChallenge)
+      // or from lesson → unit → course (lesson questions)
+      qb.leftJoin('q.course', 'poolCourse')
+        .leftJoin('q.lesson', 'qLesson')
+        .leftJoin('qLesson.unit', 'qUnit')
+        .leftJoin('qUnit.course', 'lessonCourse')
+        .andWhere(
+          '(poolCourse.trackId = :trackId OR lessonCourse.trackId = :trackId)',
+          { trackId: params.trackId },
+        );
+    }
     applyPsqlFilter({
       queryBuilder: qb,
       query: query,
@@ -97,6 +111,8 @@ export class QuestionService {
         courseId: { skip: true },
         // virtual @RelationId — already applied as q.school above
         schoolId: { skip: true },
+        // applied via the course joins above
+        trackId: { skip: true },
       },
     });
 
