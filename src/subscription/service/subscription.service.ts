@@ -7,6 +7,9 @@ import { StudentProfileService } from '../../student/service/student-profile.ser
 import { StudentProfile } from '../../student/entity/student-profile.entity';
 import { AppConfig } from '../../conf';
 import { LearningService } from '../../learning/learning.service';
+import { UserService } from '../../core/user/service/user.service';
+import { RoleType } from '../../core';
+import { SchoolService } from '../../school/school.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -14,12 +17,38 @@ export class SubscriptionService {
     private readonly keys: SubscriptionKeyService,
     private readonly profiles: StudentProfileService,
     private readonly learningService: LearningService,
+    private readonly userService: UserService,
+    private readonly schoolService: SchoolService,
     private readonly ds: DataSource,
   ) {}
 
   // redeem a key: the profile is created/renewed and the key consumed
   // (single use) in one transaction — a concurrent redeem of the same
   // key hits 0 affected rows on the delete and rolls back
+  async freeTrial(userId: UUID, trackId: UUID) {
+    let user = await this.userService.findOneAndFail({ id: userId });
+    if (user.role != RoleType.student) {
+      throw new BadRequestException('Only Student are allowed to join.');
+    }
+    let defaultSchool = await this.schoolService.findOneOrFail({
+      default: true,
+    });
+    let old = await this.profiles.findOne({ userId: userId });
+    if (old) {
+      throw new BadRequestException(
+        'Student is not allowed to have a free trial.',
+      );
+    }
+    let expireAt = new Date();
+    expireAt.setFullYear(expireAt.getDay() + AppConfig.FREE_TRIAL_DAYS);
+    return await this.profiles.create({
+      userId: userId,
+      schoolId: defaultSchool.id,
+      trackId: trackId,
+      expireDate: expireAt,
+    });
+  }
+
   async subscribe(params: { key: string; userId: UUID }) {
     return await transaction(this.ds, async (em) => {
       let key = await this.keys.findOneOrFail({ key: params.key }, em);

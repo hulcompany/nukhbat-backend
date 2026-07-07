@@ -11,4 +11,5 @@ export const AppConfig = {
     24 * 60 * 60 * 1000,
   ],
   KEY_AGE_YEAR: 1,
+  FREE_TRIAL_DAYS: 3,
 };

@@ -28,16 +28,20 @@ export class StudentProfile {
   @Column('timestamptz')
   expireDate: Date;
 
+  // only the owning school toggles this; false blocks the StudentGuard
+  @Column({ default: true })
+  active: boolean;
+
   @Column('uuid')
   schoolId: UUID;
 
-  @ManyToOne(() => School)
+  @ManyToOne(() => School, { eager: true })
   school: School;
 
   @Column('uuid')
   trackId: UUID;
 
-  @ManyToOne(() => Track)
+  @ManyToOne(() => Track, { eager: true })
   track: Track;
 
   @CreateDateColumn()

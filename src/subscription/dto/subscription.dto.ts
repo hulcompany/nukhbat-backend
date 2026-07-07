@@ -51,3 +51,8 @@ export class SubscribeDto {
   @IsNotEmpty()
   key: string;
 }
+
+export class SubscribeFreeTrialDto {
+  @IsUUID()
+  trackId: UUID;
+}

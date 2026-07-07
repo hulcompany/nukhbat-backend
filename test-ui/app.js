@@ -894,6 +894,12 @@ async function subRedeem() {
   await call('POST', '/subscription/subscribe', body);
 }
 
+async function subFreeTrial() {
+  const body = {};
+  if (el('sb-track').value) body.trackId = el('sb-track').value;
+  await call('POST', '/subscription/freeTrial', body);
+}
+
 async function subCreateKeys() {
   const body = {};
   if (el('sb-track').value) body.trackId = el('sb-track').value;
@@ -989,11 +995,15 @@ async function stuMyProfile() {
     return;
   }
   const expired = d.isExpired ? ' <span style="color:#c0392b">(expired)</span>' : '';
+  const inactive = d.active === false
+    ? '<div style="margin-top:4px;color:#c0392b">deactivated — the school must reactivate you</div>'
+    : '';
   box.className = 'card';
   box.innerHTML =
     `<div dir="auto" style="font-size:15px"><b>${escapeHtml(d.school?.name ?? d.schoolId ?? '')}</b>` +
     ` — ${escapeHtml(d.track?.name ?? d.trackId ?? '')}</div>` +
     `<div style="margin-top:6px">expires <b>${(d.expireDate || '').slice(0, 10)}</b>${expired}</div>` +
+    inactive +
     `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id}</div>`;
 }
 
@@ -1001,6 +1011,13 @@ function expiresCell(tr, p) {
   const c = tr.insertCell();
   c.textContent = (p.expireDate || '').slice(0, 10);
   if (p.isExpired) { c.style.color = '#c0392b'; c.textContent += ' ✕'; }
+}
+
+// active=false is what StudentGuard blocks on (Student_2)
+function activeCell(tr, p) {
+  const c = tr.insertCell();
+  if (p.active === false) { c.style.color = '#c0392b'; c.textContent = '✕ off'; }
+  else { c.style.color = '#27ae60'; c.textContent = '✓ on'; }
 }
 
 function stuOPage(dir) {
@@ -1029,8 +1046,13 @@ async function stuOwnerList() {
     tr.insertCell().textContent = s.user?.email ?? '';
     const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
     expiresCell(tr, s);
+    activeCell(tr, s);
+    const off = s.active === false;
     tr.insertCell().append(
       miniBtn('view', () => call('GET', `/student/school/${s.id}`)),
+      ' ', miniBtn(off ? 'Activate' : 'Deactivate',
+        () => call('PATCH', `/student/school/activation/${s.id}`, { active: off }).then(stuOwnerList),
+        !off),
     );
   }
 }
@@ -1063,6 +1085,7 @@ async function stuAdminList() {
     const sc = tr.insertCell(); sc.dir = 'auto'; sc.textContent = s.school?.name ?? '';
     const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
     expiresCell(tr, s);
+    activeCell(tr, s);
     tr.insertCell().append(
       miniBtn('view', () => call('GET', `/student/${s.id}`)),
     );
@@ -1144,6 +1167,7 @@ mountAction('s-wbulk', 'POST', '/daily-wisement/bulk', 'Create batch', wBulkCrea
 mountAction('s-wbulkdel', 'POST', '/daily-wisement/bulk-delete', 'Delete checked', wBulkDeleteChecked);
 mountAction('s-subrefs', 'GET', '/school/manage', 'Load schools + tracks', () => refsInto('sb-school', 'sb-track'));
 mountAction('s-subredeem', 'POST', '/subscription/subscribe', 'Redeem', subRedeem);
+mountAction('s-subtrial', 'POST', '/subscription/freeTrial', 'Start free trial', subFreeTrial);
 mountAction('s-subcreate', 'POST', '/subscription/keys', 'Mint keys', subCreateKeys);
 mountAction('s-subokeys', 'GET', '/subscription/keys/school', 'Load my keys', () => { S.subOSkip = 0; subOwnerKeys(); });
 mountAction('s-subakeys', 'GET', '/subscription/keys', 'Load all keys', () => { S.subASkip = 0; subAdminKeys(); });

@@ -67,9 +67,12 @@ export class SchoolAccessService {
     }
     let e2 = await this.ds
       .getRepository(School)
-      .exists({ where: { id: params.schoolId } });
+      .findOne({ where: { id: params.schoolId } });
     if (!e2) {
       throw new NotFoundException('School Not Found');
+    }
+    if (e2.default) {
+      throw new BadRequestException('Default School gave Access On All Tracks');
     }
     let cur = await this.repo.findOne({
       where: { school: { id: params.schoolId }, track: { id: params.trackId } },
@@ -84,6 +87,15 @@ export class SchoolAccessService {
   }
 
   async unAllow(params: SchoolAccessDto) {
+    let school = await this.ds
+      .getRepository(School)
+      .findOne({ where: { id: params.schoolId } });
+    if (!school) {
+      throw new NotFoundException('School Not Found');
+    }
+    if (school.default) {
+      throw new BadRequestException('Default School gave Access On All Tracks');
+    }
     let cur = await this.repo.findOne({
       where: { school: { id: params.schoolId }, track: { id: params.trackId } },
     });

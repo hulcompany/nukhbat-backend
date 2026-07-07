@@ -546,6 +546,10 @@
         <input id="sb-key" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" class="mono" style="width:300px">
         <span id="s-subredeem"></span>
       </div>
+      <p class="sub" style="margin-top:10px">Or a one-shot free trial on the default school — uses the track select above. 400 if the student already has any profile.</p>
+      <div class="row">
+        <span id="s-subtrial"></span>
+      </div>
     </div>
     <div class="card">
       <h2>Mint keys <span style="font-weight:400;font-size:12px;color:var(--mut)">admin role</span></h2>
@@ -602,6 +606,7 @@
   </div>
   <div class="card">
     <h2>My students <span style="font-weight:400;font-size:12px;color:var(--mut)">owner role — pinned to my school</span></h2>
+    <p class="sub">Only the school toggles <code>active</code>. Deactivate a student, then hit “My profile” as them — StudentGuard returns 403 (Student_2).</p>
     <div class="row">
       <input id="stu-oname" placeholder="name contains…" dir="auto" style="width:160px">
       <label>page size <input id="stu-olimit" value="10" style="width:60px"></label>
@@ -610,7 +615,7 @@
       <span id="stu-opageinfo" style="font-size:12px;color:var(--mut)">—</span>
       <button class="plain" onclick="stuOPage(1)">next ›</button>
     </div>
-    <table id="stu-otable"><thead><tr><th>student</th><th>email</th><th>track</th><th>expires</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
+    <table id="stu-otable"><thead><tr><th>student</th><th>email</th><th>track</th><th>expires</th><th>active</th><th style="width:150px">actions</th></tr></thead><tbody></tbody></table>
     <div class="empty" id="stu-oempty">Press “Load students”.</div>
   </div>
   <div class="card">
@@ -623,7 +628,7 @@
       <span id="stu-apageinfo" style="font-size:12px;color:var(--mut)">—</span>
       <button class="plain" onclick="stuAPage(1)">next ›</button>
     </div>
-    <table id="stu-atable"><thead><tr><th>student</th><th>email</th><th>school</th><th>track</th><th>expires</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
+    <table id="stu-atable"><thead><tr><th>student</th><th>email</th><th>school</th><th>track</th><th>expires</th><th>active</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
     <div class="empty" id="stu-aempty">Press “Load students”.</div>
   </div>
 </section>

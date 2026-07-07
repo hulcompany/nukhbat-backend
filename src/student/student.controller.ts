@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +14,7 @@ import { Context } from '../context';
 import { StudentProfileService } from './service/student-profile.service';
 import { StudentGuard } from './guard/student.guard';
 import {
+  StudentActivationEditDto,
   StudentProfileGetDto,
   StudentProfileSchoolGetDto,
 } from './dto/student.dto';
@@ -52,6 +55,20 @@ export class StudentController {
     return await this.profiles.findOneOrFail(
       { id: id, schoolId: this.ctxt.school.id },
       { user: true, track: true },
+    );
+  }
+
+  // only the owning school activates/deactivates its students — schoolId
+  // in the filter makes a foreign profile read as not-found
+  @Patch('school/activation/:id')
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
+  async editStudent(
+    @Param('id', ParseUUIDPipe) id: UUID,
+    @Body() body: StudentActivationEditDto,
+  ) {
+    return await this.profiles.update(
+      { id: id, schoolId: this.ctxt.school.id },
+      { active: body.active },
     );
   }
 

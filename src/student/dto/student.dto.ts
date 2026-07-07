@@ -1,7 +1,19 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { OmitType } from '@nestjs/mapped-types';
 import { BasePaginationDto } from 'core';
 import { UUID } from 'crypto';
+
+// only the owning school edits a profile — for now just the active flag
+export class StudentActivationEditDto {
+  @IsBoolean()
+  active: boolean;
+}
 
 export class StudentProfileGetDto extends BasePaginationDto {
   @IsUUID()

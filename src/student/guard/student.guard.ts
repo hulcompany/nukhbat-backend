@@ -31,6 +31,12 @@ export class StudentGuard implements CanActivate {
       );
     }
 
+    if (!student.active) {
+      throw new ForbiddenException(
+        ErrorsRecord.getError(StudentErrorCodes.StudentError_2),
+      );
+    }
+
     request.context.student = student;
 
     return true;

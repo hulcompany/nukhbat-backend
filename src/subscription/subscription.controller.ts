@@ -18,6 +18,7 @@ import { SubscriptionService } from './service/subscription.service';
 import { SubscriptionKeyService } from './service/subscription-key.service';
 import {
   SubscribeDto,
+  SubscribeFreeTrialDto,
   SubscriptionKeyCreateManyDto,
   SubscriptionKeyGetDto,
   SubscriptionKeySchoolGetDto,
@@ -41,6 +42,12 @@ export class SubscriptionController {
       key: body.key,
       userId: this.ctxt.user.id,
     });
+  }
+
+  @Post('freeTrial')
+  @UseGuards(RoleGuard([RoleType.student]))
+  async freeTrial(@Body() body: SubscribeFreeTrialDto) {
+    return await this.service.freeTrial(this.ctxt.user.id, body.trackId);
   }
 
   // owner view: pinned to their school; the DTO has no schoolId field

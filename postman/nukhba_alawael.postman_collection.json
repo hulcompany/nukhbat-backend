@@ -2480,6 +2480,47 @@
           }
         },
         {
+          "name": "Activate / deactivate student (owner)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/student/school/activation/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "school",
+                "activation",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: contentWriter. Only the owning school toggles active. active=false blocks the student (StudentGuard -> 403 Student_2). Foreign profile reads as 404."
+          }
+        },
+        {
           "name": "List students (admin)",
           "request": {
             "method": "GET",
@@ -2589,6 +2630,39 @@
               ]
             },
             "description": "Role: student. Creates the profile (expireDate = now + KEY_AGE_YEAR) and consumes the key in one transaction. 400 while a subscription is still running, or when the key belongs to a different school/track than the existing profile; renews in place after expiry."
+          }
+        },
+        {
+          "name": "Free trial (student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trackId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/freeTrial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "freeTrial"
+              ]
+            },
+            "description": "Role: student. One-shot trial profile on the default school for the given track (expires after FREE_TRIAL_DAYS). 400 if the student already has any profile."
           }
         },
         {

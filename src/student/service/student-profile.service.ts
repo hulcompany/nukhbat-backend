@@ -97,16 +97,9 @@ export class StudentProfileService {
     }
   }
 
-  // profile is usable: exists and not expired (null expireDate = no expiry)
-  isActive(profile: StudentProfile) {
-    return !profile.expireDate || profile.expireDate > new Date();
-  }
-
   // owner-scoped callers pass schoolId from the context; trackId/userId
   // come off the DTO as plain equality filters
-  async getByCriteria(params: {
-    params: StudentProfileGetDto;
-  }) {
+  async getByCriteria(params: { params: StudentProfileGetDto }) {
     const query = params.params;
     const qb = this.repo
       .createQueryBuilder('s')
