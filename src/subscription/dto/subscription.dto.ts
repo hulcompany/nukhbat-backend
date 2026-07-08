@@ -39,8 +39,7 @@ export class SubscriptionKeyCreateDto {
   trackId: UUID;
 
   @IsUUID()
-  @IsOptional()
-  schoolId?: UUID;
+  schoolId: UUID;
 }
 
 export class SubscriptionKeyCreateManyDto extends SubscriptionKeyCreateDto {

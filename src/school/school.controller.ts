@@ -76,6 +76,13 @@ export class SchoolController {
     });
   }
 
+  @Delete('image')
+  async deleteMyImage() {
+    return await this.schoolService.deleteImage({
+      owner: { id: this.ctxt.user.id },
+    });
+  }
+
   // Books
   @Get('books')
   async getSchoolBooks() {

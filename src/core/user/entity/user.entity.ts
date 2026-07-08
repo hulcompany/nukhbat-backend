@@ -22,6 +22,11 @@ export class User {
   @Index()
   email?: string;
 
+  // unique across users; nullable because signup only has an email until the
+  // profile is completed (Postgres allows many NULLs in a unique index)
+  @Column({ type: 'varchar', length: 32, nullable: true, unique: true })
+  phoneNumber?: string | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   @Exclude()
   password?: string;

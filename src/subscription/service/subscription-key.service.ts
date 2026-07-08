@@ -21,6 +21,7 @@ import {
 } from '../dto/subscription.dto';
 import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { SubscriptionKeyGetDto } from '../dto/subscription.dto';
+import { LearningService } from '../../learning/learning.service';
 
 // no 0/O/1/I — keys get typed by hand
 const KEY_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -33,6 +34,7 @@ export class SubscriptionKeyService {
     @InjectRepository(SubscriptionKey)
     private readonly repo: Repository<SubscriptionKey>,
     private readonly ds: DataSource,
+    private readonly learningService: LearningService,
   ) {}
 
   // every function takes an optional EntityManager so callers can join
@@ -91,23 +93,23 @@ export class SubscriptionKeyService {
 
   // `count` keys for the same school+track in one call
   async createMany(params: SubscriptionKeyCreateManyDto, em?: EntityManager) {
+    await this.learningService.assertSchoolTrackAccess(
+      params.schoolId,
+      params.trackId,
+    );
     // optional in the shared DTO — callers must have resolved it by now
-    if (!params.schoolId) {
-      throw new BadRequestException('schoolId is required');
-    }
     let repo = this.getRepo(em);
     let keys: SubscriptionKey[] = [];
     for (let i = 0; i < params.count; i++) {
       keys.push(
-        await repo.save(
-          repo.create({
-            key: this.generateKey(),
-            track: { id: params.trackId },
-            school: { id: params.schoolId },
-          }),
-        ),
+        repo.create({
+          key: this.generateKey(),
+          track: { id: params.trackId },
+          school: { id: params.schoolId },
+        }),
       );
     }
+    repo.save(keys);
     return keys;
   }
 

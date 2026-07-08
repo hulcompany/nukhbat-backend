@@ -52,12 +52,25 @@ export class UserService {
     return user;
   }
 
+  // phoneNumber is unique — surface a clean 400 instead of a DB constraint 500
+  private async assertPhoneUnique(
+    phoneNumber?: string | null,
+    exceptId?: UUID,
+  ) {
+    if (!phoneNumber) return;
+    const dup = await this.repo.findOne({ where: { phoneNumber } });
+    if (dup && dup.id !== exceptId) {
+      throw new BadRequestException('Phone number already in use');
+    }
+  }
+
   async update(
     id: UUID,
     data?: DeepPartial<User>,
     image?: Express.Multer.File | null,
   ) {
     let fields = data || {};
+    await this.assertPhoneUnique(fields.phoneNumber, id);
     if (fields.password) {
       fields.password = await hashPassword(fields.password, 10);
     }
@@ -90,7 +103,6 @@ export class UserService {
 
   async completeUser(id: UUID, data: UserCompleteDto) {
     let fields = data || {};
-    fields.password = await hashPassword(fields.password, 10);
     let user = await this.repo.findOneBy({ id });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -98,12 +110,15 @@ export class UserService {
     if (user.isCompleted) {
       throw new BadRequestException('User Already Completed');
     }
+    await this.assertPhoneUnique(fields.phoneNumber, id);
+    fields.password = await hashPassword(fields.password, 10);
 
-    const result = await this.repo.update(
+    await this.repo.update(
       { id },
       {
         name: fields.name,
         password: fields.password,
+        phoneNumber: fields.phoneNumber,
       },
     );
     return await this.repo.findOne({ where: { id } });
@@ -119,6 +134,9 @@ export class UserService {
           regExp: { regexp: 'contains' },
         },
         email: {
+          regExp: { regexp: 'contains' },
+        },
+        phoneNumber: {
           regExp: { regexp: 'contains' },
         },
       },

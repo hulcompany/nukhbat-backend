@@ -14,4 +14,8 @@ export class UserGetDto extends BasePaginationDto {
   @IsString()
   @IsOptional()
   email?: string;
+
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 }

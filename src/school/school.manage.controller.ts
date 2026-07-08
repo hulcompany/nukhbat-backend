@@ -64,4 +64,9 @@ export class SchoolManageController {
   ) {
     return await this.schoolService.createSchool(body, image);
   }
+
+  @Delete(':id/image')
+  async removeSchoolImage(@Param('id', ParseUUIDPipe) id: UUID) {
+    return await this.schoolService.deleteImage({ id });
+  }
 }

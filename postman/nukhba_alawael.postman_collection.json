@@ -103,7 +103,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@hul.com\",\n  \"password\": \"password123\"\n}",
+              "raw": "{\n  \"email\": \"admin@hul.com\",\n  \"password\": \"12345678\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -125,6 +125,19 @@
         },
         {
           "name": "Sign up",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body?.data?.accessToken) pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "if (body?.data?.refreshToken) pm.collectionVariables.set('refreshToken', body.data.refreshToken);"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "noauth"
@@ -383,7 +396,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Full Name\",\n  \"password\": \"password123\"\n}",
+              "raw": "{\n  \"name\": \"Full Name\",\n  \"phoneNumber\": \"0912345678\",\n  \"password\": \"password123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -415,6 +428,12 @@
                   "key": "name",
                   "value": "New Name",
                   "type": "text"
+                },
+                {
+                  "key": "phoneNumber",
+                  "value": "0912345678",
+                  "type": "text",
+                  "disabled": true
                 },
                 {
                   "key": "password",
@@ -508,6 +527,11 @@
                   "key": "email",
                   "value": "",
                   "disabled": true
+                },
+                {
+                  "key": "phoneNumber",
+                  "value": "",
+                  "disabled": true
                 }
               ]
             }
@@ -578,6 +602,12 @@
                   "key": "name",
                   "value": "New Name",
                   "type": "text"
+                },
+                {
+                  "key": "phoneNumber",
+                  "value": "0912345678",
+                  "type": "text",
+                  "disabled": true
                 },
                 {
                   "key": "password",
@@ -782,6 +812,32 @@
               ]
             }
           }
+        },
+        {
+          "name": "Remove school image (admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/school/manage/:id/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "manage",
+                ":id",
+                "image"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Role: admin. Clears the school logo."
+          }
         }
       ]
     },
@@ -836,6 +892,25 @@
                 "me"
               ]
             }
+          }
+        },
+        {
+          "name": "Delete my school image (owner)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/school/me/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "me",
+                "image"
+              ]
+            },
+            "description": "Role: contentWriter. Clears the owner school logo."
           }
         },
         {
@@ -2629,7 +2704,7 @@
                 "subscribe"
               ]
             },
-            "description": "Role: student. Creates the profile (expireDate = now + KEY_AGE_YEAR) and consumes the key in one transaction. 400 while a subscription is still running, or when the key belongs to a different school/track than the existing profile; renews in place after expiry."
+            "description": "Role: student. Enrolls the student (or reuses their profile) and adds a paid subscription (expireDate = now + KEY_AGE_YEAR), consuming the key in one transaction. 400 while a live PAID subscription is still running (a live free trial can be upgraded), or when the key's school/track differ from the existing profile."
           }
         },
         {
@@ -2662,7 +2737,74 @@
                 "freeTrial"
               ]
             },
-            "description": "Role: student. One-shot trial profile on the default school for the given track (expires after FREE_TRIAL_DAYS). 400 if the student already has any profile."
+            "description": "Role: student. One-shot free-trial subscription on the default school for the given track (expires after FREE_TRIAL_DAYS). 400 if the student has ever had any subscription."
+          }
+        },
+        {
+          "name": "My subscription (student)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "me"
+              ]
+            },
+            "description": "Role: student. The caller's latest subscription (live or expired) so the client can show remaining time / prompt a renewal."
+          }
+        },
+        {
+          "name": "List subscriptions (admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "userId",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "paid",
+                  "description": "freeTrial | paid",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "active | expired",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Role: admin. Paginated across every subscription; filter by userId, type, status."
           }
         },
         {

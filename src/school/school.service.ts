@@ -87,6 +87,11 @@ export class SchoolService {
     );
   }
 
+  // remove the school logo — tri-state replace with a null store erases it
+  async deleteImage(findOpts: FindOptionsWhere<School>) {
+    return await this.edit(findOpts, {}, null);
+  }
+
   async delete(id: UUID) {
     let res = await this.repo.delete({ id: id });
     if (!res.affected) {

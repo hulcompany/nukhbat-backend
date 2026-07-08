@@ -190,6 +190,7 @@
       <input id="a-email" placeholder="email" style="width:220px">
       <input id="a-pass" placeholder="password" type="password" style="width:160px">
       <span id="s-login"></span>
+      <span id="s-signup"></span>
     </div>
     <div class="row">
       <span id="s-refresh"></span>
@@ -316,7 +317,7 @@
   <div class="cols">
     <div class="card">
       <h2>Create book</h2>
-      <p class="sub">Image is required by the backend — try without one to see it refuse.</p>
+      <p class="sub">An attachment is required by the backend — try without one to see it refuse.</p>
       <div class="row">
         <input id="bc-name" placeholder="name" dir="auto">
         <input id="bc-image" type="file">
@@ -344,12 +345,14 @@
       <div class="row"><span id="s-mine"></span><span id="s-umeta"></span></div>
       <div class="row">
         <input id="me-name" placeholder="new name — empty omits" style="width:170px" dir="auto">
+        <input id="me-phone" placeholder="phone — empty omits" style="width:150px">
         <input id="me-image" type="file">
         <span id="s-mepatch"></span>
       </div>
       <div class="row"><span id="s-medelimg"></span></div>
       <div class="row">
         <input id="me-cname" placeholder="name" style="width:130px">
+        <input id="me-cphone" placeholder="phone" style="width:130px">
         <input id="me-cpass" placeholder="password" style="width:130px">
         <span id="s-mecomplete"></span>
       </div>

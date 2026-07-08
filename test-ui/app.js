@@ -177,6 +177,16 @@ async function doRefresh() {
   localStorage.setItem('rtk', d.refreshToken || '');
 }
 
+// signup may or may not return tokens — only store them when present so we
+// never clobber an existing session with an empty string
+async function doSignup() {
+  const d = await call('POST', '/auth/signUp', { email: el('a-email').value });
+  if (d?.accessToken) localStorage.setItem('tk', d.accessToken);
+  if (d?.refreshToken) localStorage.setItem('rtk', d.refreshToken);
+  localStorage.setItem('email', el('a-email').value);
+  setStatus('signed up: ' + el('a-email').value, !!d?.accessToken);
+}
+
 function doLogout() {
   localStorage.removeItem('tk');
   localStorage.removeItem('rtk');
@@ -567,7 +577,7 @@ async function createBook() {
   const fd = new FormData();
   if (el('bc-name').value) fd.append('name', el('bc-name').value);
   const file = el('bc-image').files[0];
-  if (file) fd.append('image', file);
+  if (file) fd.append('attachment', file);
   await call('POST', '/school/me/books', fd, { form: true });
   loadBooks();
 }
@@ -576,7 +586,7 @@ async function editBook() {
   const fd = new FormData();
   if (el('be-name').value) fd.append('name', el('be-name').value);
   const file = el('be-image').files[0];
-  if (file) fd.append('image', file);
+  if (file) fd.append('attachment', file);
   await call('PATCH', `/school/me/books/${el('be-id').value}`, fd, { form: true });
   loadBooks();
 }
@@ -587,11 +597,13 @@ async function patchMine() {
   if (file) {
     const fd = new FormData();
     if (el('me-name').value) fd.append('name', el('me-name').value);
+    if (el('me-phone').value) fd.append('phoneNumber', el('me-phone').value);
     fd.append('image', file);
     await call('PATCH', '/user/mine', fd, { form: true });
   } else {
     const body = {};
     if (el('me-name').value) body.name = el('me-name').value;
+    if (el('me-phone').value) body.phoneNumber = el('me-phone').value;
     await call('PATCH', '/user/mine', body);
   }
 }
@@ -1101,6 +1113,7 @@ async function rawSend() {
 
 /* ================= wire up ================= */
 mountAction('s-login', 'POST', '/auth/login', 'Sign in', doLogin);
+mountAction('s-signup', 'POST', '/auth/signUp', 'Sign up', doSignup);
 mountAction('s-refresh', 'POST', '/auth/refreshToken', 'Refresh token', doRefresh);
 mountAction('s-whoami', 'GET', '/user/mine', 'Who am I?', () => call('GET', '/user/mine'));
 mountAction('s-reload', 'GET', '/learning/tracks', 'Reload tree', loadTracks);
@@ -1130,6 +1143,7 @@ mountAction('s-medelimg', 'DELETE', '/user/mine/image', 'Remove my image', () =>
 mountAction('s-mecomplete', 'POST', '/user/mine/complete-profile', 'Complete profile', () =>
   call('POST', '/user/mine/complete-profile', {
     ...(el('me-cname').value ? { name: el('me-cname').value } : {}),
+    ...(el('me-cphone').value ? { phoneNumber: el('me-cphone').value } : {}),
     ...(el('me-cpass').value ? { password: el('me-cpass').value } : {}),
   }));
 mountAction('s-reqverify', 'POST', '/user/mine/request-verify', 'Send verify code', () =>
@@ -1193,7 +1207,7 @@ el('wb-json').value = JSON.stringify(
 );
 fillChain(el('c-track'), [], 'sign in first');
 el('a-email').value = localStorage.getItem('email') || 'content@hul.com';
-el('a-pass').value = localStorage.getItem('pw') || '';
+el('a-pass').value = localStorage.getItem('pw') || '12345678';
 if (localStorage.getItem('tk')) {
   setStatus('token in storage — tree loading', true);
   loadMeta().then(loadTracks);
