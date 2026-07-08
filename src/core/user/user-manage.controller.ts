@@ -49,14 +49,15 @@ export class UserManageController {
     return await this.userService.getByCriteria(query);
   }
 
-  @Post('/')
-  async create(@Body() query: UserMainDto) {
-    return await this.userService.createUser({
-      email: query.email,
-      name: query.name,
-      password: query.password,
-    });
-  }
+  // @Post('/')
+  // async create(@Body() query: UserMainDto) {
+  //   return await this.userService.createUser({
+  //     email: query.email,
+  //     name: query.name,
+  //     password: query.password,
+  //     phoneNumber: query.phoneNumber
+  //   });
+  // }
 
   @Get('/:id')
   async getById(@Param('id', new ParseUUIDPipe()) params: UUID) {

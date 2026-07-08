@@ -137,6 +137,7 @@ export class SchoolService {
           name: params.name,
           password: params.password,
           role: RoleType.contentWriter,
+          phoneNumber: params.phoneNumber
         },
         em,
       );

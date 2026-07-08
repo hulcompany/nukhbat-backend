@@ -80,6 +80,14 @@ export class UserService {
       this.repo.manager.connection,
       async (em) => {
         let curr = await this.findOneAndFail({ id: id });
+        if (
+          data?.phoneNumber &&
+          [RoleType.admin.toString()].includes(curr.role)
+        ) {
+          throw new BadRequestException(
+            'Admins cannot change their phone number',
+          );
+        }
         let newImage = await this.fileService.replace({
           em,
           old: curr.profileImage || undefined,

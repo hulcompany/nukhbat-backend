@@ -79,6 +79,7 @@ export class MainSeeder implements Seeder {
       password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
       emailVerfied: true,
       role: 'contentWriter',
+      phoneNumber: '+963935000000',
     });
     let content2 = await dataSource.getRepository(User).save({
       name: 'content-writer-2',
@@ -86,6 +87,7 @@ export class MainSeeder implements Seeder {
       password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
       emailVerfied: true,
       role: 'contentWriter',
+      phoneNumber: '+963935000001',
     });
     await factoryManager.get(User).saveMany(20);
     let school = await dataSource.getRepository(School).save({

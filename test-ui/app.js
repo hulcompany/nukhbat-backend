@@ -1,54 +1,73 @@
-/* nukhba API workbench — manual test console for src/learning + src/core.
+/* nukhba API bench — manual test console for every controller in src/.
    Deliberately NO client-side validation: requests go out exactly as
    typed so the backend's validation is what gets exercised. Empty inputs
-   are omitted; the Raw panel covers explicit garbage/empty/malformed. */
+   are omitted; the Raw panel covers explicit garbage/empty/malformed.
+
+   Sessions are stored per environment (local / prod) so you can keep an
+   admin, an owner and a couple of students signed in at once and hop
+   between them with the header chips. */
 
 const ENVS = {
-  dev: 'http://localhost:3000/api',
-  prod: 'https://alnokhba-app.com/api',
+  local: { label: 'local — localhost:3000', base: 'http://localhost:3000/api' },
+  prod: { label: 'prod — alnokhba-app.com', base: 'https://alnokhba-app.com/api' },
 };
-let ENV = ENVS[localStorage.getItem('env')] ? localStorage.getItem('env') : 'dev';
-let API = ENVS[ENV];
+let ENV = ENVS[localStorage.getItem('nk.env')] ? localStorage.getItem('nk.env') : 'local';
+let API = ENVS[ENV].base;
 
-function setEnv(name) {
-  if (!ENVS[name] || name === ENV) return;
-  ENV = name;
-  API = ENVS[name];
-  localStorage.setItem('env', name);
-  // tokens belong to the previous backend — force a fresh sign-in
-  doLogout();
-  resetChainFrom('c-course');
-  fillChain(el('c-track'), [], 'sign in first');
-  el('path-hint').textContent = `switched to ${name} (${API}) — sign in again`;
-}
+/* role → sidebar group. contentWriter owns the school workspace. */
+const ROLE_GROUP = { admin: 'admin', contentWriter: 'owner', student: 'student' };
+const HOME_PANEL = { admin: 'users', contentWriter: 'tree', student: 'student' };
+
+const TRACK_SELECTS = ['st-track', 'ac-track', 'ab-track', 'kb-track', 'as-track', 'ok-track', 'os-track'];
+const SCHOOL_SELECTS = ['ac-school', 'ab-school', 'kb-school', 'as-school'];
 
 const S = {
   meta: null,
-  units: [],
-  lessons: [],
-  questions: [],
-  qSkip: 0,
-  qTotal: 0,
-  uSkip: 0,
-  uTotal: 0,
-  wisements: [],
-  wSkip: 0,
-  wTotal: 0,
-  abQSkip: 0,
-  abQTotal: 0,
-  subOSkip: 0,
-  subOTotal: 0,
-  subASkip: 0,
-  subATotal: 0,
-  stuOSkip: 0,
-  stuOTotal: 0,
-  stuASkip: 0,
-  stuATotal: 0,
+  units: [], lessons: [], questions: [], wisements: [],
+  qSkip: 0, qTotal: 0,
+  uSkip: 0, uTotal: 0,
+  wSkip: 0, wTotal: 0,
+  abQSkip: 0, abQTotal: 0,
+  okSkip: 0, okTotal: 0,
+  osSkip: 0, osTotal: 0,
+  kaSkip: 0, kaTotal: 0,
+  sbSkip: 0, sbTotal: 0,
+  asSkip: 0, asTotal: 0,
+  smSkip: 0, smTotal: 0,
 };
 
 function el(id) { return document.getElementById(id); }
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+}
+
+/* ================= sessions ================= */
+function accounts() {
+  try { return JSON.parse(localStorage.getItem(`nk.accounts.${ENV}`)) || []; }
+  catch { return []; }
+}
+function saveAccounts(list) {
+  localStorage.setItem(`nk.accounts.${ENV}`, JSON.stringify(list));
+}
+function currentAccount() {
+  const email = localStorage.getItem(`nk.current.${ENV}`);
+  return accounts().find(a => a.email === email) || null;
+}
+function setCurrent(email) {
+  if (email) localStorage.setItem(`nk.current.${ENV}`, email);
+  else localStorage.removeItem(`nk.current.${ENV}`);
+}
+function upsertAccount(patch) {
+  const list = accounts();
+  const i = list.findIndex(a => a.email === patch.email);
+  if (i >= 0) list[i] = { ...list[i], ...patch };
+  else list.push(patch);
+  saveAccounts(list);
+}
+function forgetAccount(email) {
+  saveAccounts(accounts().filter(a => a.email !== email));
+  if (currentAccount() === null) setCurrent(null);
+  renderSession();
 }
 
 /* ================= log ================= */
@@ -58,23 +77,24 @@ function logEntry(method, path, status, body) {
   e.className = 'entry';
   const sClass = typeof status === 'number' ? 's' + String(status)[0] : 'sX';
   const when = new Date().toLocaleTimeString();
+  const who = currentAccount()?.email || 'anon';
   e.innerHTML =
     `<div class="head"><span class="chip ${method}">${method}</span>` +
     `<span>${escapeHtml(path)}</span>` +
     `<span class="chip ${sClass}">${status}</span>` +
-    `<span class="t">${when}</span></div>` +
+    `<span class="t">${escapeHtml(who)} · ${when}</span></div>` +
     `<pre>${escapeHtml(typeof body === 'string' ? body : JSON.stringify(body, null, 2))}</pre>`;
   e.querySelector('.head').onclick = () => e.classList.toggle('open');
   if (typeof status !== 'number' || status >= 400) e.classList.add('open');
   log.prepend(e);
-  while (log.children.length > 40) log.lastChild.remove();
+  while (log.children.length > 60) log.lastChild.remove();
 }
 
 /* ================= fetch core ================= */
 async function call(method, path, body, opts = {}) {
   const headers = {};
-  const tk = localStorage.getItem('tk');
-  if (tk) headers['Authorization'] = 'Bearer ' + tk;
+  const tk = currentAccount()?.tk;
+  if (tk && !opts.noAuth) headers['Authorization'] = 'Bearer ' + tk;
   const init = { method, headers };
   if (body !== undefined && body !== null) {
     if (opts.form) {
@@ -133,6 +153,20 @@ function panel(name) {
   document.querySelectorAll('#side button').forEach(b => b.classList.remove('on'));
   el('p-' + name).classList.add('on');
   document.querySelector(`#side button[data-p="${name}"]`).classList.add('on');
+  el('picker').classList.toggle('show', ['tree', 'questions', 'dc'].includes(name));
+}
+
+function fillSelect(sel, items, placeholder) {
+  sel.length = 0;
+  const p = document.createElement('option');
+  p.value = ''; p.textContent = placeholder;
+  sel.add(p);
+  for (const it of items) {
+    const o = document.createElement('option');
+    o.value = it.id;
+    o.textContent = it.title || it.name || it.id;
+    sel.add(o);
+  }
 }
 
 function move(arr, i, delta, rerender) {
@@ -142,63 +176,156 @@ function move(arr, i, delta, rerender) {
   rerender();
 }
 
-function promptPatch(path, current) {
+function promptPatch(path, current, after) {
   const seed = JSON.stringify({ title: current.title ?? current.name });
   const body = prompt(`PATCH ${path}\nJSON body — sent exactly as typed:`, seed);
   if (body === null) return;
-  call('PATCH', path, body, { rawText: true });
+  const p = call('PATCH', path, body, { rawText: true });
+  if (after) p.then(after).catch(() => {});
+}
+
+function pageInfo(spanId, skip, count, total) {
+  el(spanId).textContent = `${total ? skip + 1 : 0}–${skip + count} of ${total}`;
+}
+
+function showTable(tableId, emptyId, hasRows) {
+  el(emptyId).style.display = hasRows ? 'none' : '';
+  el(tableId).style.display = hasRows ? '' : 'none';
+}
+
+/* ================= env & role chrome ================= */
+function setEnv(name) {
+  if (!ENVS[name] || name === ENV) return;
+  ENV = name;
+  API = ENVS[name].base;
+  localStorage.setItem('nk.env', name);
+  applyEnv();
+  applyRole();
+  renderSession();
+  resetChainFrom('pk-course');
+  fillSelect(el('pk-track'), [], 'sign in first');
+  if (currentAccount()) bootRefs();
+}
+
+function applyEnv() {
+  document.body.classList.toggle('prod', ENV === 'prod');
+  el('log-base').textContent = API;
+  el('acc-envtag').textContent = `stored for ${ENV}`;
+}
+
+function applyRole() {
+  const acc = currentAccount();
+  const role = acc?.role || '';
+  document.body.dataset.role = role;
+  const st = el('h-status');
+  st.textContent = acc ? `${acc.email} · ${acc.role || '?'}` : 'signed out';
+  st.className = acc ? 'in' : '';
+  const group = ROLE_GROUP[role];
+  document.querySelectorAll('#side button[data-need]').forEach(b => {
+    const need = b.dataset.need;
+    const off = !!acc && !!need && need !== group;
+    b.classList.toggle('off', off);
+    b.title = off ? 'different role — expect 403 (that is a valid test)' : '';
+  });
+}
+
+function renderSession() {
+  const list = accounts();
+  const cur = currentAccount();
+  // header chips
+  const box = el('h-accounts');
+  box.replaceChildren(...list.map(a => {
+    const c = document.createElement('button');
+    c.className = 'chip-acc' + (cur && a.email === cur.email ? ' on' : '');
+    c.title = a.role || 'role unknown';
+    c.innerHTML = `<span class="dot r-${a.role || 'x'}"></span>${escapeHtml(a.email.split('@')[0])}`;
+    c.onclick = () => switchTo(a.email);
+    return c;
+  }));
+  // session table
+  const tb = el('acc-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('acc-table', 'acc-empty', list.length);
+  for (const a of list) {
+    const tr = tb.insertRow();
+    if (cur && a.email === cur.email) tr.className = 'ok';
+    tr.insertCell().textContent = a.email;
+    tr.insertCell().innerHTML = a.role
+      ? `<span class="rolebadge r-${a.role}">${escapeHtml(a.role)}</span>` : '?';
+    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = a.name ?? '';
+    tr.insertCell().append(
+      miniBtn('switch', () => switchTo(a.email)),
+      ' ', miniBtn('forget', () => { forgetAccount(a.email); applyRole(); }, true),
+    );
+  }
+}
+
+function switchTo(email) {
+  setCurrent(email);
+  applyRole();
+  renderSession();
+  bootRefs();
+  const home = HOME_PANEL[currentAccount()?.role];
+  if (home) panel(home);
 }
 
 /* ================= auth ================= */
 function preset(email) {
-  el('a-email').value = email;
-  el('a-pass').focus();
+  el('se-email').value = email;
+  el('se-pass').focus();
+}
+
+async function whoamiInto(email) {
+  try {
+    const me = await call('GET', '/user/mine');
+    upsertAccount({ email, role: me.role, name: me.name });
+  } catch { /* in the log */ }
 }
 
 async function doLogin() {
+  const email = el('se-email').value;
   const d = await call('POST', '/auth/login', {
-    email: el('a-email').value,
-    password: el('a-pass').value,
-  });
-  localStorage.setItem('tk', d.accessToken || '');
-  localStorage.setItem('rtk', d.refreshToken || '');
-  localStorage.setItem('email', el('a-email').value);
-  localStorage.setItem('pw', el('a-pass').value);
-  setStatus('signed in: ' + el('a-email').value, true);
-  await loadMeta();
-  await loadTracks();
+    email, password: el('se-pass').value,
+  }, { noAuth: true });
+  upsertAccount({ email, password: el('se-pass').value, tk: d.accessToken || '', rtk: d.refreshToken || '' });
+  setCurrent(email);
+  await whoamiInto(email);
+  applyRole();
+  renderSession();
+  bootRefs();
+  const home = HOME_PANEL[currentAccount()?.role];
+  if (home) panel(home);
+}
+
+// signup may or may not return tokens — only store them when present
+async function doSignup() {
+  const email = el('se-email').value;
+  const d = await call('POST', '/auth/signUp', { email }, { noAuth: true });
+  upsertAccount({ email, tk: d?.accessToken || '', rtk: d?.refreshToken || '' });
+  if (d?.accessToken) {
+    setCurrent(email);
+    await whoamiInto(email);
+  }
+  applyRole();
+  renderSession();
 }
 
 async function doRefresh() {
-  const d = await call('POST', '/auth/refreshToken', {
-    token: localStorage.getItem('rtk'),
-  });
-  localStorage.setItem('tk', d.accessToken || '');
-  localStorage.setItem('rtk', d.refreshToken || '');
-}
-
-// signup may or may not return tokens — only store them when present so we
-// never clobber an existing session with an empty string
-async function doSignup() {
-  const d = await call('POST', '/auth/signUp', { email: el('a-email').value });
-  if (d?.accessToken) localStorage.setItem('tk', d.accessToken);
-  if (d?.refreshToken) localStorage.setItem('rtk', d.refreshToken);
-  localStorage.setItem('email', el('a-email').value);
-  setStatus('signed up: ' + el('a-email').value, !!d?.accessToken);
+  const acc = currentAccount();
+  if (!acc) return;
+  const d = await call('POST', '/auth/refreshToken', { token: acc.rtk }, { noAuth: true });
+  upsertAccount({ email: acc.email, tk: d.accessToken || '', rtk: d.refreshToken || '' });
 }
 
 function doLogout() {
-  localStorage.removeItem('tk');
-  localStorage.removeItem('rtk');
-  setStatus('signed out', false);
+  const acc = currentAccount();
+  if (acc) forgetAccount(acc.email);
+  setCurrent(null);
+  applyRole();
+  renderSession();
 }
 
-function setStatus(text, isIn) {
-  const s = el('a-status');
-  s.textContent = text;
-  s.className = isIn ? 'in' : '';
-}
-
+/* ================= reference data ================= */
 async function loadMeta() {
   try {
     S.meta = await call('GET', '/learning/metaData');
@@ -234,67 +361,75 @@ function bulkSample() {
   }, null, 2);
 }
 
-/* ================= path bar ================= */
-function fillChain(sel, items, placeholder) {
-  sel.length = 0;
-  const p = document.createElement('option');
-  p.value = ''; p.textContent = placeholder;
-  sel.add(p);
-  for (const it of items) {
-    const o = document.createElement('option');
-    o.value = it.id;
-    o.textContent = it.title || it.name || it.id;
-    sel.add(o);
+// tracks into every track select; schools into every school select (admin only)
+async function reloadRefs() {
+  let tracks = [];
+  try { tracks = pickArray(await call('GET', '/learning/tracks')); } catch { /* in the log */ }
+  for (const id of TRACK_SELECTS) {
+    const keep = el(id).options[0].textContent;
+    fillSelect(el(id), tracks, keep);
   }
-  sel.disabled = items.length === 0;
+  fillSelect(el('pk-track'), tracks, tracks.length ? 'choose a track…' : 'no tracks');
+  resetChainFrom('pk-course');
+  el('pk-hint').textContent = '';
+  if (currentAccount()?.role === 'admin') {
+    try {
+      const schools = pickArray(await call('GET', '/school/manage?skip=0&limit=100'));
+      for (const id of SCHOOL_SELECTS) {
+        const keep = el(id).options[0].textContent;
+        fillSelect(el(id), schools, keep);
+      }
+    } catch { /* in the log */ }
+  }
 }
 
+function bootRefs() {
+  loadMeta();
+  reloadRefs();
+}
+
+/* ================= content path (owner cascade) ================= */
 function resetChainFrom(level) {
-  const order = ['c-course', 'c-unit', 'c-lesson'];
+  const order = ['pk-course', 'pk-unit', 'pk-lesson'];
   for (let i = order.indexOf(level); i >= 0 && i < order.length; i++) {
-    fillChain(el(order[i]), [], '—');
+    fillSelect(el(order[i]), [], '—');
+    el(order[i]).disabled = true;
   }
-  if (level === 'c-course' || level === 'c-unit') { S.lessons = []; renderLessons(); }
-  if (level === 'c-course') { S.units = []; renderUnits(); }
-}
-
-async function loadTracks() {
-  const tracks = pickArray(await call('GET', '/learning/tracks'));
-  fillChain(el('c-track'), tracks, tracks.length ? 'choose a track…' : 'no tracks');
-  fillChain(el('adm-track'), tracks, '— track —');
-  el('adm-track').disabled = false;
-  resetChainFrom('c-course');
-  el('path-hint').textContent = tracks.length ? '' : 'no tracks came back — see the log';
+  if (level === 'pk-course' || level === 'pk-unit') { S.lessons = []; renderLessons(); }
+  if (level === 'pk-course') { S.units = []; renderUnits(); }
 }
 
 async function onTrack() {
-  resetChainFrom('c-course');
-  const trackId = el('c-track').value;
+  resetChainFrom('pk-course');
+  const trackId = el('pk-track').value;
   if (!trackId) return;
   const courses = pickArray(await call('GET', `/school/me/courses/${trackId}`));
-  fillChain(el('c-course'), courses, courses.length ? 'choose a course…' : 'no courses');
+  fillSelect(el('pk-course'), courses, courses.length ? 'choose a course…' : 'no courses');
+  el('pk-course').disabled = false;
 }
 
 async function onCourse() {
-  resetChainFrom('c-unit');
-  const courseId = el('c-course').value;
+  resetChainFrom('pk-unit');
+  const courseId = el('pk-course').value;
   if (!courseId) return;
   S.units = pickArray(await call('GET', `/school/me/units/${courseId}`));
   renderUnits();
-  fillChain(el('c-unit'), S.units, S.units.length ? 'choose a unit…' : 'no units');
+  fillSelect(el('pk-unit'), S.units, S.units.length ? 'choose a unit…' : 'no units');
+  el('pk-unit').disabled = false;
 }
 
 async function onUnit() {
-  resetChainFrom('c-lesson');
-  const unitId = el('c-unit').value;
+  resetChainFrom('pk-lesson');
+  const unitId = el('pk-unit').value;
   if (!unitId) return;
   S.lessons = pickArray(await call('GET', `/school/me/lessons/${unitId}`));
   renderLessons();
-  fillChain(el('c-lesson'), S.lessons, S.lessons.length ? 'choose a lesson…' : 'no lessons');
+  fillSelect(el('pk-lesson'), S.lessons, S.lessons.length ? 'choose a lesson…' : 'no lessons');
+  el('pk-lesson').disabled = false;
 }
 
 async function onLesson() {
-  const lessonId = el('c-lesson').value;
+  const lessonId = el('pk-lesson').value;
   if (!lessonId) return;
   el('qf-lesson').value = lessonId;
   el('qf-course').value = '';
@@ -303,19 +438,18 @@ async function onLesson() {
   await loadQuestions();
 }
 
-/* ================= units & lessons ================= */
+/* ================= units & lessons (owner) ================= */
 function renderUnits() {
   const tb = el('u-table').tBodies[0];
   tb.innerHTML = '';
-  el('u-empty').style.display = S.units.length ? 'none' : '';
-  el('u-table').style.display = S.units.length ? '' : 'none';
+  showTable('u-table', 'u-empty', S.units.length);
   S.units.forEach((u, i) => {
     const tr = tb.insertRow();
     tr.innerHTML = `<td>${u.index ?? ''}</td><td dir="auto">${escapeHtml(u.title ?? '')}</td>`;
     tr.insertCell().append(
       miniBtn('Up', () => move(S.units, i, -1, renderUnits)),
       ' ', miniBtn('Down', () => move(S.units, i, +1, renderUnits)),
-      ' ', miniBtn('Edit…', () => promptPatch(`/school/me/units/${u.id}`, u)),
+      ' ', miniBtn('Edit…', () => promptPatch(`/school/me/units/${u.id}`, u, onCourse)),
       ' ', miniBtn('Delete', () => call('DELETE', `/school/me/units/${u.id}`).then(onCourse), true),
     );
   });
@@ -324,13 +458,13 @@ function renderUnits() {
 async function createUnit() {
   const body = {};
   if (el('u-title').value) body.title = el('u-title').value;
-  if (el('c-course').value) body.courseId = el('c-course').value;
+  if (el('pk-course').value) body.courseId = el('pk-course').value;
   await call('POST', '/school/me/units', body);
   onCourse();
 }
 
 async function saveUnitOrder() {
-  await call('POST', `/school/me/units/order/${el('c-course').value}`, {
+  await call('POST', `/school/me/units/order/${el('pk-course').value}`, {
     ids: S.units.map(u => u.id),
   });
   onCourse();
@@ -339,8 +473,7 @@ async function saveUnitOrder() {
 function renderLessons() {
   const tb = el('l-table').tBodies[0];
   tb.innerHTML = '';
-  el('l-empty').style.display = S.lessons.length ? 'none' : '';
-  el('l-table').style.display = S.lessons.length ? '' : 'none';
+  showTable('l-table', 'l-empty', S.lessons.length);
   S.lessons.forEach((l, i) => {
     const tr = tb.insertRow();
     tr.innerHTML = `<td>${l.index ?? ''}</td><td dir="auto">${escapeHtml(l.title ?? '')}</td>` +
@@ -348,7 +481,7 @@ function renderLessons() {
     tr.insertCell().append(
       miniBtn('Up', () => move(S.lessons, i, -1, renderLessons)),
       ' ', miniBtn('Down', () => move(S.lessons, i, +1, renderLessons)),
-      ' ', miniBtn('Edit…', () => promptPatch(`/school/me/lessons/${l.id}`, l)),
+      ' ', miniBtn('Edit…', () => promptPatch(`/school/me/lessons/${l.id}`, l, onUnit)),
       ' ', miniBtn('Delete', () => call('DELETE', `/school/me/lessons/${l.id}`).then(onUnit), true),
     );
   });
@@ -358,27 +491,27 @@ async function createLesson() {
   const body = {};
   if (el('l-title').value) body.title = el('l-title').value;
   if (el('l-desc').value) body.description = el('l-desc').value;
-  if (el('c-unit').value) body.unitId = el('c-unit').value;
+  if (el('pk-unit').value) body.unitId = el('pk-unit').value;
   await call('POST', '/school/me/lessons', body);
   onUnit();
 }
 
 async function saveLessonOrder() {
-  await call('POST', `/school/me/lessons/order/${el('c-unit').value}`, {
+  await call('POST', `/school/me/lessons/order/${el('pk-unit').value}`, {
     ids: S.lessons.map(l => l.id),
   });
   onUnit();
 }
 
-/* ================= questions ================= */
+/* ================= questions (owner) ================= */
 function useSelectedLesson() {
-  el('qf-lesson').value = el('c-lesson').value;
+  el('qf-lesson').value = el('pk-lesson').value;
   el('qf-course').value = '';
   S.qSkip = 0;
   loadQuestions();
 }
 function useSelectedCourse() {
-  el('qf-course').value = el('c-course').value;
+  el('qf-course').value = el('pk-course').value;
   el('qf-lesson').value = '';
   S.qSkip = 0;
   loadQuestions();
@@ -389,13 +522,11 @@ function clearQFilter() {
   S.qSkip = 0;
   loadQuestions();
 }
-function qcUseLesson() { el('qc-lesson').value = el('c-lesson').value; }
-function qcUseCourse() { el('qc-course').value = el('c-course').value; }
-
-function qLimit() { return Number(el('qf-limit').value) || 10; }
+function qcUseLesson() { el('qc-lesson').value = el('pk-lesson').value; }
+function qcUseCourse() { el('qc-course').value = el('pk-course').value; }
 
 function qPage(dir) {
-  S.qSkip = Math.max(0, S.qSkip + dir * qLimit());
+  S.qSkip = Math.max(0, S.qSkip + dir * (Number(el('qf-limit').value) || 10));
   loadQuestions();
 }
 
@@ -415,11 +546,8 @@ async function loadQuestions() {
 function renderQuestions() {
   const tb = el('q-table').tBodies[0];
   tb.innerHTML = '';
-  el('q-empty').style.display = S.questions.length ? 'none' : '';
-  el('q-table').style.display = S.questions.length ? '' : 'none';
-  const from = S.qTotal ? S.qSkip + 1 : 0;
-  const to = S.qSkip + S.questions.length;
-  el('q-pageinfo').textContent = `${from}–${to} of ${S.qTotal}`;
+  showTable('q-table', 'q-empty', S.questions.length);
+  pageInfo('q-pageinfo', S.qSkip, S.questions.length, S.qTotal);
   S.questions.forEach((qu, i) => {
     const tr = tb.insertRow();
     const cb = document.createElement('input');
@@ -433,7 +561,7 @@ function renderQuestions() {
       miniBtn('Up', () => move(S.questions, i, -1, renderQuestions)),
       ' ', miniBtn('Down', () => move(S.questions, i, +1, renderQuestions)),
       ' ', miniBtn('View', () => call('GET', `/school/me/questions/${qu.id}`)),
-      ' ', miniBtn('Edit…', () => promptPatch(`/school/me/questions/${qu.id}`, qu)),
+      ' ', miniBtn('Edit…', () => promptPatch(`/school/me/questions/${qu.id}`, qu, loadQuestions)),
       ' ', miniBtn('Delete', () => call('DELETE', `/school/me/questions/${qu.id}`).then(loadQuestions), true),
     );
   });
@@ -515,7 +643,7 @@ async function bulkCreate() {
   loadQuestions();
 }
 
-/* ================= daily challenge ================= */
+/* ================= daily challenge (owner) ================= */
 async function dcGet() { renderDc(await call('GET', '/school/me/daily-challenge')); }
 async function dcCreate() { await call('POST', '/school/me/daily-challenge'); dcGet(); }
 
@@ -535,15 +663,14 @@ function renderDc(d) {
       .join('');
     card.innerHTML =
       `<h2 dir="auto">${escapeHtml(c.track?.name ?? 'unknown track')} — ${escapeHtml(c.date ?? '')}` +
-      ` <span style="font-weight:400;font-size:12px;color:var(--mut)">${(c.usedQuestions || []).length} questions</span></h2>` +
+      ` <span class="tag">${(c.usedQuestions || []).length} questions</span></h2>` +
       `<ul style="list-style:none;padding:0;margin:6px 0">${qs}</ul>`;
     box.append(card);
   }
   const tb = el('dc-report').tBodies[0];
   tb.innerHTML = '';
   const report = d?.unUsedQuestions || [];
-  el('dc-empty').style.display = report.length ? 'none' : '';
-  el('dc-report').style.display = report.length ? '' : 'none';
+  showTable('dc-report', 'dc-empty', report.length);
   for (const r of report) {
     const tr = tb.insertRow();
     if (r.remainingQuestions < 2) tr.className = 'warn';
@@ -555,13 +682,12 @@ function renderDc(d) {
   }
 }
 
-/* ================= books ================= */
+/* ================= books (owner) ================= */
 async function loadBooks() {
   const books = pickArray(await call('GET', '/school/me/books'));
   const tb = el('b-table').tBodies[0];
   tb.innerHTML = '';
-  el('b-empty').style.display = books.length ? 'none' : '';
-  el('b-table').style.display = books.length ? '' : 'none';
+  showTable('b-table', 'b-empty', books.length);
   for (const b of books) {
     const tr = tb.insertRow();
     const n = tr.insertCell(); n.dir = 'auto'; n.textContent = b.name ?? '';
@@ -591,27 +717,167 @@ async function editBook() {
   loadBooks();
 }
 
-/* ================= my account ================= */
-async function patchMine() {
-  const file = el('me-image').files[0];
-  if (file) {
-    const fd = new FormData();
-    if (el('me-name').value) fd.append('name', el('me-name').value);
-    if (el('me-phone').value) fd.append('phoneNumber', el('me-phone').value);
-    fd.append('image', file);
-    await call('PATCH', '/user/mine', fd, { form: true });
-  } else {
-    const body = {};
-    if (el('me-name').value) body.name = el('me-name').value;
-    if (el('me-phone').value) body.phoneNumber = el('me-phone').value;
-    await call('PATCH', '/user/mine', body);
+/* ================= my school (owner) ================= */
+async function scGet() {
+  const box = el('sc-box');
+  let d;
+  try { d = await call('GET', '/school/me'); }
+  catch { box.className = 'empty'; box.textContent = 'no school — the error is in the log'; return; }
+  box.className = 'card';
+  box.style.marginBottom = '0';
+  box.innerHTML =
+    `<div dir="auto" style="font-size:15px"><b>${escapeHtml(d.name ?? '')}</b></div>` +
+    (d.image?.id ? `<div style="margin-top:4px"><a href="${API}/files/${d.image.id}" target="_blank">logo file</a></div>` : '') +
+    `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id ?? ''}</div>`;
+}
+
+async function scEdit() {
+  const fd = new FormData();
+  if (el('sc-name').value) fd.append('name', el('sc-name').value);
+  const file = el('sc-image').files[0];
+  if (file) fd.append('image', file);
+  await call('PATCH', '/school/me', fd, { form: true });
+  scGet();
+}
+
+/* ================= student ================= */
+async function stProfile() {
+  const box = el('st-profile');
+  let d;
+  try {
+    d = await call('GET', '/student/profile');
+  } catch {
+    box.className = 'empty';
+    box.textContent = 'no profile — the error is in the log (student role + a redeemed key or trial required)';
+    return;
+  }
+  const inactive = d.active === false
+    ? '<div style="margin-top:4px;color:#c0392b">deactivated — the school must reactivate you</div>'
+    : '';
+  box.className = 'card';
+  box.style.marginBottom = '0';
+  box.innerHTML =
+    `<div dir="auto" style="font-size:15px"><b>${escapeHtml(d.school?.name ?? d.schoolId ?? '')}</b>` +
+    ` — ${escapeHtml(d.track?.name ?? d.trackId ?? '')}</div>` +
+    inactive +
+    `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id}</div>`;
+}
+
+async function stSub() {
+  const box = el('st-sub');
+  let d;
+  try {
+    d = await call('GET', '/subscription/me');
+  } catch {
+    box.className = 'empty';
+    box.textContent = 'no subscription — the error is in the log';
+    return;
+  }
+  if (!d) {
+    box.className = 'empty';
+    box.textContent = 'null — this student never subscribed';
+    return;
+  }
+  const expired = d.isExpired ? ' <span style="color:#c0392b">(expired)</span>' : ' <span style="color:#27ae60">(live)</span>';
+  box.className = 'card';
+  box.style.marginBottom = '0';
+  box.innerHTML =
+    `<div style="font-size:15px"><b>${escapeHtml(d.type ?? '')}</b>` +
+    ` — expires <b>${(d.expireDate || '').slice(0, 10)}</b>${expired}</div>` +
+    `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id ?? ''}</div>`;
+}
+
+async function stRedeem() {
+  const body = {};
+  if (el('st-key').value) body.key = el('st-key').value;
+  await call('POST', '/subscription/subscribe', body);
+  stProfile();
+  stSub();
+}
+
+async function stTrial() {
+  const body = {};
+  if (el('st-track').value) body.trackId = el('st-track').value;
+  await call('POST', '/subscription/freeTrial', body);
+  stProfile();
+  stSub();
+}
+
+/* ================= my keys (owner) ================= */
+function okPage(dir) {
+  S.okSkip = Math.max(0, S.okSkip + dir * (Number(el('ok-limit').value) || 10));
+  okLoad();
+}
+
+async function okLoad() {
+  const p = new URLSearchParams();
+  if (el('ok-track').value) p.set('trackId', el('ok-track').value);
+  p.set('skip', S.okSkip);
+  p.set('limit', el('ok-limit').value);
+  const d = await call('GET', '/subscription/keys/school?' + p.toString());
+  const list = pickArray(d);
+  S.okTotal = d?.totalRecords ?? list.length;
+  pageInfo('ok-pageinfo', S.okSkip, list.length, S.okTotal);
+  const tb = el('ok-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('ok-table', 'ok-empty', list.length);
+  for (const k of list) {
+    const tr = tb.insertRow();
+    const c = tr.insertCell(); c.className = 'mono'; c.textContent = k.key ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = k.track?.name ?? '';
+    tr.insertCell().textContent = k.usedById || k.usedBy ? '✓' : '';
+    tr.insertCell().textContent = (k.createdAt || '').slice(0, 10);
+    tr.insertCell().append(
+      miniBtn('use', () => { el('st-key').value = k.key; }),
+    );
+  }
+}
+
+/* ================= my students (owner) ================= */
+// active=false is what StudentGuard blocks on (Student_2)
+function activeCell(tr, p) {
+  const c = tr.insertCell();
+  if (p.active === false) { c.style.color = '#c0392b'; c.textContent = '✕ off'; }
+  else { c.style.color = '#27ae60'; c.textContent = '✓ on'; }
+}
+
+function osPage(dir) {
+  S.osSkip = Math.max(0, S.osSkip + dir * (Number(el('os-limit').value) || 10));
+  osLoad();
+}
+
+async function osLoad() {
+  const p = new URLSearchParams();
+  if (el('os-track').value) p.set('trackId', el('os-track').value);
+  if (el('os-name').value) p.set('name', el('os-name').value);
+  p.set('skip', S.osSkip);
+  p.set('limit', el('os-limit').value);
+  const d = await call('GET', '/student/school?' + p.toString());
+  const list = pickArray(d);
+  S.osTotal = d?.totalRecords ?? list.length;
+  pageInfo('os-pageinfo', S.osSkip, list.length, S.osTotal);
+  const tb = el('os-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('os-table', 'os-empty', list.length);
+  for (const s of list) {
+    const tr = tb.insertRow();
+    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.user?.name ?? '';
+    tr.insertCell().textContent = s.user?.email ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
+    activeCell(tr, s);
+    const off = s.active === false;
+    tr.insertCell().append(
+      miniBtn('view', () => call('GET', `/student/school/${s.id}`)),
+      ' ', miniBtn(off ? 'Activate' : 'Deactivate',
+        () => call('PATCH', `/student/school/activation/${s.id}`, { active: off }).then(osLoad),
+        !off),
+    );
   }
 }
 
 /* ================= users (admin) ================= */
-function uLimit() { return Number(el('uf-limit').value) || 10; }
 function uPage(dir) {
-  S.uSkip = Math.max(0, S.uSkip + dir * uLimit());
+  S.uSkip = Math.max(0, S.uSkip + dir * (Number(el('uf-limit').value) || 10));
   loadUsers();
 }
 
@@ -619,25 +885,27 @@ async function loadUsers() {
   const p = new URLSearchParams();
   if (el('uf-name').value) p.set('name', el('uf-name').value);
   if (el('uf-email').value) p.set('email', el('uf-email').value);
+  if (el('uf-phone').value) p.set('phoneNumber', el('uf-phone').value);
+  if (el('uf-role').value) p.set('role', el('uf-role').value);
   p.set('skip', S.uSkip);
   p.set('limit', el('uf-limit').value);
   const d = await call('GET', '/user?' + p.toString());
   const users = pickArray(d);
   S.uTotal = d?.totalRecords ?? users.length;
-  const from = S.uTotal ? S.uSkip + 1 : 0;
-  el('u-pageinfo').textContent = `${from}–${S.uSkip + users.length} of ${S.uTotal}`;
+  pageInfo('u-pageinfo', S.uSkip, users.length, S.uTotal);
   const tb = el('usr-table').tBodies[0];
   tb.innerHTML = '';
-  el('usr-empty').style.display = users.length ? 'none' : '';
-  el('usr-table').style.display = users.length ? '' : 'none';
+  showTable('usr-table', 'usr-empty', users.length);
   for (const u of users) {
     const tr = tb.insertRow();
     const n = tr.insertCell(); n.dir = 'auto'; n.textContent = u.name ?? '';
     tr.insertCell().textContent = u.email ?? '';
-    tr.insertCell().textContent = u.role ?? '';
+    tr.insertCell().textContent = u.phoneNumber ?? '';
+    tr.insertCell().innerHTML = u.role
+      ? `<span class="rolebadge r-${u.role}">${escapeHtml(u.role)}</span>` : '';
     tr.insertCell().append(
       miniBtn('View', () => call('GET', `/user/${u.id}`)),
-      ' ', miniBtn('Edit…', () => promptPatch(`/user/${u.id}`, u)),
+      ' ', miniBtn('Edit…', () => promptPatch(`/user/${u.id}`, u, loadUsers)),
       ' ', miniBtn('Remove image', () => call('DELETE', `/user/${u.id}/image`), true),
     );
   }
@@ -652,45 +920,67 @@ async function createUser() {
   loadUsers();
 }
 
-/* ================= access (admin) ================= */
-async function admLoadSchools() {
-  const d = await call('GET', '/school/manage');
-  const schools = pickArray(d);
-  const sel = el('adm-school');
-  sel.length = 1;
-  for (const s of schools) {
-    const o = document.createElement('option');
-    o.value = s.id; o.textContent = s.name || s.id;
-    sel.add(o);
+/* ================= schools (admin) ================= */
+function smPage(dir) {
+  S.smSkip = Math.max(0, S.smSkip + dir * (Number(el('sm-limit').value) || 10));
+  smLoad();
+}
+
+async function smLoad() {
+  const p = new URLSearchParams();
+  if (el('sm-name').value) p.set('name', el('sm-name').value);
+  p.set('skip', S.smSkip);
+  p.set('limit', el('sm-limit').value);
+  const d = await call('GET', '/school/manage?' + p.toString());
+  const list = pickArray(d);
+  S.smTotal = d?.totalRecords ?? list.length;
+  pageInfo('sm-pageinfo', S.smSkip, list.length, S.smTotal);
+  const tb = el('sm-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('sm-table', 'sm-empty', list.length);
+  for (const s of list) {
+    const tr = tb.insertRow();
+    const n = tr.insertCell(); n.dir = 'auto';
+    n.textContent = (s.name ?? '') + (s.default ? ' (default)' : '');
+    const idc = tr.insertCell(); idc.className = 'mono'; idc.style.fontSize = '11px'; idc.textContent = s.id;
+    tr.insertCell().append(
+      miniBtn('view', () => call('GET', `/school/manage/${s.id}`)),
+      ' ', miniBtn('edit', () => { el('sme-id').value = s.id; el('sme-name').value = s.name ?? ''; }),
+      ' ', miniBtn('Remove image', () => call('DELETE', `/school/manage/${s.id}/image`), true),
+    );
   }
 }
-async function admAllow() {
-  await call('POST', `/learning/admin/schoolAccess/${el('adm-school').value}/${el('adm-track').value}`);
+
+async function smCreate() {
+  const fd = new FormData();
+  if (el('smc-name').value) fd.append('name', el('smc-name').value);
+  if (el('smc-email').value) fd.append('email', el('smc-email').value);
+  if (el('smc-pass').value) fd.append('password', el('smc-pass').value);
+  if (el('smc-school').value) fd.append('schoolName', el('smc-school').value);
+  const file = el('smc-image').files[0];
+  if (file) fd.append('image', file);
+  await call('POST', '/school/manage', fd, { form: true });
+  smLoad();
 }
-async function admUnAllow() {
-  await call('DELETE', `/learning/admin/schoolAccess/${el('adm-school').value}/${el('adm-track').value}`);
+
+async function smEdit() {
+  const fd = new FormData();
+  if (el('sme-name').value) fd.append('name', el('sme-name').value);
+  const file = el('sme-image').files[0];
+  if (file) fd.append('image', file);
+  await call('PATCH', `/school/manage/${el('sme-id').value}`, fd, { form: true });
+  smLoad();
+}
+
+/* ================= track access (admin) ================= */
+async function acAllow() {
+  await call('POST', `/learning/admin/schoolAccess/${el('ac-school').value}/${el('ac-track').value}`);
+}
+async function acRevoke() {
+  await call('DELETE', `/learning/admin/schoolAccess/${el('ac-school').value}/${el('ac-track').value}`);
 }
 
 /* ================= admin content browse ================= */
-async function abLoadSchools() {
-  const schools = pickArray(await call('GET', '/school/manage'));
-  const sel = el('ab-school');
-  sel.length = 1;
-  for (const s of schools) {
-    const o = document.createElement('option');
-    o.value = s.id; o.textContent = s.name || s.id;
-    sel.add(o);
-  }
-  const tracks = pickArray(await call('GET', '/learning/tracks'));
-  const tsel = el('ab-track');
-  tsel.length = 1;
-  for (const t of tracks) {
-    const o = document.createElement('option');
-    o.value = t.id; o.textContent = t.name || t.id;
-    tsel.add(o);
-  }
-}
-
 async function abCourses() {
   const p = new URLSearchParams();
   if (el('ab-ctitle').value) p.set('title', el('ab-ctitle').value);
@@ -698,8 +988,7 @@ async function abCourses() {
   const list = pickArray(await call('GET', '/learning/admin/courses?' + p.toString()));
   const tb = el('ab-ctable').tBodies[0];
   tb.innerHTML = '';
-  el('ab-cempty').style.display = list.length ? 'none' : '';
-  el('ab-ctable').style.display = list.length ? '' : 'none';
+  showTable('ab-ctable', 'ab-cempty', list.length);
   for (const c of list) {
     const tr = tb.insertRow();
     const t = tr.insertCell(); t.dir = 'auto'; t.textContent = c.title ?? '';
@@ -721,8 +1010,7 @@ async function abUnits() {
   const list = pickArray(await call('GET', '/learning/admin/units?' + p.toString()));
   const tb = el('ab-utable').tBodies[0];
   tb.innerHTML = '';
-  el('ab-uempty').style.display = list.length ? 'none' : '';
-  el('ab-utable').style.display = list.length ? '' : 'none';
+  showTable('ab-utable', 'ab-uempty', list.length);
   for (const u of list) {
     const tr = tb.insertRow();
     tr.insertCell().textContent = u.index ?? '';
@@ -744,8 +1032,7 @@ async function abLessons() {
   const list = pickArray(await call('GET', '/learning/admin/lessons?' + p.toString()));
   const tb = el('ab-ltable').tBodies[0];
   tb.innerHTML = '';
-  el('ab-lempty').style.display = list.length ? 'none' : '';
-  el('ab-ltable').style.display = list.length ? '' : 'none';
+  showTable('ab-ltable', 'ab-lempty', list.length);
   for (const l of list) {
     const tr = tb.insertRow();
     tr.insertCell().textContent = l.index ?? '';
@@ -759,9 +1046,8 @@ async function abLessons() {
   }
 }
 
-function abQLimit() { return Number(el('ab-qlimit').value) || 10; }
 function abQPage(dir) {
-  S.abQSkip = Math.max(0, S.abQSkip + dir * abQLimit());
+  S.abQSkip = Math.max(0, S.abQSkip + dir * (Number(el('ab-qlimit').value) || 10));
   abQuestions();
 }
 
@@ -777,12 +1063,10 @@ async function abQuestions() {
   const d = await call('GET', '/learning/admin/questions?' + p.toString());
   const list = pickArray(d);
   S.abQTotal = d?.totalRecords ?? list.length;
-  const from = S.abQTotal ? S.abQSkip + 1 : 0;
-  el('ab-qpageinfo').textContent = `${from}–${S.abQSkip + list.length} of ${S.abQTotal}`;
+  pageInfo('ab-qpageinfo', S.abQSkip, list.length, S.abQTotal);
   const tb = el('ab-qtable').tBodies[0];
   tb.innerHTML = '';
-  el('ab-qempty').style.display = list.length ? 'none' : '';
-  el('ab-qtable').style.display = list.length ? '' : 'none';
+  showTable('ab-qtable', 'ab-qempty', list.length);
   for (const q of list) {
     const tr = tb.insertRow();
     tr.insertCell().textContent = q.index ?? '';
@@ -792,12 +1076,134 @@ async function abQuestions() {
   }
 }
 
+/* ================= keys (admin) ================= */
+async function kMint() {
+  const body = {};
+  if (el('kb-track').value) body.trackId = el('kb-track').value;
+  if (el('kb-school').value) body.schoolId = el('kb-school').value;
+  if (el('kb-count').value) body.count = Number(el('kb-count').value);
+  await call('POST', '/subscription/keys', body);
+  S.kaSkip = 0;
+  kaLoad();
+}
+
+function kaPage(dir) {
+  S.kaSkip = Math.max(0, S.kaSkip + dir * (Number(el('ka-limit').value) || 10));
+  kaLoad();
+}
+
+async function kaLoad() {
+  const p = new URLSearchParams();
+  if (el('kb-track').value) p.set('trackId', el('kb-track').value);
+  if (el('kb-school').value) p.set('schoolId', el('kb-school').value);
+  p.set('skip', S.kaSkip);
+  p.set('limit', el('ka-limit').value);
+  const d = await call('GET', '/subscription/keys?' + p.toString());
+  const list = pickArray(d);
+  S.kaTotal = d?.totalRecords ?? list.length;
+  pageInfo('ka-pageinfo', S.kaSkip, list.length, S.kaTotal);
+  const tb = el('ka-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('ka-table', 'ka-empty', list.length);
+  for (const k of list) {
+    const tr = tb.insertRow();
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.dataset.kid = k.id;
+    tr.insertCell().append(cb);
+    const c = tr.insertCell(); c.className = 'mono'; c.textContent = k.key ?? '';
+    const s = tr.insertCell(); s.dir = 'auto'; s.textContent = k.school?.name ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = k.track?.name ?? '';
+    tr.insertCell().textContent = k.usedById || k.usedBy ? '✓' : '';
+    tr.insertCell().textContent = (k.createdAt || '').slice(0, 10);
+    tr.insertCell().append(
+      miniBtn('use', () => { el('st-key').value = k.key; }),
+      ' ', miniBtn('Delete', () => call('DELETE', `/subscription/keys/${k.id}`).then(kaLoad), true),
+    );
+  }
+}
+
+async function kaBulkDeleteChecked() {
+  const ids = [...document.querySelectorAll('#ka-table input[type=checkbox]:checked')]
+    .map(c => c.dataset.kid);
+  await call('POST', '/subscription/keys/bulk-delete', { ids });
+  kaLoad();
+}
+
+/* ================= subscriptions (admin) ================= */
+function sbPage(dir) {
+  S.sbSkip = Math.max(0, S.sbSkip + dir * (Number(el('sb-limit').value) || 10));
+  sbLoad();
+}
+
+async function sbLoad() {
+  const p = new URLSearchParams();
+  if (el('sb-user').value) p.set('userId', el('sb-user').value);
+  if (el('sb-type').value) p.set('type', el('sb-type').value);
+  if (el('sb-status').value) p.set('status', el('sb-status').value);
+  if (el('sb-sort').value) p.set('sort', el('sb-sort').value);
+  p.set('skip', S.sbSkip);
+  p.set('limit', el('sb-limit').value);
+  const d = await call('GET', '/subscription?' + p.toString());
+  const list = pickArray(d);
+  S.sbTotal = d?.totalRecords ?? list.length;
+  pageInfo('sb-pageinfo', S.sbSkip, list.length, S.sbTotal);
+  const tb = el('sb-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('sb-table', 'sb-empty', list.length);
+  for (const s of list) {
+    const tr = tb.insertRow();
+    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.studentProfile?.user?.name ?? '';
+    tr.insertCell().textContent = s.studentProfile?.user?.email ?? '';
+    tr.insertCell().textContent = s.type ?? '';
+    const e = tr.insertCell();
+    e.textContent = (s.expireDate || '').slice(0, 10);
+    if (s.isExpired || (s.expireDate && new Date(s.expireDate) < new Date())) {
+      e.style.color = '#c0392b'; e.textContent += ' ✕';
+    }
+    tr.insertCell().textContent = (s.createdAt || '').slice(0, 10);
+  }
+}
+
+/* ================= students (admin) ================= */
+function asPage(dir) {
+  S.asSkip = Math.max(0, S.asSkip + dir * (Number(el('as-limit').value) || 10));
+  asLoad();
+}
+
+async function asLoad() {
+  const p = new URLSearchParams();
+  if (el('as-track').value) p.set('trackId', el('as-track').value);
+  if (el('as-school').value) p.set('schoolId', el('as-school').value);
+  if (el('as-name').value) p.set('name', el('as-name').value);
+  p.set('skip', S.asSkip);
+  p.set('limit', el('as-limit').value);
+  const d = await call('GET', '/student?' + p.toString());
+  const list = pickArray(d);
+  S.asTotal = d?.totalRecords ?? list.length;
+  pageInfo('as-pageinfo', S.asSkip, list.length, S.asTotal);
+  const tb = el('as-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('as-table', 'as-empty', list.length);
+  for (const s of list) {
+    const tr = tb.insertRow();
+    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.user?.name ?? '';
+    tr.insertCell().textContent = s.user?.email ?? '';
+    const sc = tr.insertCell(); sc.dir = 'auto'; sc.textContent = s.school?.name ?? '';
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
+    activeCell(tr, s);
+    tr.insertCell().append(
+      miniBtn('view', () => call('GET', `/student/${s.id}`)),
+    );
+  }
+}
+
 /* ================= daily wisement ================= */
 async function wToday() {
   const d = await call('GET', '/daily-wisement/today');
   const box = el('w-today');
   if (d && d.text) {
     box.className = 'card';
+    box.style.marginBottom = '0';
     box.innerHTML = `<div dir="auto" style="font-size:15px">${escapeHtml(d.text)}</div>` +
       `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id}</div>`;
   } else {
@@ -806,9 +1212,8 @@ async function wToday() {
   }
 }
 
-function wLimit() { return Number(el('wf-limit').value) || 10; }
 function wPage(dir) {
-  S.wSkip = Math.max(0, S.wSkip + dir * wLimit());
+  S.wSkip = Math.max(0, S.wSkip + dir * (Number(el('wf-limit').value) || 10));
   loadWisements();
 }
 
@@ -827,13 +1232,11 @@ async function loadWisements() {
 function renderWisements() {
   const tb = el('w-table').tBodies[0];
   tb.innerHTML = '';
-  el('w-empty').style.display = S.wisements.length ? 'none' : '';
-  el('w-table').style.display = S.wisements.length ? '' : 'none';
-  const from = S.wTotal ? S.wSkip + 1 : 0;
-  el('w-pageinfo').textContent = `${from}–${S.wSkip + S.wisements.length} of ${S.wTotal}`;
+  showTable('w-table', 'w-empty', S.wisements.length);
+  pageInfo('w-pageinfo', S.wSkip, S.wisements.length, S.wTotal);
   for (const w of S.wisements) {
     const tr = tb.insertRow();
-    if (w.selected) tr.style.background = '#e9f7ef';
+    if (w.selected) tr.className = 'ok';
     const cb = document.createElement('input');
     cb.type = 'checkbox'; cb.dataset.wid = w.id;
     tr.insertCell().append(cb);
@@ -877,234 +1280,76 @@ async function wBulkDeleteChecked() {
   loadWisements();
 }
 
-/* ================= subscriptions ================= */
-// owners can't hit /school/manage — swallow that and load tracks anyway
-async function refsInto(schoolSelId, trackSelId) {
-  try {
-    const schools = pickArray(await call('GET', '/school/manage'));
-    const sel = el(schoolSelId);
-    sel.length = 1;
-    for (const s of schools) {
-      const o = document.createElement('option');
-      o.value = s.id; o.textContent = s.name || s.id;
-      sel.add(o);
-    }
-  } catch { /* not admin — school select stays empty */ }
-  const tracks = pickArray(await call('GET', '/learning/tracks'));
-  const tsel = el(trackSelId);
-  tsel.length = 1;
-  for (const t of tracks) {
-    const o = document.createElement('option');
-    o.value = t.id; o.textContent = t.name || t.id;
-    tsel.add(o);
+/* ================= my account ================= */
+async function patchMine() {
+  const file = el('me-image').files[0];
+  if (file) {
+    const fd = new FormData();
+    if (el('me-name').value) fd.append('name', el('me-name').value);
+    if (el('me-phone').value) fd.append('phoneNumber', el('me-phone').value);
+    if (el('me-pass').value) fd.append('password', el('me-pass').value);
+    fd.append('image', file);
+    await call('PATCH', '/user/mine', fd, { form: true });
+  } else {
+    const body = {};
+    if (el('me-name').value) body.name = el('me-name').value;
+    if (el('me-phone').value) body.phoneNumber = el('me-phone').value;
+    if (el('me-pass').value) body.password = el('me-pass').value;
+    await call('PATCH', '/user/mine', body);
   }
 }
 
-async function subRedeem() {
+/* ================= public content ================= */
+async function piGet() {
+  const d = await call('GET', '/public-content/info');
+  el('pi-json').value = JSON.stringify(d, null, 2);
+}
+
+async function piSet() {
+  await call('POST', '/public-content/info', el('pi-json').value, { rawText: true });
+}
+
+async function pfList() {
+  const list = pickArray(await call('GET', '/public-content/faqs'));
+  const tb = el('pf-table').tBodies[0];
+  tb.innerHTML = '';
+  showTable('pf-table', 'pf-empty', list.length);
+  for (const f of list) {
+    const tr = tb.insertRow();
+    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = f.title ?? '';
+    const d = tr.insertCell(); d.dir = 'auto'; d.textContent = f.description ?? '';
+    tr.insertCell().append(
+      miniBtn('Edit…', () => pfEdit(f)),
+      ' ', miniBtn('Delete', () => call('DELETE', `/public-content/faqs/${f.id}`).then(pfList), true),
+    );
+  }
+}
+
+function pfEdit(f) {
+  const body = prompt(
+    `PATCH /public-content/faqs/${f.id}\nJSON body — sent exactly as typed:`,
+    JSON.stringify({ title: f.title, description: f.description }),
+  );
+  if (body === null) return;
+  call('PATCH', `/public-content/faqs/${f.id}`, body, { rawText: true }).then(pfList);
+}
+
+async function pfCreate() {
   const body = {};
-  if (el('sb-key').value) body.key = el('sb-key').value;
-  await call('POST', '/subscription/subscribe', body);
+  if (el('pf-title').value) body.title = el('pf-title').value;
+  if (el('pf-desc').value) body.description = el('pf-desc').value;
+  await call('POST', '/public-content/faqs', body);
+  el('pf-title').value = '';
+  el('pf-desc').value = '';
+  pfList();
 }
 
-async function subFreeTrial() {
-  const body = {};
-  if (el('sb-track').value) body.trackId = el('sb-track').value;
-  await call('POST', '/subscription/freeTrial', body);
+/* ================= tools ================= */
+function openFile() {
+  if (!el('fi-id').value) return;
+  window.open(`${API}/files/${el('fi-id').value}`, '_blank');
 }
 
-async function subCreateKeys() {
-  const body = {};
-  if (el('sb-track').value) body.trackId = el('sb-track').value;
-  if (el('sb-school').value) body.schoolId = el('sb-school').value;
-  if (el('sb-count').value) body.count = Number(el('sb-count').value);
-  await call('POST', '/subscription/keys', body);
-  S.subASkip = 0;
-  subAdminKeys();
-}
-
-function subOPage(dir) {
-  S.subOSkip = Math.max(0, S.subOSkip + dir * (Number(el('sb-olimit').value) || 10));
-  subOwnerKeys();
-}
-
-async function subOwnerKeys() {
-  const p = new URLSearchParams();
-  if (el('sb-track').value) p.set('trackId', el('sb-track').value);
-  p.set('skip', S.subOSkip);
-  p.set('limit', el('sb-olimit').value);
-  const d = await call('GET', '/subscription/keys/school?' + p.toString());
-  const list = pickArray(d);
-  S.subOTotal = d?.totalRecords ?? list.length;
-  el('sb-opageinfo').textContent =
-    `${S.subOTotal ? S.subOSkip + 1 : 0}–${S.subOSkip + list.length} of ${S.subOTotal}`;
-  const tb = el('sb-otable').tBodies[0];
-  tb.innerHTML = '';
-  el('sb-oempty').style.display = list.length ? 'none' : '';
-  el('sb-otable').style.display = list.length ? '' : 'none';
-  for (const k of list) {
-    const tr = tb.insertRow();
-    const c = tr.insertCell(); c.className = 'mono'; c.textContent = k.key ?? '';
-    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = k.track?.name ?? '';
-    tr.insertCell().textContent = (k.createdAt || '').slice(0, 10);
-    tr.insertCell().append(
-      miniBtn('use', () => { el('sb-key').value = k.key; }),
-    );
-  }
-}
-
-function subAPage(dir) {
-  S.subASkip = Math.max(0, S.subASkip + dir * (Number(el('sb-alimit').value) || 10));
-  subAdminKeys();
-}
-
-async function subAdminKeys() {
-  const p = new URLSearchParams();
-  if (el('sb-track').value) p.set('trackId', el('sb-track').value);
-  if (el('sb-school').value) p.set('schoolId', el('sb-school').value);
-  p.set('skip', S.subASkip);
-  p.set('limit', el('sb-alimit').value);
-  const d = await call('GET', '/subscription/keys?' + p.toString());
-  const list = pickArray(d);
-  S.subATotal = d?.totalRecords ?? list.length;
-  el('sb-apageinfo').textContent =
-    `${S.subATotal ? S.subASkip + 1 : 0}–${S.subASkip + list.length} of ${S.subATotal}`;
-  const tb = el('sb-atable').tBodies[0];
-  tb.innerHTML = '';
-  el('sb-aempty').style.display = list.length ? 'none' : '';
-  el('sb-atable').style.display = list.length ? '' : 'none';
-  for (const k of list) {
-    const tr = tb.insertRow();
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.dataset.kid = k.id;
-    tr.insertCell().append(cb);
-    const c = tr.insertCell(); c.className = 'mono'; c.textContent = k.key ?? '';
-    const s = tr.insertCell(); s.dir = 'auto'; s.textContent = k.school?.name ?? '';
-    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = k.track?.name ?? '';
-    tr.insertCell().textContent = (k.createdAt || '').slice(0, 10);
-    tr.insertCell().append(
-      miniBtn('use', () => { el('sb-key').value = k.key; }),
-      ' ', miniBtn('Delete', () => call('DELETE', `/subscription/keys/${k.id}`).then(subAdminKeys), true),
-    );
-  }
-}
-
-async function subBulkDeleteChecked() {
-  const ids = [...document.querySelectorAll('#sb-atable input[type=checkbox]:checked')]
-    .map(c => c.dataset.kid);
-  await call('POST', '/subscription/keys/bulk-delete', { ids });
-  subAdminKeys();
-}
-
-/* ================= students ================= */
-async function stuMyProfile() {
-  const box = el('stu-profile');
-  let d;
-  try {
-    d = await call('GET', '/student/profile');
-  } catch {
-    box.className = 'empty';
-    box.textContent = 'no profile — the error is in the log (student role + a redeemed key required)';
-    return;
-  }
-  const expired = d.isExpired ? ' <span style="color:#c0392b">(expired)</span>' : '';
-  const inactive = d.active === false
-    ? '<div style="margin-top:4px;color:#c0392b">deactivated — the school must reactivate you</div>'
-    : '';
-  box.className = 'card';
-  box.innerHTML =
-    `<div dir="auto" style="font-size:15px"><b>${escapeHtml(d.school?.name ?? d.schoolId ?? '')}</b>` +
-    ` — ${escapeHtml(d.track?.name ?? d.trackId ?? '')}</div>` +
-    `<div style="margin-top:6px">expires <b>${(d.expireDate || '').slice(0, 10)}</b>${expired}</div>` +
-    inactive +
-    `<div class="mono" style="font-size:11px;color:var(--mut);margin-top:6px">${d.id}</div>`;
-}
-
-function expiresCell(tr, p) {
-  const c = tr.insertCell();
-  c.textContent = (p.expireDate || '').slice(0, 10);
-  if (p.isExpired) { c.style.color = '#c0392b'; c.textContent += ' ✕'; }
-}
-
-// active=false is what StudentGuard blocks on (Student_2)
-function activeCell(tr, p) {
-  const c = tr.insertCell();
-  if (p.active === false) { c.style.color = '#c0392b'; c.textContent = '✕ off'; }
-  else { c.style.color = '#27ae60'; c.textContent = '✓ on'; }
-}
-
-function stuOPage(dir) {
-  S.stuOSkip = Math.max(0, S.stuOSkip + dir * (Number(el('stu-olimit').value) || 10));
-  stuOwnerList();
-}
-
-async function stuOwnerList() {
-  const p = new URLSearchParams();
-  if (el('stu-track').value) p.set('trackId', el('stu-track').value);
-  if (el('stu-oname').value) p.set('name', el('stu-oname').value);
-  p.set('skip', S.stuOSkip);
-  p.set('limit', el('stu-olimit').value);
-  const d = await call('GET', '/student/school?' + p.toString());
-  const list = pickArray(d);
-  S.stuOTotal = d?.totalRecords ?? list.length;
-  el('stu-opageinfo').textContent =
-    `${S.stuOTotal ? S.stuOSkip + 1 : 0}–${S.stuOSkip + list.length} of ${S.stuOTotal}`;
-  const tb = el('stu-otable').tBodies[0];
-  tb.innerHTML = '';
-  el('stu-oempty').style.display = list.length ? 'none' : '';
-  el('stu-otable').style.display = list.length ? '' : 'none';
-  for (const s of list) {
-    const tr = tb.insertRow();
-    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.user?.name ?? '';
-    tr.insertCell().textContent = s.user?.email ?? '';
-    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
-    expiresCell(tr, s);
-    activeCell(tr, s);
-    const off = s.active === false;
-    tr.insertCell().append(
-      miniBtn('view', () => call('GET', `/student/school/${s.id}`)),
-      ' ', miniBtn(off ? 'Activate' : 'Deactivate',
-        () => call('PATCH', `/student/school/activation/${s.id}`, { active: off }).then(stuOwnerList),
-        !off),
-    );
-  }
-}
-
-function stuAPage(dir) {
-  S.stuASkip = Math.max(0, S.stuASkip + dir * (Number(el('stu-alimit').value) || 10));
-  stuAdminList();
-}
-
-async function stuAdminList() {
-  const p = new URLSearchParams();
-  if (el('stu-track').value) p.set('trackId', el('stu-track').value);
-  if (el('stu-school').value) p.set('schoolId', el('stu-school').value);
-  if (el('stu-aname').value) p.set('name', el('stu-aname').value);
-  p.set('skip', S.stuASkip);
-  p.set('limit', el('stu-alimit').value);
-  const d = await call('GET', '/student?' + p.toString());
-  const list = pickArray(d);
-  S.stuATotal = d?.totalRecords ?? list.length;
-  el('stu-apageinfo').textContent =
-    `${S.stuATotal ? S.stuASkip + 1 : 0}–${S.stuASkip + list.length} of ${S.stuATotal}`;
-  const tb = el('stu-atable').tBodies[0];
-  tb.innerHTML = '';
-  el('stu-aempty').style.display = list.length ? 'none' : '';
-  el('stu-atable').style.display = list.length ? '' : 'none';
-  for (const s of list) {
-    const tr = tb.insertRow();
-    const n = tr.insertCell(); n.dir = 'auto'; n.textContent = s.user?.name ?? '';
-    tr.insertCell().textContent = s.user?.email ?? '';
-    const sc = tr.insertCell(); sc.dir = 'auto'; sc.textContent = s.school?.name ?? '';
-    const t = tr.insertCell(); t.dir = 'auto'; t.textContent = s.track?.name ?? '';
-    expiresCell(tr, s);
-    activeCell(tr, s);
-    tr.insertCell().append(
-      miniBtn('view', () => call('GET', `/student/${s.id}`)),
-    );
-  }
-}
-
-/* ================= raw ================= */
 async function rawSend() {
   const body = el('raw-body').value;
   await call(el('raw-method').value, el('raw-path').value,
@@ -1113,10 +1358,19 @@ async function rawSend() {
 
 /* ================= wire up ================= */
 mountAction('s-login', 'POST', '/auth/login', 'Sign in', doLogin);
-mountAction('s-signup', 'POST', '/auth/signUp', 'Sign up', doSignup);
+mountAction('s-signup', 'POST', '/auth/signUp', 'Sign up (new student)', doSignup);
 mountAction('s-refresh', 'POST', '/auth/refreshToken', 'Refresh token', doRefresh);
 mountAction('s-whoami', 'GET', '/user/mine', 'Who am I?', () => call('GET', '/user/mine'));
-mountAction('s-reload', 'GET', '/learning/tracks', 'Reload tree', loadTracks);
+
+mountAction('s-stprofile', 'GET', '/student/profile', 'My profile', stProfile);
+mountAction('s-stsub', 'GET', '/subscription/me', 'My subscription', stSub);
+mountAction('s-stredeem', 'POST', '/subscription/subscribe', 'Redeem', stRedeem);
+mountAction('s-sttrial', 'POST', '/subscription/freeTrial', 'Start free trial', stTrial);
+
+mountAction('s-scget', 'GET', '/school/me', 'My school', scGet);
+mountAction('s-scedit', 'PATCH', '/school/me', 'Update name / logo', scEdit);
+mountAction('s-scdelimg', 'DELETE', '/school/me/image', 'Remove logo', () =>
+  call('DELETE', '/school/me/image').then(scGet));
 
 mountAction('s-ucreate', 'POST', '/school/me/units', 'Create unit', createUnit);
 mountAction('s-uorder', 'POST', '/school/me/units/order/:courseId', 'Save unit order', saveUnitOrder);
@@ -1136,9 +1390,42 @@ mountAction('s-bload', 'GET', '/school/me/books', 'Load books', loadBooks);
 mountAction('s-bcreate', 'POST', '/school/me/books', 'Create book', createBook);
 mountAction('s-bedit', 'PATCH', '/school/me/books/:id', 'Save book', editBook);
 
+mountAction('s-okload', 'GET', '/subscription/keys/school', 'Load my keys', () => { S.okSkip = 0; okLoad(); });
+mountAction('s-osload', 'GET', '/student/school', 'Load students', () => { S.osSkip = 0; osLoad(); });
+
+mountAction('s-uload', 'GET', '/user', 'Load users', () => { S.uSkip = 0; loadUsers(); });
+mountAction('s-ucreateuser', 'POST', '/user', 'Create user', createUser);
+
+mountAction('s-smload', 'GET', '/school/manage', 'Load schools', () => { S.smSkip = 0; smLoad(); });
+mountAction('s-smcreate', 'POST', '/school/manage', 'Create school', smCreate);
+mountAction('s-smedit', 'PATCH', '/school/manage/:id', 'Save school', smEdit);
+mountAction('s-smdelimg', 'DELETE', '/school/manage/:id/image', 'Remove logo', () =>
+  call('DELETE', `/school/manage/${el('sme-id').value}/image`));
+
+mountAction('s-acallow', 'POST', '/learning/admin/schoolAccess/:schoolId/:trackId', 'Grant access', acAllow);
+mountAction('s-acrevoke', 'DELETE', '/learning/admin/schoolAccess/:schoolId/:trackId', 'Revoke access', acRevoke);
+
+mountAction('s-abcourses', 'GET', '/learning/admin/courses', 'Load courses', abCourses);
+mountAction('s-abunits', 'GET', '/learning/admin/units', 'Load units', abUnits);
+mountAction('s-ablessons', 'GET', '/learning/admin/lessons', 'Load lessons', abLessons);
+mountAction('s-abquestions', 'GET', '/learning/admin/questions', 'Load questions', () => { S.abQSkip = 0; abQuestions(); });
+
+mountAction('s-kmint', 'POST', '/subscription/keys', 'Mint keys', kMint);
+mountAction('s-kaload', 'GET', '/subscription/keys', 'Load all keys', () => { S.kaSkip = 0; kaLoad(); });
+mountAction('s-kabulkdel', 'POST', '/subscription/keys/bulk-delete', 'Delete checked', kaBulkDeleteChecked);
+
+mountAction('s-sbload', 'GET', '/subscription', 'Load subscriptions', () => { S.sbSkip = 0; sbLoad(); });
+mountAction('s-asload', 'GET', '/student', 'Load students', () => { S.asSkip = 0; asLoad(); });
+
+mountAction('s-wtoday', 'GET', '/daily-wisement/today', 'Fetch today', wToday);
+mountAction('s-wload', 'GET', '/daily-wisement', 'Load wisements', () => { S.wSkip = 0; loadWisements(); });
+mountAction('s-wcreate', 'POST', '/daily-wisement', 'Create wisement', wCreate);
+mountAction('s-wbulk', 'POST', '/daily-wisement/bulk', 'Create batch', wBulkCreate);
+mountAction('s-wbulkdel', 'POST', '/daily-wisement/bulk-delete', 'Delete checked', wBulkDeleteChecked);
+
 mountAction('s-mine', 'GET', '/user/mine', 'Fetch my profile', () => call('GET', '/user/mine'));
 mountAction('s-umeta', 'GET', '/user/metaData', 'Roles list', () => call('GET', '/user/metaData'));
-mountAction('s-mepatch', 'PATCH', '/user/mine', 'Update name / image', patchMine);
+mountAction('s-mepatch', 'PATCH', '/user/mine', 'Update profile', patchMine);
 mountAction('s-medelimg', 'DELETE', '/user/mine/image', 'Remove my image', () => call('DELETE', '/user/mine/image'));
 mountAction('s-mecomplete', 'POST', '/user/mine/complete-profile', 'Complete profile', () =>
   call('POST', '/user/mine/complete-profile', {
@@ -1161,54 +1448,44 @@ mountAction('s-reset', 'POST', '/user/mine/reset-password', 'Reset password', ()
       : {}),
   }));
 
-mountAction('s-uload', 'GET', '/user', 'Load users', () => { S.uSkip = 0; loadUsers(); });
-mountAction('s-ucreateuser', 'POST', '/user', 'Create user', createUser);
+mountAction('s-piget', 'GET', '/public-content/info', 'Fetch info', piGet);
+mountAction('s-piset', 'POST', '/public-content/info', 'Set info (admin)', piSet);
+mountAction('s-pflist', 'GET', '/public-content/faqs', 'Load FAQs', pfList);
+mountAction('s-pfcreate', 'POST', '/public-content/faqs', 'Create FAQ (admin)', pfCreate);
 
-mountAction('s-admschools', 'GET', '/school/manage', 'Load schools', admLoadSchools);
-mountAction('s-admallow', 'POST', '/learning/admin/schoolAccess/:schoolId/:trackId', 'Grant access', admAllow);
-mountAction('s-admrevoke', 'DELETE', '/learning/admin/schoolAccess/:schoolId/:trackId', 'Revoke access', admUnAllow);
+mountAction('s-ping', 'GET', '/ping', 'Ping', () => call('GET', '/ping'));
+mountAction('s-errcat', 'GET', '/errors', 'Error catalog', () => call('GET', '/errors'));
+mountAction('s-lmeta', 'GET', '/learning/metaData', 'Learning enums', () => call('GET', '/learning/metaData'));
+mountAction('s-tracks', 'GET', '/learning/tracks', 'Tracks', () => call('GET', '/learning/tracks'));
 
-mountAction('s-abschools', 'GET', '/school/manage', 'Load schools + tracks', abLoadSchools);
-mountAction('s-abcourses', 'GET', '/learning/admin/courses', 'Load courses', abCourses);
-mountAction('s-abunits', 'GET', '/learning/admin/units', 'Load units', abUnits);
-mountAction('s-ablessons', 'GET', '/learning/admin/lessons', 'Load lessons', abLessons);
-mountAction('s-abquestions', 'GET', '/learning/admin/questions', 'Load questions', () => { S.abQSkip = 0; abQuestions(); });
-
-mountAction('s-wtoday', 'GET', '/daily-wisement/today', 'Fetch today', wToday);
-mountAction('s-wload', 'GET', '/daily-wisement', 'Load wisements', () => { S.wSkip = 0; loadWisements(); });
-mountAction('s-wcreate', 'POST', '/daily-wisement', 'Create wisement', wCreate);
-mountAction('s-wbulk', 'POST', '/daily-wisement/bulk', 'Create batch', wBulkCreate);
-mountAction('s-wbulkdel', 'POST', '/daily-wisement/bulk-delete', 'Delete checked', wBulkDeleteChecked);
-mountAction('s-subrefs', 'GET', '/school/manage', 'Load schools + tracks', () => refsInto('sb-school', 'sb-track'));
-mountAction('s-subredeem', 'POST', '/subscription/subscribe', 'Redeem', subRedeem);
-mountAction('s-subtrial', 'POST', '/subscription/freeTrial', 'Start free trial', subFreeTrial);
-mountAction('s-subcreate', 'POST', '/subscription/keys', 'Mint keys', subCreateKeys);
-mountAction('s-subokeys', 'GET', '/subscription/keys/school', 'Load my keys', () => { S.subOSkip = 0; subOwnerKeys(); });
-mountAction('s-subakeys', 'GET', '/subscription/keys', 'Load all keys', () => { S.subASkip = 0; subAdminKeys(); });
-mountAction('s-subbulkdel', 'POST', '/subscription/keys/bulk-delete', 'Delete checked', subBulkDeleteChecked);
-mountAction('s-sturefs', 'GET', '/school/manage', 'Load schools + tracks', () => refsInto('stu-school', 'stu-track'));
-mountAction('s-stuprofile', 'GET', '/student/profile', 'My profile', stuMyProfile);
-mountAction('s-stuown', 'GET', '/student/school', 'Load students', () => { S.stuOSkip = 0; stuOwnerList(); });
-mountAction('s-stuadmin', 'GET', '/student', 'Load students', () => { S.stuASkip = 0; stuAdminList(); });
-
-el('c-track').onchange = onTrack;
-el('c-course').onchange = onCourse;
-el('c-unit').onchange = onUnit;
-el('c-lesson').onchange = onLesson;
+el('pk-track').onchange = onTrack;
+el('pk-course').onchange = onCourse;
+el('pk-unit').onchange = onUnit;
+el('pk-lesson').onchange = onLesson;
 
 /* ================= boot ================= */
-el('a-env').value = ENV;
-el('a-env').onchange = (e) => setEnv(e.target.value);
-resetChainFrom('c-course');
-renderQuestions();
+const envSel = el('h-env');
+for (const [k, v] of Object.entries(ENVS)) {
+  const o = document.createElement('option');
+  o.value = k; o.textContent = v.label;
+  envSel.add(o);
+}
+envSel.value = ENV;
+envSel.onchange = (e) => setEnv(e.target.value);
+
 el('wb-json').value = JSON.stringify(
   { items: [{ text: 'حكمة اليوم الأولى' }, { text: 'حكمة اليوم الثانية' }] },
   null, 2,
 );
-fillChain(el('c-track'), [], 'sign in first');
-el('a-email').value = localStorage.getItem('email') || 'content@hul.com';
-el('a-pass').value = localStorage.getItem('pw') || '12345678';
-if (localStorage.getItem('tk')) {
-  setStatus('token in storage — tree loading', true);
-  loadMeta().then(loadTracks);
-}
+el('se-email').value = localStorage.getItem('nk.lastEmail') || 'admin@hul.com';
+el('se-pass').value = localStorage.getItem('nk.lastPass') || '12345678';
+el('se-email').onchange = () => localStorage.setItem('nk.lastEmail', el('se-email').value);
+el('se-pass').onchange = () => localStorage.setItem('nk.lastPass', el('se-pass').value);
+
+applyEnv();
+applyRole();
+renderSession();
+resetChainFrom('pk-course');
+fillSelect(el('pk-track'), [], 'sign in first');
+renderQuestions();
+if (currentAccount()) bootRefs();
