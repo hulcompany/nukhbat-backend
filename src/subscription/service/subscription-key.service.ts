@@ -9,6 +9,7 @@ import {
   EntityManager,
   FindOptionsWhere,
   In,
+  IsNull,
   Repository,
 } from 'typeorm';
 import { randomBytes } from 'crypto';
@@ -51,7 +52,11 @@ export class SubscriptionKeyService {
     const qb = this.repo
       .createQueryBuilder('sk')
       .leftJoinAndSelect('sk.school', 'school')
-      .leftJoinAndSelect('sk.track', 'track');
+      .leftJoinAndSelect('sk.track', 'track')
+      // who redeemed the key: key → subscription → profile → user
+      .leftJoinAndSelect('sk.usedBy', 'usedBy')
+      .leftJoinAndSelect('usedBy.studentProfile', 'profile')
+      .leftJoinAndSelect('profile.user', 'user');
     qb.orderBy('sk.createdAt', params.sort);
 
     applyPsqlFilter({
@@ -104,6 +109,19 @@ export class SubscriptionKeyService {
       );
     }
     return keys;
+  }
+
+  // single-use, atomically: only claims the key if it is still available
+  // (usedById IS NULL). A concurrent redeem of the same key updates 0 rows
+  // and this throws, rolling the surrounding transaction back.
+  async markUsed(keyId: UUID, subscriptionId: UUID, em?: EntityManager) {
+    const res = await this.getRepo(em).update(
+      { id: keyId, usedById: IsNull() },
+      { usedById: subscriptionId },
+    );
+    if (res.affected !== 1) {
+      throw new BadRequestException('Subscription key already used');
+    }
   }
 
   async delete(filter: FindOptionsWhere<SubscriptionKey>, em?: EntityManager) {

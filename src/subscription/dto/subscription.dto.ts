@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -11,6 +12,27 @@ import {
 import { OmitType } from '@nestjs/mapped-types';
 import { BasePaginationDto } from 'core';
 import { UUID } from 'crypto';
+import { SubscriptionType } from '../entity/subscription.entity';
+
+// admin-only listing across every subscription
+export enum SubscriptionStatusFilter {
+  active = 'active',
+  expired = 'expired',
+}
+
+export class SubscriptionGetDto extends BasePaginationDto {
+  @IsUUID()
+  @IsOptional()
+  userId?: UUID;
+
+  @IsEnum(SubscriptionType)
+  @IsOptional()
+  type?: SubscriptionType;
+
+  @IsEnum(SubscriptionStatusFilter)
+  @IsOptional()
+  status?: SubscriptionStatusFilter;
+}
 
 export class SubscriptionKeyCreateDto {
   @IsUUID()

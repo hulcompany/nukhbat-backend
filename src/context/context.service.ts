@@ -28,6 +28,26 @@ export class Context {
     return school;
   }
 
+  get studentOrNull() {
+    return this.req.context?.student;
+  }
+
+  get student() {
+    const student = this.req.context?.student;
+    if (!student) throw new Error('No Student');
+    return student;
+  }
+
+  get subscriptionOrNull() {
+    return this.req.context?.subscription;
+  }
+
+  get subscription() {
+    const subscription = this.req.context?.subscription;
+    if (!subscription) throw new Error('No Subscription');
+    return subscription;
+  }
+
   get context() {
     return this.req.context;
   }

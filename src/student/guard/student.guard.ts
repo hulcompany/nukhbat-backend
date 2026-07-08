@@ -3,42 +3,52 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  mixin,
+  Type,
 } from '@nestjs/common';
 import { ErrorsRecord } from 'core';
 import { StudentProfileService } from '../service/student-profile.service';
 import { StudentErrorCodes } from '../errors';
 
-@Injectable()
-export class StudentGuard implements CanActivate {
-  constructor(private readonly service: StudentProfileService) {}
+// Loads the caller's StudentProfile onto request.context.student. Cares only
+// about identity — subscription/expiry is SubscriptionGuard's job.
+//  - no options        → just requires a profile to exist (Student_1)
+//  - { requireActive } → school must not have deactivated them (Student_2)
+// Mirrors the RoleGuard(...) factory idiom so options are set per-route.
+export function StudentGuard(options?: {
+  requireActive?: boolean;
+}): Type<CanActivate> {
+  @Injectable()
+  class StudentGuardMixin implements CanActivate {
+    constructor(private readonly service: StudentProfileService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+      const request = context.switchToHttp().getRequest();
 
-    const userId = request.user.id;
-    if (!userId) {
-      throw new ForbiddenException(
-        ErrorsRecord.getError(StudentErrorCodes.StudentError_1),
-      );
+      const userId = request.user?.id;
+      if (!userId) {
+        throw new ForbiddenException(
+          ErrorsRecord.getError(StudentErrorCodes.StudentError_1),
+        );
+      }
+
+      const student = await this.service.findOne({ user: { id: userId } });
+      if (!student) {
+        throw new ForbiddenException(
+          ErrorsRecord.getError(StudentErrorCodes.StudentError_1),
+        );
+      }
+
+      if (options?.requireActive && !student.active) {
+        throw new ForbiddenException(
+          ErrorsRecord.getError(StudentErrorCodes.StudentError_2),
+        );
+      }
+
+      request.context.student = student;
+      return true;
     }
-    const student = await this.service.findOne({
-      user: { id: userId },
-    });
-
-    if (!student) {
-      throw new ForbiddenException(
-        ErrorsRecord.getError(StudentErrorCodes.StudentError_1),
-      );
-    }
-
-    if (!student.active) {
-      throw new ForbiddenException(
-        ErrorsRecord.getError(StudentErrorCodes.StudentError_2),
-      );
-    }
-
-    request.context.student = student;
-
-    return true;
   }
+
+  return mixin(StudentGuardMixin);
 }

@@ -1,109 +1,197 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
-import { DataSource } from 'typeorm';
-import { transaction } from 'core';
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import {
+  applyPsqlFilter,
+  BasePaginationModel,
+  SortType,
+  transaction,
+} from 'core';
 import { SubscriptionKeyService } from './subscription-key.service';
 import { StudentProfileService } from '../../student/service/student-profile.service';
-import { StudentProfile } from '../../student/entity/student-profile.entity';
+import { Subscription, SubscriptionType } from '../entity/subscription.entity';
+import {
+  SubscriptionGetDto,
+  SubscriptionStatusFilter,
+} from '../dto/subscription.dto';
 import { AppConfig } from '../../conf';
 import { LearningService } from '../../learning/learning.service';
-import { UserService } from '../../core/user/service/user.service';
-import { RoleType } from '../../core';
 import { SchoolService } from '../../school/school.service';
-import { CoreService } from '../../core/core.service';
 
 @Injectable()
 export class SubscriptionService {
   constructor(
+    @InjectRepository(Subscription)
+    private readonly repo: Repository<Subscription>,
     private readonly keys: SubscriptionKeyService,
     private readonly profiles: StudentProfileService,
     private readonly learningService: LearningService,
-    private readonly coreService: CoreService,
     private readonly schoolService: SchoolService,
     private readonly ds: DataSource,
   ) {}
 
-  // redeem a key: the profile is created/renewed and the key consumed
-  // (single use) in one transaction — a concurrent redeem of the same
-  // key hits 0 affected rows on the delete and rolls back
+  private getRepo(em?: EntityManager) {
+    return em?.getRepository(Subscription) ?? this.repo;
+  }
+
+  // the caller's current live (non-expired) subscription, if any —
+  // SubscriptionGuard's access check
+  async findLiveByUser(userId: UUID, em?: EntityManager) {
+    return await this.getRepo(em)
+      .createQueryBuilder('sub')
+      .innerJoinAndSelect('sub.studentProfile', 'profile')
+      .where('profile.userId = :userId', { userId })
+      .andWhere('sub.expireDate > now()')
+      .orderBy('sub.expireDate', 'DESC')
+      .getOne();
+  }
+
+  // the caller's current live PAID subscription, if any. A live free trial
+  // deliberately does not count — it may be upgraded straight to paid.
+  async findLivePaidByUser(userId: UUID, em?: EntityManager) {
+    return await this.getRepo(em)
+      .createQueryBuilder('sub')
+      .innerJoin('sub.studentProfile', 'profile')
+      .where('profile.userId = :userId', { userId })
+      .andWhere('sub.type = :type', { type: SubscriptionType.paid })
+      .andWhere('sub.expireDate > now()')
+      .getOne();
+  }
+
+  // the caller's most recent subscription regardless of expiry — lets the
+  // client show "expired, renew" now that expiry no longer sits on the profile
+  async findLatestByUser(userId: UUID, em?: EntityManager) {
+    return await this.getRepo(em)
+      .createQueryBuilder('sub')
+      .innerJoinAndSelect('sub.studentProfile', 'profile')
+      .where('profile.userId = :userId', { userId })
+      .orderBy('sub.expireDate', 'DESC')
+      .getOne();
+  }
+
+  // Free trial: a one-shot freeTrial subscription on the default school.
+  // enroll() enforces one-profile-per-user, so a trial is only ever a
+  // brand-new student's first touch.
   async freeTrial(userId: UUID, trackId: UUID) {
-    let user = await this.coreService.findUserById(userId);
-    if (user.role != RoleType.student) {
-      throw new BadRequestException('Only Student are allowed to join.');
-    }
-    let defaultSchool = await this.schoolService.findOneOrFail({
+    const defaultSchool = await this.schoolService.findOneOrFail({
       default: true,
     });
-    let old = await this.profiles.findOne({ userId: userId });
-    if (old) {
-      throw new BadRequestException(
-        'Student is not allowed to have a free trial.',
+    await this.learningService.assertSchoolTrackAccess(
+      defaultSchool.id,
+      trackId,
+    );
+
+    return await transaction(this.ds, async (em) => {
+      // free trial is once ever: block if the student has any subscription.
+      // Inside the transaction so two concurrent trial requests can't both
+      // pass the check (enroll no longer throws on an existing profile).
+      const anyOld = await this.getRepo(em).findOne({
+        where: {
+          studentProfile: { user: { id: userId } },
+        },
+      });
+      if (anyOld) {
+        throw new BadRequestException(
+          'You are not allowed for free trial anymore .',
+        );
+      }
+
+      const profile = await this.profiles.enroll(
+        { userId, schoolId: defaultSchool.id, trackId },
+        em,
       );
-    }
-    let expireAt = new Date();
-    expireAt.setFullYear(expireAt.getDay() + AppConfig.FREE_TRIAL_DAYS);
-    return await this.profiles.create({
-      userId: userId,
-      schoolId: defaultSchool.id,
-      trackId: trackId,
-      expireDate: expireAt,
+
+      const expireDate = new Date();
+      expireDate.setDate(expireDate.getDate() + AppConfig.FREE_TRIAL_DAYS);
+
+      return await this.getRepo(em).save(
+        this.getRepo(em).create({
+          type: SubscriptionType.freeTrial,
+          expireDate,
+          studentProfile: { id: profile.id },
+        }),
+      );
     });
   }
 
+  // Redeem a key: enrolls the student (first touch) or adds a paid
+  // subscription to their existing profile, then consumes the key — all in
+  // one transaction. Owns the redemption policy; the student module owns the
+  // profile write.
   async subscribe(params: { key: string; userId: UUID }) {
     return await transaction(this.ds, async (em) => {
-      let key = await this.keys.findOneOrFail({ key: params.key }, em);
+      // a live free trial is fine (upgrade path); only a live PAID sub blocks
+      const livePaid = await this.findLivePaidByUser(params.userId, em);
+      if (livePaid) {
+        throw new BadRequestException('Wait until your subscription ends');
+      }
+      const key = await this.keys.findOneOrFail({ key: params.key }, em);
+      if (key.usedById) {
+        throw new BadRequestException('Subscription key already used');
+      }
       await this.learningService.assertSchoolTrackAccess(
         key.schoolId,
         key.trackId,
       );
-
-      let expireAt = new Date();
-      expireAt.setFullYear(expireAt.getFullYear() + AppConfig.KEY_AGE_YEAR);
-
-      // one profile per student, pinned to one school + track forever:
-      // a still-running subscription blocks the redeem, an expired one
-      // gets renewed in place — same school and track only
-      let existing = await this.profiles.findOne(
-        { userId: params.userId },
-        undefined,
+      const expireDate = new Date();
+      expireDate.setFullYear(expireDate.getFullYear() + AppConfig.KEY_AGE_YEAR);
+      let profile = await this.profiles.enroll(
+        {
+          userId: params.userId,
+          schoolId: key.schoolId,
+          trackId: key.trackId,
+        },
         em,
       );
+      const subscription = await this.getRepo(em).save(
+        this.getRepo(em).create({
+          type: SubscriptionType.paid,
+          expireDate,
+          studentProfile: { id: profile.id },
+        }),
+      );
 
-      let profile: StudentProfile;
-      if (existing) {
-        if (!existing.isExpired) {
-          throw new BadRequestException('Wait until your subscription ends');
-        }
-        if (existing.schoolId != key.schoolId) {
-          throw new BadRequestException(
-            'Subscription key belongs to a different school',
-          );
-        }
-        if (existing.trackId != key.trackId) {
-          throw new BadRequestException(
-            'Subscription key is for a different track',
-          );
-        }
-        profile = await this.profiles.update(
-          { id: existing.id },
-          { expireDate: expireAt },
-          em,
-        );
-      } else {
-        profile = await this.profiles.create(
-          {
-            userId: params.userId,
-            schoolId: key.schoolId,
-            trackId: key.trackId,
-            expireDate: expireAt,
-          },
-          em,
-        );
-      }
+      await this.keys.markUsed(key.id, subscription.id, em);
+      return subscription;
+    });
+  }
 
-      await this.keys.delete({ id: key.id }, em);
-      return profile;
+  // admin-only listing across all subscriptions
+  async getByCriteria(params: SubscriptionGetDto) {
+    const qb = this.repo
+      .createQueryBuilder('sub')
+      .leftJoinAndSelect('sub.studentProfile', 'profile')
+      .leftJoinAndSelect('profile.user', 'user')
+      .orderBy('sub.createdAt', params.sort || SortType.Desc);
+
+    applyPsqlFilter({
+      queryBuilder: qb,
+      query: params,
+      options: {
+        userId: {
+          value: (v) => ['profile.userId = :userId', { userId: v }],
+        },
+        type: {
+          value: (v) => ['sub.type = :type', { type: v }],
+        },
+        status: {
+          value: (v) => [
+            v === SubscriptionStatusFilter.active
+              ? 'sub.expireDate > now()'
+              : 'sub.expireDate <= now()',
+            {},
+          ],
+        },
+      },
+    });
+
+    const [data, count] = await qb.getManyAndCount();
+    return new BasePaginationModel({
+      list: data,
+      totalRecords: count,
+      skip: params.skip,
+      limit: params.limit,
     });
   }
 }

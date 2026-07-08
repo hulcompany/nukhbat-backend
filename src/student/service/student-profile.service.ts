@@ -71,12 +71,40 @@ export class StudentProfileService {
     return await repo.save(params);
   }
 
+  // --- lifecycle ---
+
+  // first-touch enrollment: one profile per user, ever. Whatever school the
+  // student lands on first (default school via free trial, or the key's
+  // school via subscribe) is permanent — the school + track set here never
+  // change. The access window is a separate Subscription, so there is no
+  // renew() here; the subscription module just adds Subscription rows.
+  async enroll(
+    params: { userId: UUID; schoolId: UUID; trackId: UUID },
+    em?: EntityManager,
+  ) {
+    const existing = await this.findOne(
+      { userId: params.userId },
+      undefined,
+      em,
+    );
+    if (existing) {
+      if (existing.trackId !== params.trackId) {
+        throw new BadRequestException("You Can't change student track");
+      }
+      if (existing.schoolId !== params.schoolId) {
+        throw new BadRequestException("You Can't change student school");
+      }
+      return existing;
+    }
+    return await this.create(params, em);
+  }
+
   async update(
     filter: FindOptionsWhere<StudentProfile>,
     data: DeepPartial<StudentProfile>,
     em?: EntityManager,
   ) {
-    let old = await this.findOneOrFail(filter);
+    let old = await this.findOneOrFail(filter, undefined, em);
     if (old.schoolId && (data.school || data.schoolId)) {
       throw new BadRequestException("You Can't change student school");
     }

@@ -30,14 +30,14 @@ export class StudentController {
     private readonly ctxt: Context,
   ) {}
 
-  // one profile per student (single school + track, never changes)
+  // one profile per student (single school + track, never changes).
+  // Bare guard: expired/deactivated students can still read their own
+  // profile (so the client can prompt a renewal). school + track are
+  // eager, so the guard-loaded profile already carries them.
   @Get('profile')
-  @UseGuards(RoleGuard([RoleType.student]), StudentGuard)
+  @UseGuards(RoleGuard([RoleType.student]), StudentGuard())
   async getMyProfile() {
-    return await this.profiles.findOneOrFail(
-      { userId: this.ctxt.user.id },
-      { school: true, track: true },
-    );
+    return this.ctxt.student;
   }
 
   @Get('school')

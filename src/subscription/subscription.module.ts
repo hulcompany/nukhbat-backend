@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubscriptionKey } from './entity/subscription-key.entity';
+import { Subscription } from './entity/subscription.entity';
 import { SubscriptionKeyService } from './service/subscription-key.service';
 import { SubscriptionService } from './service/subscription.service';
 import { SubscriptionController } from './subscription.controller';
@@ -12,7 +13,7 @@ require('./errors');
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SubscriptionKey]),
+    TypeOrmModule.forFeature([SubscriptionKey, Subscription]),
     // StudentProfileService for subscribe; SchoolService for SchoolOwnerGuard
     StudentModule,
     SchoolModule,
@@ -20,6 +21,8 @@ require('./errors');
   ],
   controllers: [SubscriptionController],
   providers: [SubscriptionKeyService, SubscriptionService],
-  exports: [SubscriptionKeyService],
+  // SubscriptionService is exported so SubscriptionGuard can be used by other
+  // modules (e.g. learning content routes)
+  exports: [SubscriptionKeyService, SubscriptionService],
 })
 export class SubscriptionModule {}

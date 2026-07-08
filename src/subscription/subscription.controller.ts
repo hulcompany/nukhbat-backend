@@ -19,6 +19,7 @@ import { SubscriptionKeyService } from './service/subscription-key.service';
 import {
   SubscribeDto,
   SubscribeFreeTrialDto,
+  SubscriptionGetDto,
   SubscriptionKeyCreateManyDto,
   SubscriptionKeyGetDto,
   SubscriptionKeySchoolGetDto,
@@ -48,6 +49,22 @@ export class SubscriptionController {
   @UseGuards(RoleGuard([RoleType.student]))
   async freeTrial(@Body() body: SubscribeFreeTrialDto) {
     return await this.service.freeTrial(this.ctxt.user.id, body.trackId);
+  }
+
+  // the caller's own latest subscription (live or expired). Now that expiry
+  // lives on Subscription (not the profile), the client reads it here to show
+  // remaining time / prompt a renewal.
+  @Get('me')
+  @UseGuards(RoleGuard([RoleType.student]))
+  async getMySubscription() {
+    return await this.service.findLatestByUser(this.ctxt.user.id);
+  }
+
+  // admin: paginate/filter every subscription (userId, type, status)
+  @Get()
+  @UseGuards(RoleGuard([RoleType.admin]))
+  async getSubscriptions(@Query() query: SubscriptionGetDto) {
+    return await this.service.getByCriteria(query);
   }
 
   // owner view: pinned to their school; the DTO has no schoolId field

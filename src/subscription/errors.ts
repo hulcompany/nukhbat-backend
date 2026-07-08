@@ -1,12 +1,12 @@
-// import { ErrorsRecord } from 'core';
+import { ErrorsRecord } from 'core';
 
-// export enum SubscriptionErrorCodes {
-//   SubscriptionError_1 = 'SubscriptionError_1',
-// }
+export enum SubscriptionErrorCodes {
+  Subscription_1 = 'Subscription_1',
+}
 
-// ErrorsRecord.addErrors('Subscription', [
-//   {
-//     code: SubscriptionErrorCodes.SubscriptionError_1,
-//     description: 'Key o',
-//   },
-// ]);
+ErrorsRecord.addErrors('subscription', [
+  {
+    code: SubscriptionErrorCodes.Subscription_1,
+    description: 'You have no active subscription',
+  },
+]);

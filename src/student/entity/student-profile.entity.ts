@@ -10,7 +10,6 @@ import {
 import { User } from '../../core/user/entity/user.entity';
 import { School } from '../../school/entity/school.entity';
 import { Track } from '../../learning/tracks/entity/track.entity';
-import { Expose } from 'class-transformer';
 
 @Entity()
 // hey claude here is one profile per user
@@ -25,10 +24,8 @@ export class StudentProfile {
   @ManyToOne(() => User)
   user: User;
 
-  @Column('timestamptz')
-  expireDate: Date;
-
-  // only the owning school toggles this; false blocks the StudentGuard
+  // only the owning school toggles this; false blocks the StudentGuard.
+  // The access window (expiry) lives on Subscription, not here.
   @Column({ default: true })
   active: boolean;
 
@@ -46,9 +43,4 @@ export class StudentProfile {
 
   @CreateDateColumn()
   createdAt: Date;
-
-  @Expose()
-  get isExpired() {
-    return this.expireDate < new Date();
-  }
 }
