@@ -14,6 +14,9 @@ export class InfoService {
     old.googlePlay = data.googlePlay;
     old.phone = data.phone;
     old.location = data.location;
+    old.about = data.about;
+    old.privacyPolicy = data.privacyPolicy;
+    old.termsAndConditions = data.termsAndConditions;
 
     if (data.position?.lat && data.position?.lng) {
       old.position = { lat: data.position!.lat, lng: data.position!.lng };

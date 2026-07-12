@@ -15,4 +15,10 @@ export class Info {
   location?: string;
   @Column('json', { nullable: true })
   position?: { lat: number; lng: number };
+  @Column('text', { nullable: true })
+  about?: string;
+  @Column('text', { nullable: true })
+  privacyPolicy?: string;
+  @Column('text', { nullable: true })
+  termsAndConditions?: string;
 }

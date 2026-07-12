@@ -2100,7 +2100,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"googlePlay\": \"https://play.google.com/store/apps/details?id=app\",\n  \"appStore\": \"https://apps.apple.com/app/id000000\",\n  \"phone\": \"+963900000000\",\n  \"location\": \"Damascus\",\n  \"position\": { \"lat\": 33.5138, \"lng\": 36.2765 }\n}",
+              "raw": "{\n  \"googlePlay\": \"https://play.google.com/store/apps/details?id=app\",\n  \"appStore\": \"https://apps.apple.com/app/id000000\",\n  \"phone\": \"+963900000000\",\n  \"location\": \"Damascus\",\n  \"position\": { \"lat\": 33.5138, \"lng\": 36.2765 },\n  \"about\": \"About the platform...\",\n  \"privacyPolicy\": \"Privacy policy text...\",\n  \"termsAndConditions\": \"Terms and conditions text...\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

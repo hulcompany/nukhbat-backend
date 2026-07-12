@@ -25,4 +25,13 @@ export class InfoDto {
   @IsOptional()
   @Type(() => LatLngDto)
   position?: LatLngDto;
+  @IsString()
+  @IsOptional()
+  about?: string;
+  @IsString()
+  @IsOptional()
+  privacyPolicy?: string;
+  @IsString()
+  @IsOptional()
+  termsAndConditions?: string;
 }

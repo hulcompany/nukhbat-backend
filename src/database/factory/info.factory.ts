@@ -12,5 +12,8 @@ export const InfoFactory = setSeederFactory(Info, (faker: Faker) => {
     lat: faker.location.latitude(),
     lng: faker.location.longitude(),
   };
+  info.about = faker.lorem.paragraphs(2);
+  info.privacyPolicy = faker.lorem.paragraphs(3);
+  info.termsAndConditions = faker.lorem.paragraphs(3);
   return info;
 });
