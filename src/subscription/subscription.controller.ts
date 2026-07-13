@@ -57,7 +57,7 @@ export class SubscriptionController {
   @Get('me')
   @UseGuards(RoleGuard([RoleType.student]))
   async getMySubscription() {
-    return await this.service.findLatestByUser(this.ctxt.user.id);
+    return await this.service.findMyCurrentSubscription(this.ctxt.user.id);
   }
 
   // admin: paginate/filter every subscription (userId, type, status)

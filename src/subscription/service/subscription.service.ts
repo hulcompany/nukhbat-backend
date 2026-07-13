@@ -5,6 +5,7 @@ import { DataSource, EntityManager, MoreThan, Repository } from 'typeorm';
 import {
   applyPsqlFilter,
   BasePaginationModel,
+  ErrorsRecord,
   SortType,
   transaction,
 } from 'core';
@@ -18,6 +19,7 @@ import {
 import { AppConfig } from '../../conf';
 import { LearningService } from '../../learning/learning.service';
 import { SchoolService } from '../../school/school.service';
+import { SubscriptionErrorCodes } from '../errors';
 
 @Injectable()
 export class SubscriptionService {
@@ -60,12 +62,18 @@ export class SubscriptionService {
 
   // the caller's most recent subscription regardless of expiry — lets the
   // client show "expired, renew" now that expiry no longer sits on the profile
-  async findLatestByUser(userId: UUID, em?: EntityManager) {
-    return await this.getRepo(em).findOne({
+  async findMyCurrentSubscription(userId: UUID, em?: EntityManager) {
+    let res = await this.getRepo(em).findOne({
       where: { studentProfile: { userId } },
       relations: { studentProfile: true },
       order: { expireDate: 'DESC' },
     });
+    if (!res) {
+      throw new BadRequestException(
+        ErrorsRecord.getError(SubscriptionErrorCodes.Subscription_1),
+      );
+    }
+    return res;
   }
 
   // Free trial: a one-shot freeTrial subscription on the default school.
