@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/public-content/info"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "googlePlay": "https://play.google.com/store/apps/details?id=app",
+      "appStore": "https://apps.apple.com/app/id000000",
+      "phone": "+963900000000",
+      "location": "Damascus",
+      "position": { "lat": 33.5138, "lng": 36.2765 },
+      "about": "About the platform...",
+      "privacyPolicy": "Privacy policy text...",
+      "termsAndConditions": "Terms and conditions text..."
+    }
+order: 2000

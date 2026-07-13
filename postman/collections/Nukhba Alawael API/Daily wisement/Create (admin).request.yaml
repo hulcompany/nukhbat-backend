@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/api/daily-wisement"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "text": "A word of wisdom for the day."
+    }
+order: 3000

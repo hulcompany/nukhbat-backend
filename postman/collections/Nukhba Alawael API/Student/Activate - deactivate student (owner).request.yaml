@@ -1,0 +1,16 @@
+$kind: http-request
+name: Activate / deactivate student (owner)
+description: "Role: contentWriter. Only the owning school toggles active. active=false blocks the student (StudentGuard -> 403 Student_2). Foreign profile reads as 404."
+url: "{{baseUrl}}/api/student/school/activation/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "active": false
+    }
+order: 4000

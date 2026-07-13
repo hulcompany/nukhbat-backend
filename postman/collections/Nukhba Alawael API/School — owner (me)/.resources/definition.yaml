@@ -1,0 +1,3 @@
+$kind: collection
+description: "Requires role: contentWriter (school owner). All routes under /api/school/me."
+order: 6000

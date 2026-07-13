@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/user/mine/request-verify"
+method: POST
+order: 3000

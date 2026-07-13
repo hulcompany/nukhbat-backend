@@ -1,0 +1,7 @@
+$kind: http-request
+description: "Role: admin."
+url: "{{baseUrl}}/api/subscription/keys/:id"
+method: DELETE
+pathVariables:
+  id: ""
+order: 8000

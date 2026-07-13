@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/user/mine/image"
+method: DELETE
+order: 9000

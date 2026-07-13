@@ -1,0 +1,15 @@
+$kind: http-request
+description: "All-or-nothing: a missing id or the currently selected wisement in the list fails the whole batch."
+url: "{{baseUrl}}/api/daily-wisement/bulk-delete"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "ids": [
+        "00000000-0000-0000-0000-000000000000"
+      ]
+    }
+order: 7000

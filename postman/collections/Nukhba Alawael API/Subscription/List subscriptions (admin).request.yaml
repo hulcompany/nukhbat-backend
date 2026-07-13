@@ -1,0 +1,24 @@
+$kind: http-request
+description: "Role: admin. Paginated across every subscription; filter by userId, type, status."
+url: "{{baseUrl}}/api/subscription?skip=0&limit=10"
+method: GET
+queryParams:
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: userId
+    value: ""
+    disabled: true
+  - key: type
+    value: paid
+    disabled: true
+    description: freeTrial | paid
+  - key: status
+    value: active
+    disabled: true
+    description: active | expired
+  - key: sort
+    value: DESC
+    disabled: true
+order: 4000

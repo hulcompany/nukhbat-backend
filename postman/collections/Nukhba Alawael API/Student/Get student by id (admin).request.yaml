@@ -1,0 +1,7 @@
+$kind: http-request
+description: "Role: admin."
+url: "{{baseUrl}}/api/student/:id"
+method: GET
+pathVariables:
+  id: ""
+order: 6000

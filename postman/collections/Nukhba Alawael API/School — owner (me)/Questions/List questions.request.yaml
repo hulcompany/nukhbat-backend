@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/questions?skip=0&limit=10"
+method: GET
+queryParams:
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: courseId
+    value: ""
+    disabled: true
+  - key: lessonId
+    value: ""
+    disabled: true
+  - key: title
+    value: ""
+    disabled: true
+order: 1000

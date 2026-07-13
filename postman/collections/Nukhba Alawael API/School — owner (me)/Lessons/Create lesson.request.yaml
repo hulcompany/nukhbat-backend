@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/lessons"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Lesson 1",
+      "description": "Optional description",
+      "unitId": "00000000-0000-0000-0000-000000000000"
+    }
+order: 2000

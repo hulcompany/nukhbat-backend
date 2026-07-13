@@ -1,0 +1,3 @@
+$kind: collection
+description: "Subscription keys (6 groups: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX, single use). Subscribe: student. keys/school: school owner. keys CRUD: admin."
+order: 12000

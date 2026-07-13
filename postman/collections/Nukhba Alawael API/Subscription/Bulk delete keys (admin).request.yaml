@@ -1,0 +1,13 @@
+$kind: http-request
+description: "Role: admin. All-or-nothing: any missing id cancels the whole batch."
+url: "{{baseUrl}}/api/subscription/keys/bulk-delete"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "ids": []
+    }
+order: 9000

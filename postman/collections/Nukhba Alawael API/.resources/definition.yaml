@@ -1,0 +1,17 @@
+$kind: collection
+description: |-
+  Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.
+
+  Auth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.
+
+  Roles: admin (user/manage, school/manage, learning/admin, public-content writes), contentWriter (school/me tree), public (auth, files, learning metaData/tracks, public-content reads).
+variables:
+  baseUrl: http://localhost:3000
+  accessToken: ""
+  refreshToken: ""
+auth:
+  - id: 84317c86-2a43-497f-8073-e522f35d86db
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{accessToken}}"

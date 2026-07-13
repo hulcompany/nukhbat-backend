@@ -1,0 +1,24 @@
+$kind: http-request
+description: "Role: admin. Spans all schools; paginated."
+url: "{{baseUrl}}/api/student?skip=0&limit=10"
+method: GET
+queryParams:
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: trackId
+    value: ""
+    disabled: true
+  - key: schoolId
+    value: ""
+    disabled: true
+  - key: name
+    value: ""
+    disabled: true
+    description: student name contains, case-insensitive
+  - key: sort
+    value: DESC
+    disabled: true
+    description: by createdAt
+order: 5000

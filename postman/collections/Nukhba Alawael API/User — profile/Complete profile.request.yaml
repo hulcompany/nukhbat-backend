@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/user/mine/complete-profile"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Full Name",
+      "phoneNumber": "0912345678",
+      "password": "password123"
+    }
+order: 7000

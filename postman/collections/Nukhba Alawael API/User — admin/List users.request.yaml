@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/api/user?skip=0&limit=10"
+method: GET
+queryParams:
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: sort
+    value: DESC
+    disabled: true
+  - key: name
+    value: ""
+    disabled: true
+  - key: role
+    value: student
+    disabled: true
+    description: admin | contentWriter | student
+  - key: email
+    value: ""
+    disabled: true
+  - key: phoneNumber
+    value: ""
+    disabled: true
+order: 1000

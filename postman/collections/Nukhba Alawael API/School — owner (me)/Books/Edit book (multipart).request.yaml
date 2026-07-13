@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/books/:id"
+method: PATCH
+pathVariables:
+  id: ""
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: New Book Name
+    - type: file
+      key: attachment
+      src: ""
+order: 3000

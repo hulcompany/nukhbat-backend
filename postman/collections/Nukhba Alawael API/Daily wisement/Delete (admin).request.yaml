@@ -1,0 +1,7 @@
+$kind: http-request
+description: Fails with 400 when the target is the currently selected wisement.
+url: "{{baseUrl}}/api/daily-wisement/:id"
+method: DELETE
+pathVariables:
+  id: ""
+order: 6000

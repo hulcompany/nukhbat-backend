@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/units/:courseId"
+method: GET
+queryParams:
+  - key: title
+    value: ""
+    disabled: true
+pathVariables:
+  courseId: ""
+order: 1000

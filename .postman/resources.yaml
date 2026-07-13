@@ -1,0 +1,5 @@
+workspace:
+  id: 85cd9509-21fc-4c40-8d1c-c760ac0c54b0
+cloudResources:
+  collections:
+    ../postman/collections/Nukhba Alawael API: 50047162-b8fc3730-abac-44d6-a6a8-c8ce03021bcc

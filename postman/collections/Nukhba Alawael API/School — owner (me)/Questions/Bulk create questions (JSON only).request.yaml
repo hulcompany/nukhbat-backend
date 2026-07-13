@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/questions/bulk"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "questions": [
+        {
+          "title": "What is 2 + 2?",
+          "type": "options",
+          "lessonId": "00000000-0000-0000-0000-000000000000",
+          "options": [
+            { "text": "4", "isCorrect": true },
+            { "text": "5", "isCorrect": false }
+          ]
+        }
+      ]
+    }
+order: 5000

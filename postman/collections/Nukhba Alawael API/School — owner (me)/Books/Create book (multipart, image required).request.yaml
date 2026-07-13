@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/books"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: Book Name
+    - type: file
+      key: attachment
+      src: ""
+order: 2000

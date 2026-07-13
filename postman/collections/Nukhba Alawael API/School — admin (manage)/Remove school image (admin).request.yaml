@@ -1,0 +1,7 @@
+$kind: http-request
+description: "Role: admin. Clears the school logo."
+url: "{{baseUrl}}/api/school/manage/:id/image"
+method: DELETE
+pathVariables:
+  id: ""
+order: 5000

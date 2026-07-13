@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/daily-wisement?skip=0&limit=10"
+method: GET
+queryParams:
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: sort
+    value: DESC
+    disabled: true
+    description: "by createdAt: ASC | DESC"
+  - key: text
+    value: ""
+    disabled: true
+    description: regexp contains
+order: 2000

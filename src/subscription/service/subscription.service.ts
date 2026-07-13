@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, MoreThan, Repository } from 'typeorm';
 import {
   applyPsqlFilter,
   BasePaginationModel,
@@ -38,36 +38,34 @@ export class SubscriptionService {
   // the caller's current live (non-expired) subscription, if any —
   // SubscriptionGuard's access check
   async findLiveByUser(userId: UUID, em?: EntityManager) {
-    return await this.getRepo(em)
-      .createQueryBuilder('sub')
-      .innerJoinAndSelect('sub.studentProfile', 'profile')
-      .where('profile.userId = :userId', { userId })
-      .andWhere('sub.expireDate > now()')
-      .orderBy('sub.expireDate', 'DESC')
-      .getOne();
+    return await this.getRepo(em).findOne({
+      where: { studentProfile: { userId }, expireDate: MoreThan(new Date()) },
+      relations: { studentProfile: true },
+      order: { expireDate: 'DESC' },
+    });
   }
 
   // the caller's current live PAID subscription, if any. A live free trial
   // deliberately does not count — it may be upgraded straight to paid.
   async findLivePaidByUser(userId: UUID, em?: EntityManager) {
-    return await this.getRepo(em)
-      .createQueryBuilder('sub')
-      .innerJoin('sub.studentProfile', 'profile')
-      .where('profile.userId = :userId', { userId })
-      .andWhere('sub.type = :type', { type: SubscriptionType.paid })
-      .andWhere('sub.expireDate > now()')
-      .getOne();
+    return await this.getRepo(em).findOne({
+      where: {
+        studentProfile: { userId },
+        type: SubscriptionType.paid,
+        expireDate: MoreThan(new Date()),
+      },
+      relations: { studentProfile: true },
+    });
   }
 
   // the caller's most recent subscription regardless of expiry — lets the
   // client show "expired, renew" now that expiry no longer sits on the profile
   async findLatestByUser(userId: UUID, em?: EntityManager) {
-    return await this.getRepo(em)
-      .createQueryBuilder('sub')
-      .innerJoinAndSelect('sub.studentProfile', 'profile')
-      .where('profile.userId = :userId', { userId })
-      .orderBy('sub.expireDate', 'DESC')
-      .getOne();
+    return await this.getRepo(em).findOne({
+      where: { studentProfile: { userId } },
+      relations: { studentProfile: true },
+      order: { expireDate: 'DESC' },
+    });
   }
 
   // Free trial: a one-shot freeTrial subscription on the default school.
@@ -105,13 +103,18 @@ export class SubscriptionService {
       const expireDate = new Date();
       expireDate.setDate(expireDate.getDate() + AppConfig.FREE_TRIAL_DAYS);
 
-      return await this.getRepo(em).save(
+      const subscription = await this.getRepo(em).save(
         this.getRepo(em).create({
           type: SubscriptionType.freeTrial,
           expireDate,
           studentProfile: { id: profile.id },
         }),
       );
+
+      return await this.getRepo(em).findOne({
+        where: { id: subscription.id },
+        relations: { studentProfile: true },
+      });
     });
   }
 
@@ -153,7 +156,10 @@ export class SubscriptionService {
       );
 
       await this.keys.markUsed(key.id, subscription.id, em);
-      return subscription;
+      return await this.getRepo(em).findOne({
+        where: { id: subscription.id },
+        relations: { studentProfile: true },
+      });
     });
   }
 

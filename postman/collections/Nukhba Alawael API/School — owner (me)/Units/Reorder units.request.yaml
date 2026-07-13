@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/units/order/:courseId"
+method: POST
+headers:
+  Content-Type: application/json
+pathVariables:
+  courseId: ""
+body:
+  type: json
+  content: |-
+    {
+      "ids": [
+        "00000000-0000-0000-0000-000000000000"
+      ]
+    }
+order: 5000

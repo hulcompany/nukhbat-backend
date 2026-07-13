@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/questions/bulk-delete"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "ids": [
+        "00000000-0000-0000-0000-000000000000"
+      ]
+    }
+order: 8000

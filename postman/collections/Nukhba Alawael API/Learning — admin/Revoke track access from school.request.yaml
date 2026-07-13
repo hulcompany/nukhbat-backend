@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/admin/schoolAccess/:schoolId/:trackId"
+method: DELETE
+pathVariables:
+  schoolId: ""
+  trackId: ""
+order: 6000

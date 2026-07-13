@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/user/:id/image"
+method: DELETE
+pathVariables:
+  id: ""
+order: 5000

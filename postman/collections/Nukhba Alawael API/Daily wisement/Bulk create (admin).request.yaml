@@ -1,0 +1,16 @@
+$kind: http-request
+description: "All-or-nothing: one invalid item drops the whole batch."
+url: "{{baseUrl}}/api/daily-wisement/bulk"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "text": "First wisement" },
+        { "text": "Second wisement" }
+      ]
+    }
+order: 4000

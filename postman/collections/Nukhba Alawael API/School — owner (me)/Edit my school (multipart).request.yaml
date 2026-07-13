@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me"
+method: PATCH
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: New School Name
+    - type: file
+      key: image
+      src: ""
+order: 8000

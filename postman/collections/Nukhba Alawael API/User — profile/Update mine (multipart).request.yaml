@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/user/mine"
+method: PATCH
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: New Name
+    - type: text
+      key: phoneNumber
+      value: "0912345678"
+      disabled: true
+    - type: text
+      key: password
+      value: newPassword123
+      disabled: true
+    - type: file
+      key: image
+      src: ""
+order: 8000

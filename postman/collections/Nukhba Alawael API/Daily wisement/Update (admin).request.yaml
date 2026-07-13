@@ -1,0 +1,15 @@
+$kind: http-request
+description: Fails with 400 when the target is the currently selected wisement.
+url: "{{baseUrl}}/api/daily-wisement/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "text": "Updated wisement text"
+    }
+order: 5000

@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/public-content/faqs/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "title": "Updated title",
+      "description": "Updated description"
+    }
+order: 5000

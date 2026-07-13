@@ -1,0 +1,27 @@
+$kind: http-request
+description: Paginated like the school route, but without track-access scoping.
+url: "{{baseUrl}}/api/learning/admin/questions?skip=0&limit=10"
+method: GET
+queryParams:
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: courseId
+    value: ""
+    disabled: true
+  - key: lessonId
+    value: ""
+    disabled: true
+  - key: schoolId
+    value: ""
+    disabled: true
+  - key: title
+    value: ""
+    disabled: true
+    description: contains, case-insensitive
+  - key: trackId
+    value: ""
+    disabled: true
+    description: pool course OR lesson→unit→course
+order: 4000

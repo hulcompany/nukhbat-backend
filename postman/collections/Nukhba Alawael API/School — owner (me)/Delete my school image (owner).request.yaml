@@ -1,0 +1,5 @@
+$kind: http-request
+description: "Role: contentWriter. Clears the owner school logo."
+url: "{{baseUrl}}/api/school/me/image"
+method: DELETE
+order: 9000

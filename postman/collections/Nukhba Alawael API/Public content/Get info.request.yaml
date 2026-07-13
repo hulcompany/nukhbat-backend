@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/public-content/info"
+method: GET
+auth:
+  type: noauth
+order: 1000

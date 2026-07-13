@@ -1,0 +1,7 @@
+$kind: http-request
+description: "Role: contentWriter. A foreign profile reads as 404."
+url: "{{baseUrl}}/api/student/school/:id"
+method: GET
+pathVariables:
+  id: ""
+order: 3000

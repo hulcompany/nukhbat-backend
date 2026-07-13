@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/public-content/faqs"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "How do I sign up?",
+      "description": "Use the mobile app sign up screen."
+    }
+order: 4000

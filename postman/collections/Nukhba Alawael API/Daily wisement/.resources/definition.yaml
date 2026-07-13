@@ -1,0 +1,3 @@
+$kind: collection
+description: "Rotating daily wisement. Public: today. Admin: CRUD + bulk. The selected one cannot be edited or deleted; a midnight cron rotates the selection."
+order: 10000

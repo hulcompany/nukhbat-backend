@@ -1,0 +1,5 @@
+$kind: http-request
+description: "Role: student. The single profile with school + track. 403 (StudentGuard) until the student has redeemed a subscription key."
+url: "{{baseUrl}}/api/student/profile"
+method: GET
+order: 1000

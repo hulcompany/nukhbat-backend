@@ -1,0 +1,13 @@
+$kind: http-request
+description: "Role: student. Enrolls the student (or reuses their profile) and adds a paid subscription (expireDate = now + KEY_AGE_YEAR), consuming the key in one transaction. 400 while a live PAID subscription is still running (a live free trial can be upgraded), or when the key's school/track differ from the existing profile."
+url: "{{baseUrl}}/api/subscription/subscribe"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "key": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+    }
+order: 1000

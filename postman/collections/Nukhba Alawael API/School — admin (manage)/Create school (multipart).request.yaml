@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/manage"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: name
+      value: Owner Name
+    - type: text
+      key: email
+      value: owner@example.com
+    - type: text
+      key: password
+      value: password123
+    - type: text
+      key: schoolName
+      value: My School
+    - type: file
+      key: image
+      src: ""
+order: 3000

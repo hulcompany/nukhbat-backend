@@ -1,0 +1,13 @@
+$kind: http-request
+description: Not paginated. Includes the track relation.
+url: "{{baseUrl}}/api/learning/admin/courses"
+method: GET
+queryParams:
+  - key: title
+    value: ""
+    disabled: true
+    description: contains, case-insensitive
+  - key: trackId
+    value: ""
+    disabled: true
+order: 1000

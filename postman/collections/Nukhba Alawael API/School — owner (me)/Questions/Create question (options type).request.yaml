@@ -1,0 +1,20 @@
+$kind: http-request
+description: "type: options | match. purpose: lesson | dailyChallenge (dailyChallenge requires courseId instead of lessonId). To attach an image switch body to form-data with an `image` file field."
+url: "{{baseUrl}}/api/school/me/questions"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "What is 2 + 2?",
+      "type": "options",
+      "purpose": "lesson",
+      "lessonId": "00000000-0000-0000-0000-000000000000",
+      "options": [
+        { "text": "4", "isCorrect": true },
+        { "text": "5", "isCorrect": false }
+      ]
+    }
+order: 3000

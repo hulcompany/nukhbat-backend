@@ -1,0 +1,3 @@
+$kind: collection
+description: "Requires role: admin. Read routes span all schools — no track-access checks."
+order: 8000

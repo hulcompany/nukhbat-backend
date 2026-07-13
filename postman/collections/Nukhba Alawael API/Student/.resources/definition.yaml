@@ -1,0 +1,3 @@
+$kind: collection
+description: "One profile per student — a single school and track, never changed. Profiles are created by redeeming subscription keys. /student/school*: contentWriter (own school). /student*: admin."
+order: 11000

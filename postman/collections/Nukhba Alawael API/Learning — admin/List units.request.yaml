@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/admin/units"
+method: GET
+queryParams:
+  - key: schoolId
+    value: ""
+    disabled: true
+  - key: title
+    value: ""
+    disabled: true
+    description: contains, case-insensitive
+  - key: courseId
+    value: ""
+    disabled: true
+  - key: trackId
+    value: ""
+    disabled: true
+    description: via course.trackId
+order: 2000

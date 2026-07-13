@@ -1,0 +1,17 @@
+$kind: http-request
+description: "status: active | draft | unActive"
+url: "{{baseUrl}}/api/school/me/lessons/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "title": "New Lesson Title",
+      "description": "New description",
+      "status": "active"
+    }
+order: 3000

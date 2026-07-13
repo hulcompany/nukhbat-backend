@@ -1,0 +1,13 @@
+$kind: http-request
+description: "Role: student. One-shot free-trial subscription on the default school for the given track (expires after FREE_TRIAL_DAYS). 400 if the student has ever had any subscription."
+url: "{{baseUrl}}/api/subscription/freeTrial"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "trackId": ""
+    }
+order: 2000

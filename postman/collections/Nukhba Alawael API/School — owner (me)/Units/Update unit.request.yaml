@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/units/:id"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "title": "New Unit Title"
+    }
+order: 3000

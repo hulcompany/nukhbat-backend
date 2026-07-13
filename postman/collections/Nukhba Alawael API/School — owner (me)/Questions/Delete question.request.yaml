@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/school/me/questions/:id"
+method: DELETE
+pathVariables:
+  id: ""
+order: 7000
