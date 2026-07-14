@@ -16,10 +16,10 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
-import { UserVerifyDto } from './dto/user-verify.dto';
-import { UserForgetPasswordDto } from './dto/user-forget-password.dto';
-import { UserResetPasswordDto } from './dto/user-reset-password.dto';
-import { UserUpdateDto } from './dto/user-update-dto';
+import { UserVerifyDto } from '../dto/user-verify.dto';
+import { UserForgetPasswordDto } from '../dto/user-forget-password.dto';
+import { UserResetPasswordDto } from '../dto/user-reset-password.dto';
+import { UserUpdateDto } from '../dto/user-update-dto';
 import { JwtGuard, JwtGuardStrict } from '../auth';
 import { UserService } from './service/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';

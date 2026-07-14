@@ -1,5 +1,5 @@
 import { IsOptional, IsString } from 'class-validator';
-import { UserMainDto } from '../../core/user/dto/user-main.dto';
+import { UserMainDto } from '../../core/dto/user-main.dto';
 
 export class SchoolEditDto {
   @IsString()

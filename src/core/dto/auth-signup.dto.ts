@@ -1,15 +1,14 @@
 import {
-  IsEmail,
   IsNotEmpty,
   IsPhoneNumber,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { EmailField } from 'core';
 
 export class AuthSignUpDto {
-  @IsEmail()
-  @IsNotEmpty()
+  @EmailField()
   email: string;
 
   @IsString()

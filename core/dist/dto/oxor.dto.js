@@ -10,7 +10,6 @@ exports.OXorValidator = void 0;
 const class_validator_1 = require("class-validator");
 let OXorValidator = class OXorValidator {
     validate(_, args) {
-        console.log(_);
         if (_ !== undefined && _ !== null) {
             return false;
         }

@@ -1,14 +1,13 @@
 import {
-  IsEmail,
   IsString,
   MaxLength,
   MinLength,
   Validate,
 } from 'class-validator';
-import { MatchValidator } from 'core';
+import { EmailField, MatchValidator } from 'core';
 
 export class UserResetPasswordDto {
-  @IsEmail()
+  @EmailField()
   email: string;
 
   @IsString()

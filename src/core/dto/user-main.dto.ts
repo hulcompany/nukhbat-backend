@@ -1,15 +1,15 @@
 import {
-  IsEmail,
   IsPhoneNumber,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { EmailField } from 'core';
 
 export class UserMainDto {
   @IsString()
   name: string;
-  @IsEmail()
+  @EmailField()
   email: string;
   @IsString()
   @MinLength(8)

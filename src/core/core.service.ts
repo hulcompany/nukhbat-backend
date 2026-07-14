@@ -2,7 +2,7 @@ import { UUID } from 'crypto';
 import { UserService } from './user/service/user.service';
 import { Injectable } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
-import { UserMainDto } from './user/dto/user-main.dto';
+import { UserMainDto } from './dto/user-main.dto';
 import { RoleType } from './role/enum/role.type';
 
 @Injectable()
@@ -13,7 +13,10 @@ export class CoreService {
     return this.userService.findOneAndFail({ id: id });
   }
 
-  async createUser(params: UserMainDto & {role?: RoleType}, em?: EntityManager) {
+  async createUser(
+    params: UserMainDto & { role?: RoleType },
+    em?: EntityManager,
+  ) {
     return this.userService.createUser(params, em);
   }
 }

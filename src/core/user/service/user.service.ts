@@ -20,13 +20,13 @@ import {
   transaction,
 } from 'core';
 import { User } from '../entity/user.entity';
-import { UserGetDto } from '../dto/user-get.dto';
-import { UserResetPasswordDto } from '../dto/user-reset-password.dto';
-import { UserForgetPasswordDto } from '../dto/user-forget-password.dto';
+import { UserGetDto } from '../../dto/user-get.dto';
+import { UserResetPasswordDto } from '../../dto/user-reset-password.dto';
+import { UserForgetPasswordDto } from '../../dto/user-forget-password.dto';
 import { OtpService } from '../../../otp/otp.service';
 import { FileService } from '../../../file/file.service';
 import { OtpReason } from '../../../otp/entity/otp';
-import { UserMainDto } from '../dto/user-main.dto';
+import { UserMainDto } from '../../dto/user-main.dto';
 import { RoleType } from '../../role/enum/role.type';
 import { UserErrorCodes } from '../user.errors';
 
@@ -200,7 +200,9 @@ export class UserService {
   }
 
   async requestChangePassword(params: UserForgetPasswordDto) {
-    let user = await this.repo.findOne({ where: { email: params.email } });
+    let user = await this.repo.findOne({
+      where: { email: params.email, emailVerfied: true },
+    });
     if (!user) {
       throw new BadRequestException(
         ErrorsRecord.getError(UserErrorCodes.User_2),
@@ -213,7 +215,7 @@ export class UserService {
 
   async resetPassword(params: UserResetPasswordDto) {
     let user = await this.repo.findOne({
-      where: { email: params.email, emailVerfied: false },
+      where: { email: params.email },
     });
     if (!user) {
       throw new BadRequestException(

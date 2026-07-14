@@ -22,5 +22,6 @@ __exportStar(require("./psql"), exports);
 __exportStar(require("./nestjs"), exports);
 __exportStar(require("./casl"), exports);
 __exportStar(require("./models"), exports);
+__exportStar(require("./dto/email-field.dto"), exports);
 require("./types/express");
 //# sourceMappingURL=index.js.map

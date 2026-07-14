@@ -15,13 +15,13 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
-import { UserUpdateDto } from './dto/user-update-dto';
-import { UserGetDto } from './dto/user-get.dto';
+import { UserUpdateDto } from '../dto/user-update-dto';
+import { UserGetDto } from '../dto/user-get.dto';
 import { UUID } from 'crypto';
 import { UserService } from './service/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageFileValidatorPipeline } from '../../common';
-import { UserMainDto } from './dto/user-main.dto';
+import { UserMainDto } from '../dto/user-main.dto';
 import { RoleType } from '../role/enum/role.type';
 import { JwtGuardStrict } from '../auth';
 import { RoleGuard } from '../guards/role.guard';

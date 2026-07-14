@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum, IsEmail } from 'class-validator';
 import { BasePaginationDto } from 'core';
-import { RoleType } from '../../role/enum/role.type';
+import { RoleType } from '../role/enum/role.type';
 
 export class UserGetDto extends BasePaginationDto {
   @IsOptional()

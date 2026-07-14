@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { comparePassword, ErrorCommonCodes } from 'core';
-import { AuthSignUpDto } from './dto/auth-signup.dto';
+import { AuthSignUpDto } from '../dto/auth-signup.dto';
 import { UserService } from '../user/service/user.service';
 import { AppConfig } from '../../conf';
 

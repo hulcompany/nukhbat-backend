@@ -1,6 +1,6 @@
-import { IsEmail } from 'class-validator';
+import { EmailField } from 'core';
 
 export class UserForgetPasswordDto {
-  @IsEmail()
+  @EmailField()
   email: string;
 }
