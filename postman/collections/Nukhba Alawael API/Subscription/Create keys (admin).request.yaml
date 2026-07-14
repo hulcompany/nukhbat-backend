@@ -1,4 +1,5 @@
 $kind: http-request
+name: Create keys (admin)
 description: "Role: admin. Mints `count` keys (1–500) for the school+track."
 url: "{{baseUrl}}/api/subscription/keys"
 method: POST
@@ -8,8 +9,8 @@ body:
   type: json
   content: |-
     {
-      "trackId": "",
-      "schoolId": "",
-      "count": 5
+      "trackId": "5ada52b2-4c26-4bd3-9f8e-e16371b2a26c",
+      "schoolId": "dbe5b25c-9224-407a-be32-687a481cef2d",
+      "count": 20
     }
 order: 7000

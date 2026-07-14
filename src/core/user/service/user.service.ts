@@ -51,17 +51,17 @@ export class UserService {
     return user;
   }
 
-  // phoneNumber is unique — surface a clean 400 instead of a DB constraint 500
-  private async assertPhoneUnique(
-    phoneNumber?: string | null,
-    exceptId?: UUID,
-  ) {
-    if (!phoneNumber) return;
-    const dup = await this.repo.findOne({ where: { phoneNumber } });
-    if (dup && dup.id !== exceptId) {
-      throw new BadRequestException('Phone number already in use');
-    }
-  }
+  // // phoneNumber is unique — surface a clean 400 instead of a DB constraint 500
+  // private async assertPhoneUnique(
+  //   phoneNumber?: string | null,
+  //   exceptId?: UUID,
+  // ) {
+  //   if (!phoneNumber) return;
+  //   const dup = await this.repo.findOne({ where: { phoneNumber } });
+  //   if (dup && dup.id !== exceptId) {
+  //     throw new BadRequestException('Phone number already in use');
+  //   }
+  // }
 
   async update(
     id: UUID,
@@ -69,7 +69,7 @@ export class UserService {
     image?: Express.Multer.File | null,
   ) {
     let fields = data || {};
-    await this.assertPhoneUnique(fields.phoneNumber, id);
+    // await this.assertPhoneUnique(fields.phoneNumber, id);
     if (fields.password) {
       fields.password = await hashPassword(fields.password, 10);
     }
@@ -145,7 +145,7 @@ export class UserService {
     }
     data.password = await hashPassword(data.password!, 10);
     if (old) {
-      await this.assertPhoneUnique(data.phoneNumber, old.id);
+      // await this.assertPhoneUnique(data.phoneNumber, old.id);
       old.emailVerfied = false;
       old.name = data.name!;
       old.password = data.password!;
@@ -153,7 +153,7 @@ export class UserService {
       old = await this.repo.save(old);
       return old;
     }
-    await this.assertPhoneUnique(data.phoneNumber);
+    // await this.assertPhoneUnique(data.phoneNumber);
     let user = this.repo.create(data);
     user.role = RoleType.student;
     user.emailVerfied = false;
@@ -202,7 +202,9 @@ export class UserService {
   async requestChangePassword(params: UserForgetPasswordDto) {
     let user = await this.repo.findOne({ where: { email: params.email } });
     if (!user) {
-      throw new BadRequestException({ message: 'Email Is Wrong' });
+      throw new BadRequestException(
+        ErrorsRecord.getError(UserErrorCodes.User_2),
+      );
     }
 
     let otp = await this.otpService.sendOtp(user.id, OtpReason.RESET_PASSWORD);
@@ -210,9 +212,14 @@ export class UserService {
   }
 
   async resetPassword(params: UserResetPasswordDto) {
-    let user = await this.findOneAndFail({
-      email: params.email,
+    let user = await this.repo.findOne({
+      where: { email: params.email, emailVerfied: false },
     });
+    if (!user) {
+      throw new BadRequestException(
+        ErrorsRecord.getError(UserErrorCodes.User_2),
+      );
+    }
     await this.otpService.verifyOtp(
       user.id,
       OtpReason.RESET_PASSWORD,
