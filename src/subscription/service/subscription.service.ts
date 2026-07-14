@@ -26,6 +26,7 @@ import { AppConfig } from '../../conf';
 import { LearningService } from '../../learning/learning.service';
 import { SchoolService } from '../../school/school.service';
 import { SubscriptionErrorCodes } from '../errors';
+import { SubscriptionKey } from '../entity/subscription-key.entity';
 
 @Injectable()
 export class SubscriptionService {
@@ -42,7 +43,7 @@ export class SubscriptionService {
   private getRepo(em?: EntityManager) {
     return em?.getRepository(Subscription) ?? this.repo;
   }
-  
+
   // the caller's current live (non-expired) subscription, if any —
   // SubscriptionGuard's access check
   async findLiveByUser(userId: UUID, em?: EntityManager) {
@@ -143,9 +144,18 @@ export class SubscriptionService {
       if (livePaid) {
         throw new BadRequestException('Wait until your subscription ends');
       }
-      const key = await this.keys.findOneOrFail({ key: params.key }, em);
+      const key = await em
+        .getRepository(SubscriptionKey)
+        .findOne({ where: { key: params.key } });
+      if (!key) {
+        throw new BadRequestException(
+          ErrorsRecord.getError(SubscriptionErrorCodes.Subscription_2),
+        );
+      }
       if (key.usedById) {
-        throw new BadRequestException('Subscription key already used');
+        throw new BadRequestException(
+          ErrorsRecord.getError(SubscriptionErrorCodes.Subscription_2),
+        );
       }
       await this.learningService.assertSchoolTrackAccess(
         key.schoolId,
