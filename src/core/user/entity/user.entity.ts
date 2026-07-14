@@ -1,4 +1,4 @@
-import { Exclude, Expose, Transform } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 import { UUID } from 'crypto';
 import {
   Column,
@@ -6,7 +6,7 @@ import {
   Entity,
   Index,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  // UpdateDateColumn,
 } from 'typeorm';
 import { RoleType } from '../../role/enum/role.type';
 
@@ -15,21 +15,21 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: UUID;
 
-  @Column({ type: 'varchar', length: 128, nullable: true })
-  name?: string;
+  @Column({ type: 'varchar', length: 128 })
+  name: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
   @Index()
-  email?: string;
+  email: string;
 
   // unique across users; nullable because signup only has an email until the
   // profile is completed (Postgres allows many NULLs in a unique index)
   @Column({ type: 'varchar', length: 32, nullable: true, unique: true })
   phoneNumber?: string | null;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255})
   @Exclude()
-  password?: string;
+  password: string;
 
   @Column({ default: false })
   emailVerfied: boolean;
@@ -47,15 +47,7 @@ export class User {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column('uuid', { nullable: true })
-  @Exclude()
-  trackId?: UUID | null;
-
-  @Expose()
-  get isCompleted() {
-    if (this.password && this.email && this.name) {
-      return true;
-    }
-    return false;
-  }
+  // @Column('uuid', { nullable: true })
+  // @Exclude()
+  // trackId?: UUID | null;
 }

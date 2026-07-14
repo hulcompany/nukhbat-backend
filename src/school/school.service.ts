@@ -137,15 +137,10 @@ export class SchoolService {
           name: params.name,
           password: params.password,
           role: RoleType.contentWriter,
-          phoneNumber: params.phoneNumber
+          phoneNumber: params.phoneNumber,
         },
         em,
       );
-      if (!res.isCompleted || !res.emailVerfied) {
-        throw new ForbiddenException(
-          'Email Already Exists but it need to be completed and verified',
-        );
-      }
       if (image) {
         schoolImage = await this.files.store(image, 'school');
         await this.files.use({ id: schoolImage?.id, dm: em });

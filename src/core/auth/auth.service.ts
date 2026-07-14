@@ -34,6 +34,9 @@ export class AuthService {
   async signUp(data: AuthSignUpDto) {
     let user = await this.userService.signUp({
       email: data.email,
+      name: data.name,
+      password: data.password,
+      phoneNumber: data.phoneNumber,
     });
     return this.buildUserResponse(user);
   }

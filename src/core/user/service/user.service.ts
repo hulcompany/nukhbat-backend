@@ -1,4 +1,3 @@
-import { setTimeout } from 'timers/promises';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   BadRequestException,
@@ -16,6 +15,7 @@ import { UUID } from 'crypto';
 import {
   applyPsqlFilter,
   BasePaginationModel,
+  ErrorsRecord,
   hashPassword,
   transaction,
 } from 'core';
@@ -23,13 +23,12 @@ import { User } from '../entity/user.entity';
 import { UserGetDto } from '../dto/user-get.dto';
 import { UserResetPasswordDto } from '../dto/user-reset-password.dto';
 import { UserForgetPasswordDto } from '../dto/user-forget-password.dto';
-import { UserCompleteDto } from '../dto/user-complete.dto';
-// import { UserCreateDto } from '../dto/user-create.dto';
 import { OtpService } from '../../../otp/otp.service';
 import { FileService } from '../../../file/file.service';
 import { OtpReason } from '../../../otp/entity/otp';
 import { UserMainDto } from '../dto/user-main.dto';
 import { RoleType } from '../../role/enum/role.type';
+import { UserErrorCodes } from '../user.errors';
 
 @Injectable()
 export class UserService {
@@ -109,29 +108,6 @@ export class UserService {
     );
   }
 
-  async completeUser(id: UUID, data: UserCompleteDto) {
-    let fields = data || {};
-    let user = await this.repo.findOneBy({ id });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    if (user.isCompleted) {
-      throw new BadRequestException('User Already Completed');
-    }
-    await this.assertPhoneUnique(fields.phoneNumber, id);
-    fields.password = await hashPassword(fields.password, 10);
-
-    await this.repo.update(
-      { id },
-      {
-        name: fields.name,
-        password: fields.password,
-        phoneNumber: fields.phoneNumber,
-      },
-    );
-    return await this.repo.findOne({ where: { id } });
-  }
-
   async getByCriteria(params?: UserGetDto) {
     const qb = this.repo.createQueryBuilder('u').orderBy('u.createdAt', 'DESC');
     applyPsqlFilter({
@@ -162,15 +138,22 @@ export class UserService {
 
   async signUp(data: Partial<User>) {
     let old = await this.repo.findOne({ where: { email: data.email } });
-    if (old?.isCompleted) {
-      throw new BadRequestException('Email Already Exists');
+    if (old?.emailVerfied) {
+      throw new BadRequestException(
+        ErrorsRecord.getError(UserErrorCodes.User_1),
+      );
     }
+    data.password = await hashPassword(data.password!, 10);
     if (old) {
+      await this.assertPhoneUnique(data.phoneNumber, old.id);
+      old.emailVerfied = false;
+      old.name = data.name!;
+      old.password = data.password!;
+      old.phoneNumber = data.phoneNumber!;
+      old = await this.repo.save(old);
       return old;
     }
-    if (data.password) {
-      data.password = await hashPassword(data.password!, 10);
-    }
+    await this.assertPhoneUnique(data.phoneNumber);
     let user = this.repo.create(data);
     user.role = RoleType.student;
     user.emailVerfied = false;

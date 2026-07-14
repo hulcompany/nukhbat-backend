@@ -28,12 +28,6 @@ export class JwtGuardStrict extends AuthGuard('jwt') {
         message: 'Account not verified yet',
       });
     }
-    if (!user?.isCompleted) {
-      throw new ForbiddenException({
-        code: ErrorCommonCodes.accountNotVerifiedYet,
-        message: 'Account not completed yet',
-      });
-    }
     return user;
   }
 }

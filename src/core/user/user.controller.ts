@@ -21,7 +21,6 @@ import { UserForgetPasswordDto } from './dto/user-forget-password.dto';
 import { UserResetPasswordDto } from './dto/user-reset-password.dto';
 import { UserUpdateDto } from './dto/user-update-dto';
 import { JwtGuard, JwtGuardStrict } from '../auth';
-import { UserCompleteDto } from './dto/user-complete.dto';
 import { UserService } from './service/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageFileValidatorPipeline } from '../../common';
@@ -78,12 +77,6 @@ export class UserController {
   @Post('/mine/reset-password')
   async resetPassword(@Body() body: UserResetPasswordDto) {
     await this.userService.resetPassword(body);
-  }
-
-  @Post('/mine/complete-profile')
-  @UseGuards(JwtGuard)
-  async completeProfile(@Body() body: UserCompleteDto) {
-    return await this.userService.completeUser(this.context.user.id, body);
   }
 
   @UseGuards(JwtGuardStrict)

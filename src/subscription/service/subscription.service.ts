@@ -1,7 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
-import { DataSource, EntityManager, MoreThan, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  FindOptionsWhere,
+  MoreThan,
+  Repository,
+} from 'typeorm';
 import {
   applyPsqlFilter,
   BasePaginationModel,
@@ -36,7 +42,7 @@ export class SubscriptionService {
   private getRepo(em?: EntityManager) {
     return em?.getRepository(Subscription) ?? this.repo;
   }
-
+  
   // the caller's current live (non-expired) subscription, if any —
   // SubscriptionGuard's access check
   async findLiveByUser(userId: UUID, em?: EntityManager) {
