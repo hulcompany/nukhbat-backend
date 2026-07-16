@@ -1,0 +1,37 @@
+$kind: http-request
+description: purpose=dailyChallenge takes `courseId` and NO `lessonId` — sending a lessonId is rejected. These live in the school pool rather than a lesson.
+url: "{{baseUrl}}/api/school/me/questions"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: Pool question
+    - type: text
+      key: type
+      value: options
+    - type: text
+      key: purpose
+      value: dailyChallenge
+    - type: text
+      key: courseId
+      value: 00000000-0000-0000-0000-000000000000
+    - type: text
+      key: options[0][text]
+      value: Right
+    - type: text
+      key: options[0][isCorrect]
+      value: "true"
+    - type: text
+      key: options[1][text]
+      value: Wrong
+    - type: text
+      key: options[1][isCorrect]
+      value: "false"
+    - type: file
+      key: image
+      src: []
+      description: Optional. Enable and pick a file to attach an image.
+      disabled: true
+order: 6000

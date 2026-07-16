@@ -1,0 +1,44 @@
+$kind: http-request
+description: |-
+  Single create is multipart (form-data) — that is the only way to attach `image`.
+
+  Nested arrays use bracket notation (`options[0][text]`); multer parses it into a real array and the DTOs coerce the strings back to booleans/numbers.
+
+  `type`: options | trueFalse | match. `purpose` is REQUIRED: lesson | dailyChallenge.
+
+  Exactly one option must have isCorrect=true, minimum 2 options.
+url: "{{baseUrl}}/api/school/me/questions"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: What is 2 + 2?
+    - type: text
+      key: type
+      value: options
+    - type: text
+      key: purpose
+      value: lesson
+    - type: text
+      key: lessonId
+      value: 00000000-0000-0000-0000-000000000000
+    - type: text
+      key: options[0][text]
+      value: "4"
+    - type: text
+      key: options[0][isCorrect]
+      value: "true"
+    - type: text
+      key: options[1][text]
+      value: "5"
+    - type: text
+      key: options[1][isCorrect]
+      value: "false"
+    - type: file
+      key: image
+      src: []
+      description: Optional. Enable and pick a file to attach an image.
+      disabled: true
+order: 3000

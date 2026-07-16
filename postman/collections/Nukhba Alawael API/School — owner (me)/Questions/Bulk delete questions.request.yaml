@@ -1,4 +1,8 @@
 $kind: http-request
+description: |-
+  By ids. POST rather than DELETE because DELETE bodies get dropped by some proxies.
+
+  All-or-nothing: one undeletable question cancels the batch. Same guards as single delete.
 url: "{{baseUrl}}/api/school/me/questions/bulk-delete"
 method: POST
 headers:
@@ -11,4 +15,4 @@ body:
         "00000000-0000-0000-0000-000000000000"
       ]
     }
-order: 8000
+order: 13000

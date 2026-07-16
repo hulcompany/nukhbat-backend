@@ -10,7 +10,7 @@ variables:
   accessToken: ""
   refreshToken: ""
 auth:
-  - id: 84317c86-2a43-497f-8073-e522f35d86db
+  - id: b1931e95-2d5d-4958-99a9-ecd7a9e7daff
     type: bearer
     name: bearer auth
     credentials:

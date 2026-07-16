@@ -1,5 +1,8 @@
 workspace:
   id: 85cd9509-21fc-4c40-8d1c-c760ac0c54b0
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
 cloudResources:
   collections:
-    ../postman/collections/Nukhba Alawael API: 50047162-b8fc3730-abac-44d6-a6a8-c8ce03021bcc
+    ../postman/collections/Nukhba Alawael API: d8b17ac8-514c-40d2-9dfd-9c19f4cd78fd

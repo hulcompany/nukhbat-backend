@@ -1,0 +1,64 @@
+$kind: http-request
+name: "Update question — type: match (form-data)"
+description: |-
+  Switch to / stay on `match`. `type` is sent, so the full `matchingItems[]` array is required (min 3). `correctIndex` is a position in this same array and must point at a `match` row. Switching away resets `trueOrFalseAnswer` to null.
+
+  ---
+
+  Mirrors QuestionEditDto — every field is optional:
+  • `title` — optional, on its own or with anything else.
+  • `image` — optional. Omit to keep the current one, send a file to swap it.
+  • `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).
+
+  The answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.
+
+  Omit `type` and the answer key is left untouched — any components you send are ignored.
+url: "{{baseUrl}}/api/school/me/questions/:id"
+method: PATCH
+pathVariables:
+  id: ""
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: Updated title
+    - type: text
+      key: type
+      value: match
+    - type: text
+      key: matchingItems[0][text]
+      value: Meow
+    - type: text
+      key: matchingItems[0][type]
+      value: match
+    - type: text
+      key: matchingItems[1][text]
+      value: Bark
+    - type: text
+      key: matchingItems[1][type]
+      value: match
+    - type: text
+      key: matchingItems[2][text]
+      value: Cat
+    - type: text
+      key: matchingItems[2][type]
+      value: base
+    - type: text
+      key: matchingItems[2][correctIndex]
+      value: "0"
+    - type: text
+      key: matchingItems[3][text]
+      value: Dog
+    - type: text
+      key: matchingItems[3][type]
+      value: base
+    - type: text
+      key: matchingItems[3][correctIndex]
+      value: "1"
+    - type: file
+      key: image
+      src: []
+      description: Optional. Leave disabled to keep the current image; enable and pick a file to swap it.
+      disabled: true
+order: 10000

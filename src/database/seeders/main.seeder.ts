@@ -189,7 +189,7 @@ export class MainSeeder implements Seeder {
       }
     }
 
-    // 21 lesson questions: first 7 lessons × 3, one match question per triple
+    // 21 lesson questions: first 7 lessons × 3 — one of each type per triple
     let n = 0;
     for (const lesson of lessons.slice(0, 7)) {
       for (let i = 1; i <= 3; i++) {
@@ -197,24 +197,31 @@ export class MainSeeder implements Seeder {
         await this.seedQuestion(dataSource, {
           schoolId,
           lessonId: lesson.id,
-          index: i,
           title: `سؤال ${i} - ${lesson.title}`,
-          type: i === 3 ? QuestionType.MATCH : QuestionType.OPTIONS,
+          type:
+            i === 3
+              ? QuestionType.MATCH
+              : i === 2
+                ? QuestionType.TRUE_FALSE
+                : QuestionType.OPTIONS,
         });
       }
     }
 
-    // daily-challenge pool: 4 questions per course (index restarts per
-    // course, matching the service's per-course max+1), last one a match
+    // daily-challenge pool: 4 questions per course, last one a match
     for (const course of allCourses) {
       for (let i = 1; i <= 4; i++) {
         await this.seedQuestion(dataSource, {
           schoolId,
           lessonId: null,
           courseId: course.id,
-          index: i,
           title: `سؤال التحدي اليومي ${i} - ${course.title}`,
-          type: i === 4 ? QuestionType.MATCH : QuestionType.OPTIONS,
+          type:
+            i === 4
+              ? QuestionType.MATCH
+              : i === 3
+                ? QuestionType.TRUE_FALSE
+                : QuestionType.OPTIONS,
         });
       }
     }
@@ -226,7 +233,6 @@ export class MainSeeder implements Seeder {
       schoolId: UUID;
       lessonId: UUID | null;
       courseId?: UUID;
-      index: number;
       title: string;
       type: QuestionType;
     },
@@ -237,12 +243,17 @@ export class MainSeeder implements Seeder {
       purpose: params.lessonId
         ? QuestionPurpose.lesson
         : QuestionPurpose.dailyChallenge,
-      index: params.index,
       lesson: params.lessonId ? { id: params.lessonId } : null,
       course: params.courseId ? { id: params.courseId } : null,
       school: { id: params.schoolId },
+      // trueFalse keeps its whole answer key on the question itself
+      trueOrFalseAnswer:
+        params.type === QuestionType.TRUE_FALSE ? Math.random() < 0.5 : null,
     });
 
+    if (params.type === QuestionType.TRUE_FALSE) {
+      return;
+    }
     if (params.type === QuestionType.OPTIONS) {
       const optionRepo = dataSource.getRepository(QuestionOption);
       const correct = Math.floor(Math.random() * 4);
@@ -256,22 +267,24 @@ export class MainSeeder implements Seeder {
       }
     } else {
       const matchRepo = dataSource.getRepository(QuestionMatch);
-      let matches: QuestionMatch[] = [];
+      // matches occupy index 0..2, bases 3..5 — so base i's correctIndex is
+      // just i, naming the match row at that index
       for (let i = 0; i < 3; i++) {
-        matches.push(
-          await matchRepo.save({
-            text: `الإجابة ${i + 1}`,
-            type: QuestionMatchType.match,
-            question: { id: question.id },
-            school: { id: params.schoolId },
-          }),
-        );
+        await matchRepo.save({
+          text: `الإجابة ${i + 1}`,
+          type: QuestionMatchType.match,
+          index: i,
+          correctIndex: null,
+          question: { id: question.id },
+          school: { id: params.schoolId },
+        });
       }
       for (let i = 0; i < 3; i++) {
         await matchRepo.save({
           text: `العنصر ${i + 1}`,
           type: QuestionMatchType.base,
-          correctMatchId: matches[i].id,
+          index: 3 + i,
+          correctIndex: i,
           question: { id: question.id },
           school: { id: params.schoolId },
         });

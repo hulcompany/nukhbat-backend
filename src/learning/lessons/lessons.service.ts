@@ -63,9 +63,6 @@ export class LessonService {
   }
 
   async update(params: FindOptionsWhere<Lesson>, data: LessonEditDto) {
-    if (data.status == LessonStatusType.draft) {
-      throw new BadRequestException("Lesson can't set to draft");
-    }
     let old = await this.repo.findOne({
       where: params,
       relations: { questions: true },
@@ -73,19 +70,11 @@ export class LessonService {
     if (!old) {
       throw new NotFoundException('Lesson Not Found');
     }
-    // active lessons are locked: only a status change (active -> hidden)
-    // is allowed, otherwise the lesson must be deactivated first
-    if (
-      old.status == LessonStatusType.active &&
-      (data.title !== undefined || data.description !== undefined)
-    ) {
+    // a published lesson always has at least one question; QuestionService
+    // keeps that true afterwards by refusing to delete the last one
+    if (data.status == LessonStatusType.published && !old.questions?.length) {
       throw new BadRequestException(
-        'Active lesson is locked, only its status can be changed',
-      );
-    }
-    if (data.status == LessonStatusType.active && !old.questions?.length) {
-      throw new BadRequestException(
-        "You can't set lesson to active until it have questions",
+        "You can't publish a lesson until it has questions",
       );
     }
     await this.repo.update(params, data);
@@ -94,16 +83,15 @@ export class LessonService {
 
   async delete(params: FindOptionsWhere<Lesson>) {
     let lesson = await this.findOneOrFail(params);
-    if (lesson.status == LessonStatusType.active) {
-      throw new BadRequestException('Cannot delete an active lesson');
-    }
     await transaction(this.ds, async (em) => {
-      await this.qs.bulkDelete(
+      // the lesson itself is going away, so the keep-one-question rule
+      // doesn't apply to its teardown
+      await this.qs.deleteQuestions(
         {
           lesson: { id: lesson.id },
           school: { id: lesson.schoolId },
         },
-        em,
+        { em, skipGuards: true },
       );
       let res = await em
         .getRepository(Lesson)

@@ -11,5 +11,5 @@ body:
       value: New Book Name
     - type: file
       key: attachment
-      src: ""
+      src: []
 order: 3000

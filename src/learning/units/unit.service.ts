@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Unit } from './entity/unit.entity';
 import {
@@ -18,7 +14,6 @@ import { UnitCreateDto, UnitUpdateDto } from './dto/unit-dto';
 import { UUID } from 'crypto';
 import { transaction } from 'core';
 import { Lesson } from '../lessons/entity/lesson.entity';
-import { LessonStatusType } from '../lessons/entity/lesson.status.type';
 import { QuestionService } from '../questions/questions.service';
 import { ReqContext } from '../../context';
 
@@ -89,17 +84,14 @@ export class UnitService {
       let lessons = await lessonRepo.find({
         where: { unitId: unit.id, schoolId: unit.schoolId },
       });
-      if (lessons.some((l) => l.status == LessonStatusType.active)) {
-        throw new BadRequestException(
-          'Cannot delete a unit that has active lessons',
-        );
-      }
       if (lessons.length) {
-        await this.questionService.bulkDelete(
+        // the lessons themselves are going away, so the keep-one-question
+        // rule doesn't apply to their teardown
+        await this.questionService.deleteQuestions(
           {
             lesson: { id: In(lessons.map((e) => e.id)) },
           },
-          em,
+          { em, skipGuards: true },
         );
         await lessonRepo.delete({ unitId: unit.id, schoolId: unit.schoolId });
       }

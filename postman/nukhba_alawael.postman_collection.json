@@ -1320,7 +1320,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"title\": \"New Lesson Title\",\n  \"description\": \"New description\",\n  \"status\": \"active\"\n}",
+                  "raw": "{\n  \"title\": \"New Lesson Title\",\n  \"description\": \"New description\",\n  \"status\": \"published\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1346,7 +1346,7 @@
                     }
                   ]
                 },
-                "description": "status: active | draft | unActive"
+                "description": "status: draft | published.\n\nPublishing requires the lesson to already have at least one question, and a published lesson cannot then be emptied — set it back to draft to delete its last question."
               }
             },
             {
@@ -1489,23 +1489,60 @@
               }
             },
             {
-              "name": "Create question (options type)",
+              "name": "Create question — options (form-data)",
               "request": {
                 "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
                 "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"What is 2 + 2?\",\n  \"type\": \"options\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n  \"options\": [\n    { \"text\": \"4\", \"isCorrect\": true },\n    { \"text\": \"5\", \"isCorrect\": false }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "What is 2 + 2?",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "options",
+                      "type": "text"
+                    },
+                    {
+                      "key": "purpose",
+                      "value": "lesson",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lessonId",
+                      "value": "00000000-0000-0000-0000-000000000000",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[0][text]",
+                      "value": "4",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[0][isCorrect]",
+                      "value": "true",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[1][text]",
+                      "value": "5",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[1][isCorrect]",
+                      "value": "false",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Enable and pick a file to attach an image."
                     }
-                  }
+                  ]
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/school/me/questions",
@@ -1519,27 +1556,50 @@
                     "questions"
                   ]
                 },
-                "description": "type: options | match. purpose: lesson | dailyChallenge (dailyChallenge requires courseId instead of lessonId). To attach an image switch body to form-data with an `image` file field."
+                "description": "Single create is multipart (form-data) — that is the only way to attach `image`.\n\nNested arrays use bracket notation (`options[0][text]`); multer parses it into a real array and the DTOs coerce the strings back to booleans/numbers.\n\n`type`: options | trueFalse | match. `purpose` is REQUIRED: lesson | dailyChallenge.\n\nExactly one option must have isCorrect=true, minimum 2 options."
               }
             },
             {
-              "name": "Create question (match type)",
+              "name": "Create question — trueFalse (form-data)",
               "request": {
                 "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
                 "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"Match the pairs\",\n  \"type\": \"match\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n  \"matchingItems\": [\n    { \"text\": \"Cat\", \"type\": \"base\", \"correctIndex\": 0 },\n    { \"text\": \"Meow\", \"type\": \"match\" },\n    { \"text\": \"Bark\", \"type\": \"match\" }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "The earth is round",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "trueFalse",
+                      "type": "text"
+                    },
+                    {
+                      "key": "purpose",
+                      "value": "lesson",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lessonId",
+                      "value": "00000000-0000-0000-0000-000000000000",
+                      "type": "text"
+                    },
+                    {
+                      "key": "correctAnswer",
+                      "value": "true",
+                      "type": "text",
+                      "description": "true | false — the whole answer key"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Enable and pick a file to attach an image."
                     }
-                  }
+                  ]
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/school/me/questions",
@@ -1553,11 +1613,183 @@
                     "questions"
                   ]
                 },
-                "description": "matchingItems types: base (needs correctIndex, index into the match rows) | match. Minimum 3 items."
+                "description": "trueFalse carries its answer key in the single `correctAnswer` boolean; it is stored on the question as `trueOrFalseAnswer` and reads back there (no option rows). Send no options/matchingItems."
               }
             },
             {
-              "name": "Bulk create questions (JSON only)",
+              "name": "Create question — match (form-data)",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Match each animal to its sound",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "match",
+                      "type": "text"
+                    },
+                    {
+                      "key": "purpose",
+                      "value": "lesson",
+                      "type": "text"
+                    },
+                    {
+                      "key": "lessonId",
+                      "value": "00000000-0000-0000-0000-000000000000",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[0][text]",
+                      "value": "Meow",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[0][type]",
+                      "value": "match",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[1][text]",
+                      "value": "Bark",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[1][type]",
+                      "value": "match",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[2][text]",
+                      "value": "Cat",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[2][type]",
+                      "value": "base",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[2][correctIndex]",
+                      "value": "0",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[3][text]",
+                      "value": "Dog",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[3][type]",
+                      "value": "base",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[3][correctIndex]",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Enable and pick a file to attach an image."
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "school",
+                    "me",
+                    "questions"
+                  ]
+                },
+                "description": "Minimum 3 items. `type`: base | match.\n\n`correctIndex` is only on base rows and is a POSITION in this same array — it must point at a `match` row, each match can back only one base, and matches must be >= bases.\n\nHere base \"Cat\"(2) -> index 0 = \"Meow\", base \"Dog\"(3) -> index 1 = \"Bark\"."
+              }
+            },
+            {
+              "name": "Create question — dailyChallenge pool (form-data)",
+              "request": {
+                "method": "POST",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Pool question",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "options",
+                      "type": "text"
+                    },
+                    {
+                      "key": "purpose",
+                      "value": "dailyChallenge",
+                      "type": "text"
+                    },
+                    {
+                      "key": "courseId",
+                      "value": "00000000-0000-0000-0000-000000000000",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[0][text]",
+                      "value": "Right",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[0][isCorrect]",
+                      "value": "true",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[1][text]",
+                      "value": "Wrong",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[1][isCorrect]",
+                      "value": "false",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Enable and pick a file to attach an image."
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "school",
+                    "me",
+                    "questions"
+                  ]
+                },
+                "description": "purpose=dailyChallenge takes `courseId` and NO `lessonId` — sending a lessonId is rejected. These live in the school pool rather than a lesson."
+              }
+            },
+            {
+              "name": "Bulk create questions (raw JSON, no files)",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1568,7 +1800,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"questions\": [\n    {\n      \"title\": \"What is 2 + 2?\",\n      \"type\": \"options\",\n      \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n      \"options\": [\n        { \"text\": \"4\", \"isCorrect\": true },\n        { \"text\": \"5\", \"isCorrect\": false }\n      ]\n    }\n  ]\n}",
+                  "raw": "{\n  \"questions\": [\n    {\n      \"title\": \"What is 2 + 2?\",\n      \"type\": \"options\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n      \"options\": [\n        {\n          \"text\": \"4\",\n          \"isCorrect\": true\n        },\n        {\n          \"text\": \"5\",\n          \"isCorrect\": false\n        }\n      ]\n    },\n    {\n      \"title\": \"The earth is round\",\n      \"type\": \"trueFalse\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n      \"correctAnswer\": true\n    },\n    {\n      \"title\": \"Match each animal to its sound\",\n      \"type\": \"match\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"00000000-0000-0000-0000-000000000000\",\n      \"matchingItems\": [\n        {\n          \"text\": \"Meow\",\n          \"type\": \"match\"\n        },\n        {\n          \"text\": \"Bark\",\n          \"type\": \"match\"\n        },\n        {\n          \"text\": \"Cat\",\n          \"type\": \"base\",\n          \"correctIndex\": 0\n        },\n        {\n          \"text\": \"Dog\",\n          \"type\": \"base\",\n          \"correctIndex\": 1\n        }\n      ]\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -1587,27 +1819,65 @@
                     "questions",
                     "bulk"
                   ]
-                }
+                },
+                "description": "Bulk create is raw JSON — no image support on this route.\n\nAll-or-nothing: one invalid question drops the whole batch (single transaction, everything validated before the first write).\n\n`purpose` is required on every item, same as single create."
               }
             },
             {
-              "name": "Update question",
+              "name": "Update question — type: options (form-data)",
               "request": {
                 "method": "PATCH",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
                 "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"Updated title\",\n  \"type\": \"options\",\n  \"options\": [\n    { \"text\": \"4\", \"isCorrect\": true },\n    { \"text\": \"5\", \"isCorrect\": false }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Updated title",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "options",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[0][text]",
+                      "value": "4",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[0][isCorrect]",
+                      "value": "true",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[1][text]",
+                      "value": "5",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[1][isCorrect]",
+                      "value": "false",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[2][text]",
+                      "value": "6",
+                      "type": "text"
+                    },
+                    {
+                      "key": "options[2][isCorrect]",
+                      "value": "false",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
                     }
-                  }
+                  ]
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/school/me/questions/:id",
@@ -1628,7 +1898,202 @@
                     }
                   ]
                 },
-                "description": "To attach an image switch body to form-data with an `image` file field."
+                "description": "Switch to / stay on `options`. `type` is sent, so the full `options[]` array is required and replaces the whole answer key.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
+              }
+            },
+            {
+              "name": "Update question — type: trueFalse (form-data)",
+              "request": {
+                "method": "PATCH",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Updated title",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "trueFalse",
+                      "type": "text"
+                    },
+                    {
+                      "key": "correctAnswer",
+                      "value": "false",
+                      "type": "text",
+                      "description": "true | false — required when type=trueFalse"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "school",
+                    "me",
+                    "questions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Switch to / stay on `trueFalse`. `type` is sent, so `correctAnswer` is required. Coming from options/match, the old rows are dropped; the key lands on the question as `trueOrFalseAnswer`.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
+              }
+            },
+            {
+              "name": "Update question — type: match (form-data)",
+              "request": {
+                "method": "PATCH",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Updated title",
+                      "type": "text"
+                    },
+                    {
+                      "key": "type",
+                      "value": "match",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[0][text]",
+                      "value": "Meow",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[0][type]",
+                      "value": "match",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[1][text]",
+                      "value": "Bark",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[1][type]",
+                      "value": "match",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[2][text]",
+                      "value": "Cat",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[2][type]",
+                      "value": "base",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[2][correctIndex]",
+                      "value": "0",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[3][text]",
+                      "value": "Dog",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[3][type]",
+                      "value": "base",
+                      "type": "text"
+                    },
+                    {
+                      "key": "matchingItems[3][correctIndex]",
+                      "value": "1",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "school",
+                    "me",
+                    "questions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Switch to / stay on `match`. `type` is sent, so the full `matchingItems[]` array is required (min 3). `correctIndex` is a position in this same array and must point at a `match` row. Switching away resets `trueOrFalseAnswer` to null.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
+              }
+            },
+            {
+              "name": "Update question — title / image, no type (form-data)",
+              "request": {
+                "method": "PATCH",
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "Renamed, answer key untouched",
+                      "type": "text"
+                    },
+                    {
+                      "key": "image",
+                      "type": "file",
+                      "src": [],
+                      "disabled": true,
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "school",
+                    "me",
+                    "questions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "No `type` sent, so the answer key survives exactly as-is. Use this to rename and/or swap the image without touching options/matchingItems/correctAnswer.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
               }
             },
             {
@@ -1653,7 +2118,8 @@
                       "value": ""
                     }
                   ]
-                }
+                },
+                "description": "By id.\n\nRejected when the question is the LAST one of a `published` lesson — set the lesson to `draft` first. Also rejected while today's daily challenge uses it.\n\nDeleting the whole lesson or unit tears its questions down regardless (guards are skipped there)."
               }
             },
             {
@@ -1687,48 +2153,8 @@
                     "questions",
                     "bulk-delete"
                   ]
-                }
-              }
-            },
-            {
-              "name": "Reorder questions",
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"ids\": [\n    \"00000000-0000-0000-0000-000000000000\"\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
-                "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/order/:lessonId",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "school",
-                    "me",
-                    "questions",
-                    "order",
-                    ":lessonId"
-                  ],
-                  "variable": [
-                    {
-                      "key": "lessonId",
-                      "value": ""
-                    }
-                  ]
-                }
+                "description": "By ids. POST rather than DELETE because DELETE bodies get dropped by some proxies.\n\nAll-or-nothing: one undeletable question cancels the batch. Same guards as single delete."
               }
             }
           ]

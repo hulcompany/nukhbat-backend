@@ -1,6 +1,12 @@
 $kind: http-request
+description: |-
+  By id.
+
+  Rejected when the question is the LAST one of a `published` lesson — set the lesson to `draft` first. Also rejected while today's daily challenge uses it.
+
+  Deleting the whole lesson or unit tears its questions down regardless (guards are skipped there).
 url: "{{baseUrl}}/api/school/me/questions/:id"
 method: DELETE
 pathVariables:
   id: ""
-order: 7000
+order: 12000

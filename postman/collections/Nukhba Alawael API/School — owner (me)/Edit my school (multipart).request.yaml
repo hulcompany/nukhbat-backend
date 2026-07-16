@@ -9,5 +9,5 @@ body:
       value: New School Name
     - type: file
       key: image
-      src: ""
+      src: []
 order: 8000

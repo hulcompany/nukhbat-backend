@@ -9,5 +9,5 @@ body:
       value: Book Name
     - type: file
       key: attachment
-      src: ""
+      src: []
 order: 2000

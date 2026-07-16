@@ -1,5 +1,8 @@
 $kind: http-request
-description: "status: active | draft | unActive"
+description: |-
+  status: draft | published.
+
+  Publishing requires the lesson to already have at least one question, and a published lesson cannot then be emptied — set it back to draft to delete its last question.
 url: "{{baseUrl}}/api/school/me/lessons/:id"
 method: PATCH
 headers:
@@ -12,6 +15,6 @@ body:
     {
       "title": "New Lesson Title",
       "description": "New description",
-      "status": "active"
+      "status": "published"
     }
 order: 3000

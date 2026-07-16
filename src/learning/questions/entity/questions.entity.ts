@@ -3,7 +3,6 @@ import {
   Check,
   Column,
   Entity,
-  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -18,18 +17,6 @@ import { QuestionPurpose } from './enum/question-purpose.type';
 import { School } from '../../../school/entity/school.entity';
 
 @Entity()
-@Index('uq_question_school_lesson_index', ['school', 'lesson', 'index'], {
-  unique: true,
-  where: '"schoolId" IS NOT NULL AND "lessonId" IS NOT NULL',
-})
-@Index('uq_question_global_lesson_index', ['lesson', 'index'], {
-  unique: true,
-  where: '"schoolId" IS NULL AND "lessonId" IS NOT NULL',
-})
-@Index('uq_question_school_course_index', ['school', 'course', 'index'], {
-  unique: true,
-  where: '"courseId" IS NOT NULL AND "lessonId" IS NULL',
-})
 @Check(
   'chk_question_lesson_xor_course',
   '("lessonId" IS NOT NULL AND "courseId" IS NULL) OR ("lessonId" IS NULL AND "courseId" IS NOT NULL)',
@@ -46,9 +33,6 @@ export class Question {
     enum: QuestionType,
   })
   type: QuestionType;
-
-  @Column()
-  index: number;
 
   @Column({
     type: 'enum',
@@ -73,18 +57,31 @@ export class Question {
   @RelationId((q: Question) => q.course)
   courseId: UUID | null;
 
-  @OneToMany(() => QuestionOption, (o) => o.question, { eager: true })
+  @OneToMany(() => QuestionOption, (o) => o.question, {
+    eager: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'RESTRICT',
+    cascade: ['remove', 'soft-remove', 'insert'],
+  })
   options: QuestionOption[];
 
-  @OneToMany(() => QuestionMatch, (m) => m.question, { eager: true })
+  @OneToMany(() => QuestionMatch, (m) => m.question, {
+    eager: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'RESTRICT',
+    cascade: ['remove', 'soft-remove', 'insert'],
+  })
   matchingItems: QuestionMatch[];
 
   @Column('uuid', { nullable: true })
   imageId?: UUID | null;
 
-  @ManyToOne(() => School , {nullable: true})
+  @ManyToOne(() => School, { nullable: true })
   school?: School;
 
   @RelationId((q: Question) => q.school)
   schoolId?: UUID;
+
+  @Column({ type: 'boolean', nullable: true })
+  trueOrFalseAnswer?: boolean | null;
 }

@@ -19,7 +19,7 @@ import {
 import { QuestionPurpose } from './questions/entity/enum/question-purpose.type';
 import { DailyChallengeService } from './daily-challenge/daily-challenge.service';
 import { Context } from '../context';
-import { FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, In } from 'typeorm';
 import { Book } from './books/entity/book.entity';
 import { Unit } from './units/entity/unit.entity';
 import { Lesson } from './lessons/entity/lesson.entity';
@@ -297,7 +297,9 @@ export class LearningSchoolService {
       this.context.school.id,
       id,
     );
-    return await this.questionService.delete(this.scoped<Question>({ id: id }));
+    return await this.questionService.deleteQuestions(
+      this.scoped<Question>({ id: id }),
+    );
   }
 
   // all-or-nothing: one undeletable question cancels the whole batch
@@ -306,7 +308,9 @@ export class LearningSchoolService {
       this.context.school.id,
       ids,
     );
-    return await this.questionService.deleteMany(this.scoped<Question>(), ids);
+    return await this.questionService.deleteQuestions(
+      this.scoped<Question>({ id: In(ids) }),
+    );
   }
 
   // challenges: today's, one per track that could build one — a track is
@@ -329,17 +333,6 @@ export class LearningSchoolService {
   async createTodayDailyChallenge() {
     return await this.dailyChallengeService.createTodayAll(
       this.context.school.id,
-    );
-  }
-
-  async changeQuestionOrder(lessonId: UUID, ids: UUID[]) {
-    await this.SchoolAccessService.assertLessonAccess(
-      this.context.school.id,
-      lessonId,
-    );
-    return await this.questionService.changeOrder(
-      this.scoped<Lesson>({ id: lessonId }),
-      ids,
     );
   }
 }

@@ -18,5 +18,5 @@ body:
       value: My School
     - type: file
       key: image
-      src: ""
+      src: []
 order: 3000

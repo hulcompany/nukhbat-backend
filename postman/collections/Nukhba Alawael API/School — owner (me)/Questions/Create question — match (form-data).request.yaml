@@ -1,0 +1,60 @@
+$kind: http-request
+description: |-
+  Minimum 3 items. `type`: base | match.
+
+  `correctIndex` is only on base rows and is a POSITION in this same array — it must point at a `match` row, each match can back only one base, and matches must be >= bases.
+
+  Here base "Cat"(2) -> index 0 = "Meow", base "Dog"(3) -> index 1 = "Bark".
+url: "{{baseUrl}}/api/school/me/questions"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: Match each animal to its sound
+    - type: text
+      key: type
+      value: match
+    - type: text
+      key: purpose
+      value: lesson
+    - type: text
+      key: lessonId
+      value: 00000000-0000-0000-0000-000000000000
+    - type: text
+      key: matchingItems[0][text]
+      value: Meow
+    - type: text
+      key: matchingItems[0][type]
+      value: match
+    - type: text
+      key: matchingItems[1][text]
+      value: Bark
+    - type: text
+      key: matchingItems[1][type]
+      value: match
+    - type: text
+      key: matchingItems[2][text]
+      value: Cat
+    - type: text
+      key: matchingItems[2][type]
+      value: base
+    - type: text
+      key: matchingItems[2][correctIndex]
+      value: "0"
+    - type: text
+      key: matchingItems[3][text]
+      value: Dog
+    - type: text
+      key: matchingItems[3][type]
+      value: base
+    - type: text
+      key: matchingItems[3][correctIndex]
+      value: "1"
+    - type: file
+      key: image
+      src: []
+      description: Optional. Enable and pick a file to attach an image.
+      disabled: true
+order: 5000

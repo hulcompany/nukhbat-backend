@@ -1,0 +1,6 @@
+$kind: http-request
+name: Create question — trueFalse (form-data)
+description: trueFalse carries its answer key in the single `correctAnswer` boolean; it is stored on the question as `trueOrFalseAnswer` and reads back there (no option rows). Send no options/matchingItems.
+url: "{{baseUrl}}/api/school/me/questions"
+method: POST
+order: 4000

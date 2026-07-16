@@ -19,5 +19,5 @@ body:
       disabled: true
     - type: file
       key: image
-      src: ""
+      src: []
 order: 4000

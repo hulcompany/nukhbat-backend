@@ -1,6 +1,7 @@
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -10,7 +11,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { UUID } from 'crypto';
 import { BasePaginationDto, OXorValidator, XorValidator } from 'core';
 import { QuestionType } from '../entity/enum/question.type';
@@ -27,8 +28,7 @@ export class QuestionCreateDto {
   type: QuestionType;
 
   @IsEnum(QuestionPurpose)
-  @IsOptional()
-  purpose?: QuestionPurpose;
+  purpose: QuestionPurpose;
 
   // required for lesson questions; ignored for dailyChallenge ones
   @ValidateIf((o) => o.purpose !== QuestionPurpose.dailyChallenge)
@@ -53,6 +53,15 @@ export class QuestionCreateDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionMatchDto)
   matchingItems?: QuestionMatchDto[];
+
+  // trueFalse questions carry their whole answer key here — the service
+  // materializes the two option rows from it
+  @ValidateIf((o) => o.type === QuestionType.TRUE_FALSE)
+  @Transform(({ value }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  correctAnswer?: boolean;
 }
 
 export class QuestionBulkCreateDto {
@@ -89,19 +98,28 @@ export class QuestionEditDto {
   @IsOptional()
   type?: QuestionType;
 
-  @IsArray()
+  // no @IsOptional() on these: ValidateIf already skips them unless `type`
+  // names them, and @IsOptional() would let `{ type: 'options' }` through
+  // with no array — the answer key is replaced wholesale or not at all
   @ValidateIf((q) => q.type === QuestionType.OPTIONS)
-  @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => QuestionOptionDto)
   @ArrayMinSize(2)
   options?: QuestionOptionDto[];
 
-  @IsArray()
   @ValidateIf((q) => q.type === QuestionType.MATCH)
-  @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => QuestionMatchDto)
   @ArrayMinSize(3)
   matchingItems?: QuestionMatchDto[];
+
+  // like options/matchingItems: only honored when `type` is sent
+  @ValidateIf((q) => q.type === QuestionType.TRUE_FALSE)
+  @Transform(({ value }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  correctAnswer?: boolean;
 }

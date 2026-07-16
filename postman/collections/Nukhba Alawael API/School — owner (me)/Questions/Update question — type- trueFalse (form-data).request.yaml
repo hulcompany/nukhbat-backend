@@ -1,0 +1,38 @@
+$kind: http-request
+name: "Update question — type: trueFalse (form-data)"
+description: |-
+  Switch to / stay on `trueFalse`. `type` is sent, so `correctAnswer` is required. Coming from options/match, the old rows are dropped; the key lands on the question as `trueOrFalseAnswer`.
+
+  ---
+
+  Mirrors QuestionEditDto — every field is optional:
+  • `title` — optional, on its own or with anything else.
+  • `image` — optional. Omit to keep the current one, send a file to swap it.
+  • `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).
+
+  The answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.
+
+  Omit `type` and the answer key is left untouched — any components you send are ignored.
+url: "{{baseUrl}}/api/school/me/questions/:id"
+method: PATCH
+pathVariables:
+  id: ""
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: Updated title
+    - type: text
+      key: type
+      value: trueFalse
+    - type: text
+      key: correctAnswer
+      value: "false"
+      description: true | false — required when type=trueFalse
+    - type: file
+      key: image
+      src: []
+      description: Optional. Leave disabled to keep the current image; enable and pick a file to swap it.
+      disabled: true
+order: 9000

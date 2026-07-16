@@ -1,0 +1,68 @@
+$kind: http-request
+description: |-
+  Bulk create is raw JSON — no image support on this route.
+
+  All-or-nothing: one invalid question drops the whole batch (single transaction, everything validated before the first write).
+
+  `purpose` is required on every item, same as single create.
+url: "{{baseUrl}}/api/school/me/questions/bulk"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "questions": [
+        {
+          "title": "What is 2 + 2?",
+          "type": "options",
+          "purpose": "lesson",
+          "lessonId": "00000000-0000-0000-0000-000000000000",
+          "options": [
+            {
+              "text": "4",
+              "isCorrect": true
+            },
+            {
+              "text": "5",
+              "isCorrect": false
+            }
+          ]
+        },
+        {
+          "title": "The earth is round",
+          "type": "trueFalse",
+          "purpose": "lesson",
+          "lessonId": "00000000-0000-0000-0000-000000000000",
+          "correctAnswer": true
+        },
+        {
+          "title": "Match each animal to its sound",
+          "type": "match",
+          "purpose": "lesson",
+          "lessonId": "00000000-0000-0000-0000-000000000000",
+          "matchingItems": [
+            {
+              "text": "Meow",
+              "type": "match"
+            },
+            {
+              "text": "Bark",
+              "type": "match"
+            },
+            {
+              "text": "Cat",
+              "type": "base",
+              "correctIndex": 0
+            },
+            {
+              "text": "Dog",
+              "type": "base",
+              "correctIndex": 1
+            }
+          ]
+        }
+      ]
+    }
+order: 7000

@@ -1,11 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  OnModuleDestroy,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleDestroy } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AppFile, FileStatus } from './entity/app-file.entity';
-import { Brackets, DataSource, EntityManager, Repository } from 'typeorm';
+import { Brackets, DataSource, EntityManager, In, Repository } from 'typeorm';
 import { UUID } from 'node:crypto';
 import { transaction } from 'core';
 import { FilePgListener } from './file.pg.listener';
@@ -63,10 +59,13 @@ export class FileService implements OnModuleDestroy {
     });
   }
 
-  async softRemove(id: UUID, dm?: EntityManager) {
+  // takes one id or many — the batch form is two queries regardless of size
+  async softRemove(id: UUID | UUID[], dm?: EntityManager) {
     let fRep = dm?.getRepository(AppFile) || this.repo;
-    let res = await fRep.findOneBy({ id });
-    if (res) {
+    let ids = Array.isArray(id) ? id : [id];
+    if (!ids.length) return;
+    let res = await fRep.findBy({ id: In(ids) });
+    if (res.length) {
       await fRep.softRemove(res);
     }
   }

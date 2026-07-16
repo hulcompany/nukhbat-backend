@@ -1,0 +1,31 @@
+$kind: http-request
+name: Update question — title / image, no type (form-data)
+description: |-
+  No `type` sent, so the answer key survives exactly as-is. Use this to rename and/or swap the image without touching options/matchingItems/correctAnswer.
+
+  ---
+
+  Mirrors QuestionEditDto — every field is optional:
+  • `title` — optional, on its own or with anything else.
+  • `image` — optional. Omit to keep the current one, send a file to swap it.
+  • `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).
+
+  The answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.
+
+  Omit `type` and the answer key is left untouched — any components you send are ignored.
+url: "{{baseUrl}}/api/school/me/questions/:id"
+method: PATCH
+pathVariables:
+  id: ""
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: Renamed, answer key untouched
+    - type: file
+      key: image
+      src: []
+      description: Optional. Leave disabled to keep the current image; enable and pick a file to swap it.
+      disabled: true
+order: 11000

@@ -1,5 +1,4 @@
 $kind: http-request
-name: My subscription (student)
 description: "Role: student. The caller's latest subscription (live or expired) so the client can show remaining time / prompt a renewal."
 url: "{{baseUrl}}/api/subscription/me"
 method: GET

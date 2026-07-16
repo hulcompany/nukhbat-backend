@@ -245,14 +245,6 @@ export class SchoolController {
     return await this.service.deleteQuestions(params.ids);
   }
 
-  @Post('questions/order/:lessonId')
-  async changeQuestionOrder(
-    @Param('lessonId', ParseUUIDPipe) lessonId: UUID,
-    @Body() params: IdsDto,
-  ) {
-    return await this.service.changeQuestionOrder(lessonId, params.ids);
-  }
-
   // daily challenge
   @Get('daily-challenge')
   async getTodayDailyChallenge() {

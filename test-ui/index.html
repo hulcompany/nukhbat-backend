@@ -1,871 +1,344 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Nukhba API bench</title>
+<title>Nukhba console</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root {
-    --paper: #f3f2ec; --card: #ffffff; --ink: #23262e; --mut: #6f7480;
-    --line: #e3e1d7; --warnbg: #fdeeee; --okbg: #e9f7ef;
-    --accent: #52606d;               /* neutral — replaced by the signed-in role */
-    --adm: #6d28d9; --own: #0e7490; --stu: #b45309;
-    --get: #2563eb; --post: #059669; --patch: #d97706; --del: #dc2626;
+/* ── tokens ───────────────────────────────────────────────────────────
+   Method and status are the only colour in this UI. Everything else is
+   neutral, so the eye lands on the two things you actually scan for. */
+:root {
+  --bg:#f7f7f6; --panel:#fff; --sunk:#f1f1ef; --line:#e2e2de; --line-2:#d2d2cc;
+  --ink:#1b1d20; --mut:#71757c; --faint:#9a9ea5;
+  --get:#1d63d1; --post:#137a45; --patch:#9a6100; --put:#6b32c4; --delete:#c2281f;
+  --ok:#137a45; --bad:#c2281f;
+  --admin:#6b32c4; --contentWriter:#0b6e83; --student:#a8530a;
+  --focus:#1d63d1;
+  --r:6px;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+:root[data-theme="dark"] {
+  --bg:#131519; --panel:#191c21; --sunk:#101216; --line:#282c33; --line-2:#393f48;
+  --ink:#e4e6e9; --mut:#8d939c; --faint:#666c75;
+  --get:#6fa2f5; --post:#4cc38a; --patch:#e0a33b; --put:#ab84ee; --delete:#f0776c;
+  --ok:#4cc38a; --bad:#f0776c;
+  --admin:#ab84ee; --contentWriter:#3fb6cf; --student:#e0913b;
+  --focus:#6fa2f5;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#131519; --panel:#191c21; --sunk:#101216; --line:#282c33; --line-2:#393f48;
+    --ink:#e4e6e9; --mut:#8d939c; --faint:#666c75;
+    --get:#6fa2f5; --post:#4cc38a; --patch:#e0a33b; --put:#ab84ee; --delete:#f0776c;
+    --ok:#4cc38a; --bad:#f0776c;
+    --admin:#ab84ee; --contentWriter:#3fb6cf; --student:#e0913b;
+    --focus:#6fa2f5;
   }
-  body[data-role="admin"]         { --accent: var(--adm); }
-  body[data-role="contentWriter"] { --accent: var(--own); }
-  body[data-role="student"]       { --accent: var(--stu); }
+}
 
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--paper); color: var(--ink);
-    font: 14px/1.45 system-ui, "Segoe UI", sans-serif;
-    padding-bottom: 260px;
-  }
-  code, .mono { font-family: ui-monospace, Consolas, monospace; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; }
+body {
+  background:var(--bg); color:var(--ink);
+  font:13px/1.5 var(--sans);
+  display:grid; grid-template-rows:auto 1fr auto; height:100vh; overflow:hidden;
+}
+button,input,select,textarea { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+:focus-visible { outline:2px solid var(--focus); outline-offset:1px; border-radius:3px; }
+.mono { font-family:var(--mono); }
+.spacer { flex:1; }
 
-  /* ---------- header ---------- */
-  #top {
-    background: #1b1e26; color: #fff; padding: 9px 20px;
-    border-top: 4px solid var(--accent);
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  }
-  #top h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: -.01em; }
-  #top h1 small { display: block; font-size: 11px; font-weight: 400; opacity: .6; letter-spacing: 0; }
-  #h-env {
-    font-size: 12px; padding: 4px 8px; border-radius: 6px;
-    background: #262b37; color: #d7dde7; border: 1px solid #394153;
-  }
-  #h-prod {
-    display: none; font-size: 11px; font-weight: 700; letter-spacing: .08em;
-    background: #dc2626; color: #fff; padding: 2px 8px; border-radius: 10px;
-  }
-  body.prod #h-prod { display: inline-block; }
-  #h-accounts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
-  .chip-acc {
-    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-    font-size: 12px; padding: 3px 10px; border-radius: 12px;
-    background: #262b37; color: #c6cedb; border: 1px solid #394153;
-  }
-  .chip-acc .dot { width: 8px; height: 8px; border-radius: 50%; background: #52606d; }
-  .chip-acc .dot.r-admin { background: var(--adm); }
-  .chip-acc .dot.r-contentWriter { background: var(--own); }
-  .chip-acc .dot.r-student { background: var(--stu); }
-  .chip-acc.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .chip-acc.on .dot { background: #fff; }
-  #h-status {
-    font-size: 12px; padding: 3px 12px; border-radius: 12px;
-    background: #394153; white-space: nowrap;
-  }
-  #h-status.in { background: var(--accent); }
-  #h-reload {
-    background: none; border: 1px solid #394153; color: #8fa0b8;
-    border-radius: 6px; padding: 3px 9px; cursor: pointer; font-size: 12px;
-  }
-  #h-reload:hover { color: #fff; }
+/* ── header ─────────────────────────────────────────────────────────── */
+header {
+  display:flex; align-items:center; gap:10px; padding:0 12px; height:44px;
+  background:var(--panel); border-bottom:1px solid var(--line);
+}
+.brand { font-weight:640; letter-spacing:-.02em; }
+.brand span { color:var(--faint); font-weight:400; }
+.seg { display:flex; border:1px solid var(--line); border-radius:var(--r); overflow:hidden; }
+.seg button { padding:4px 10px; font-size:12px; color:var(--mut); }
+.seg button[aria-pressed="true"] { background:var(--sunk); color:var(--ink); font-weight:600; }
+.seg button + button { border-left:1px solid var(--line); }
+#prod-warn {
+  display:none; font-size:10px; font-weight:700; letter-spacing:.08em;
+  color:var(--bad); border:1px solid var(--bad); border-radius:var(--r); padding:2px 6px;
+}
+body[data-env="prod"] #prod-warn { display:block; }
 
-  /* ---------- content path strip (owner cascade) ---------- */
-  #picker {
-    display: none; align-items: flex-end; gap: 8px; flex-wrap: wrap;
-    background: #fbfaf6; padding: 8px 20px; border-bottom: 1px solid var(--line);
-  }
-  #picker.show { display: flex; }
-  .hop { display: flex; flex-direction: column; gap: 2px; }
-  .hop label { font-size: 10px; color: var(--mut); text-transform: uppercase; letter-spacing: .06em; }
-  .hop select { min-width: 150px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
-  .hop select:disabled { background: var(--paper); color: #9aa3b2; }
-  .sep { color: #b8c0cc; padding-bottom: 7px; }
-  #picker .hint { font-size: 12px; color: var(--mut); padding-bottom: 7px; }
+/* session chips — the only place role colour appears */
+#sessions { display:flex; gap:5px; align-items:center; flex-wrap:wrap; }
+.chip {
+  display:flex; align-items:center; gap:6px; padding:3px 5px 3px 8px;
+  border:1px solid var(--line); border-radius:99px; font-size:12px; color:var(--mut);
+  max-width:200px;
+}
+.chip[aria-pressed="true"] {
+  border-color:var(--role); color:var(--ink);
+  background:color-mix(in srgb,var(--role) 9%,transparent);
+}
+.chip .dot { width:7px; height:7px; border-radius:99px; background:var(--role); flex:none; }
+.chip .who { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chip .x { color:var(--faint); font-size:14px; line-height:1; padding:0 2px; }
+.chip .x:hover { color:var(--bad); }
+.ghost {
+  border:1px solid var(--line); border-radius:var(--r); padding:4px 9px;
+  font-size:12px; color:var(--mut);
+}
+.ghost:hover { border-color:var(--line-2); color:var(--ink); }
 
-  /* ---------- sidebar + panel ---------- */
-  #layout { display: flex; align-items: flex-start; }
-  #side { width: 216px; flex: none; padding: 12px 0 14px 14px; position: sticky; top: 0; }
-  #side .group {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--mut); margin: 14px 8px 4px;
-  }
-  #side .group::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #b9bfc9; }
-  #side .group.g-stu::before { background: var(--stu); }
-  #side .group.g-own::before { background: var(--own); }
-  #side .group.g-adm::before { background: var(--adm); }
-  #side button {
-    display: block; width: 100%; text-align: left; padding: 7px 12px; margin: 1px 0;
-    border: none; border-radius: 7px; background: none; cursor: pointer;
-    font-size: 13px; color: var(--ink);
-  }
-  #side button:hover { background: #e9e7dd; }
-  #side button.on { background: var(--accent); color: #fff; }
-  #side button.off { opacity: .4; }
-  #panel { flex: 1; padding: 14px 20px 0 14px; min-width: 0; }
-  section.panel { display: none; }
-  section.panel.on { display: block; }
+/* ── main grid ──────────────────────────────────────────────────────── */
+main { display:grid; grid-template-columns:272px 1fr; min-height:0; }
 
-  .card {
-    border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
-    margin-bottom: 14px; background: var(--card);
-  }
-  .card > h2 { margin: 0 0 3px; font-size: 14px; font-weight: 650; }
-  .card > h2 .tag { font-weight: 400; font-size: 12px; color: var(--mut); }
-  .card > p.sub { margin: 0 0 10px; font-size: 12px; color: var(--mut); }
-  .cols { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
-  .cols > .card { flex: 1 1 330px; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 7px 0; }
-  input, select, textarea { padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; font-size: 13px; background: #fff; }
-  textarea { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+/* ── sidebar ────────────────────────────────────────────────────────── */
+#side {
+  background:var(--panel); border-right:1px solid var(--line);
+  display:flex; flex-direction:column; min-height:0;
+}
+#search {
+  width:100%; padding:9px 12px; border:0; border-bottom:1px solid var(--line);
+  background:transparent; font-size:12px;
+}
+#search::placeholder { color:var(--faint); }
+#tree { overflow-y:auto; padding:4px 0 12px; flex:1; }
+.folder > summary {
+  list-style:none; cursor:pointer; padding:6px 12px;
+  font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--faint); display:flex; align-items:center; gap:6px;
+}
+.folder > summary::-webkit-details-marker { display:none; }
+.folder > summary:hover { color:var(--mut); }
+.folder > summary::before { content:"▸"; font-size:9px; transition:transform .12s; }
+.folder[open] > summary::before { transform:rotate(90deg); }
+.folder > summary .n { margin-left:auto; font-weight:500; letter-spacing:0; }
+.req {
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  padding:5px 12px 5px 16px; color:var(--mut); font-size:12.5px;
+  border-left:2px solid transparent;
+}
+.req:hover { background:var(--sunk); color:var(--ink); }
+.req[aria-current="true"] { background:var(--sunk); color:var(--ink); border-left-color:var(--m); font-weight:550; }
+.req .label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.verb {
+  font:600 9.5px/1.4 var(--mono); letter-spacing:.04em; color:var(--m);
+  flex:none; width:38px; text-align:right;
+}
 
-  /* ---------- buttons ---------- */
-  button { cursor: pointer; font-size: 13px; }
-  .act {
-    display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
-    padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line);
-    background: #fff; text-align: left;
-  }
-  .act .route { font-family: ui-monospace, Consolas, monospace; font-size: 10px; opacity: .75; }
-  .act.v-GET    { border-color: var(--get);   color: var(--get); }
-  .act.v-POST   { border-color: var(--post);  color: var(--post); }
-  .act.v-PATCH  { border-color: var(--patch); color: var(--patch); }
-  .act.v-DELETE { border-color: var(--del);   color: var(--del); }
-  .act:hover { background: #f6f8fb; }
-  .plain { padding: 6px 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
-  .plain:hover { background: #f6f8fb; }
-  .mini { padding: 3px 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 5px; background: #fff; }
-  .mini.warn { color: var(--del); border-color: #d9a0a0; }
-  button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 1px;
-  }
+/* ── request pane ───────────────────────────────────────────────────── */
+#work { display:flex; flex-direction:column; min-width:0; min-height:0; }
+#bar {
+  display:flex; align-items:center; gap:8px; padding:9px 12px;
+  border-bottom:1px solid var(--line); background:var(--panel);
+}
+#bar .verb { width:auto; font-size:11px; letter-spacing:.06em; }
+#url {
+  flex:1; font-size:12px; color:var(--mut); overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap;
+}
+#url b { color:var(--ink); font-weight:600; }
+#url i { color:var(--bad); font-style:normal; }
+#send {
+  background:var(--ink); color:var(--panel); padding:6px 16px;
+  border-radius:var(--r); font-weight:600; font-size:12px;
+}
+#send:hover { opacity:.85; }
+#send:disabled { opacity:.4; cursor:default; }
 
-  /* ---------- tables ---------- */
-  table { border-collapse: collapse; width: 100%; font-size: 13px; }
-  th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--mut); }
-  th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: start; vertical-align: middle; }
-  tr.warn td { background: var(--warnbg); }
-  tr.ok td { background: var(--okbg); }
-  .empty { padding: 16px; text-align: center; color: var(--mut); font-size: 13px; border: 1px dashed var(--line); border-radius: 8px; }
-  .pageinfo { font-size: 12px; color: var(--mut); }
+#tabs { display:flex; gap:2px; padding:0 12px; border-bottom:1px solid var(--line); background:var(--panel); }
+#tabs button {
+  padding:7px 10px; font-size:12px; color:var(--mut);
+  border-bottom:2px solid transparent; margin-bottom:-1px;
+}
+#tabs button[aria-selected="true"] { color:var(--ink); border-bottom-color:var(--ink); font-weight:600; }
+#tabs .badge {
+  font:600 9px/1 var(--mono); background:var(--sunk); color:var(--mut);
+  border-radius:99px; padding:2px 4px; margin-left:4px;
+}
 
-  .chip {
-    display: inline-block; font-family: ui-monospace, Consolas, monospace; font-size: 11px;
-    padding: 1px 7px; border-radius: 4px; color: #fff;
-  }
-  .chip.GET { background: var(--get); } .chip.POST { background: var(--post); }
-  .chip.PATCH { background: var(--patch); } .chip.PUT { background: var(--patch); }
-  .chip.DELETE { background: var(--del); }
-  .chip.s2 { background: #059669; } .chip.s4 { background: #d97706; } .chip.s5, .chip.sX { background: #dc2626; }
+#panes { overflow:auto; background:var(--panel); flex:1; }
+.pane { padding:12px; display:none; }
+.pane[data-on] { display:block; }
 
-  .rolebadge {
-    display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px;
-    color: #fff; background: #52606d;
-  }
-  .rolebadge.r-admin { background: var(--adm); }
-  .rolebadge.r-contentWriter { background: var(--own); }
-  .rolebadge.r-student { background: var(--stu); }
+.row { display:grid; grid-template-columns:18px 160px 1fr auto; gap:8px; align-items:center; margin-bottom:6px; }
+.row input[type=text] {
+  border:1px solid var(--line); border-radius:var(--r); padding:5px 8px;
+  background:var(--bg); font-family:var(--mono); font-size:12px; min-width:0;
+}
+.row input[type=text]:focus { border-color:var(--focus); outline:none; }
+.row .k { font-family:var(--mono); font-size:12px; color:var(--mut); overflow:hidden; text-overflow:ellipsis; }
+.row .k em { color:var(--faint); font-style:normal; }
+.req-mark { color:var(--bad); }
+.hint { color:var(--faint); font-size:11.5px; margin-bottom:10px; }
+.pick {
+  border:1px solid var(--line); border-radius:var(--r); padding:4px 6px;
+  font-size:10px; color:var(--mut); white-space:nowrap;
+}
+.pick:hover { border-color:var(--focus); color:var(--focus); }
+.pick:disabled { opacity:.4; cursor:default; }
+.file {
+  border:1px dashed var(--line-2); border-radius:var(--r);
+  padding:5px 8px; font-size:11.5px; color:var(--mut); cursor:pointer; text-align:left;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.file:hover { border-color:var(--focus); color:var(--ink); }
+.file[data-has] { border-style:solid; color:var(--ink); }
+textarea {
+  width:100%; min-height:220px; border:1px solid var(--line); border-radius:var(--r);
+  padding:10px; background:var(--bg); font-family:var(--mono); font-size:12px;
+  line-height:1.6; resize:vertical; tab-size:2;
+}
+textarea:focus { border-color:var(--focus); outline:none; }
+.docs { max-width:72ch; white-space:pre-wrap; color:var(--mut); font-size:12.5px; line-height:1.65; }
+.docs b { color:var(--ink); font-weight:600; }
+.docs code { color:var(--ink); font-family:var(--mono); font-size:11.5px; background:var(--sunk); padding:1px 4px; border-radius:3px; }
+.empty { color:var(--faint); font-size:12px; padding:6px 0; }
+.tools { display:flex; gap:6px; margin-bottom:8px; }
 
-  /* ---------- log dock ---------- */
-  #logwrap {
-    position: fixed; bottom: 0; left: 0; right: 0; height: 240px;
-    background: #15171d; color: #d7dde7; display: flex; flex-direction: column;
-  }
-  #logwrap.min { height: 34px; }
-  #loghead {
-    display: flex; align-items: center; gap: 10px; padding: 6px 16px;
-    font-size: 12px; border-bottom: 1px solid #262b37; color: #8fa0b8;
-  }
-  #loghead button { background: none; border: 1px solid #394153; color: #8fa0b8; border-radius: 5px; padding: 2px 10px; }
-  #log { overflow: auto; flex: 1; padding: 4px 16px 10px; }
-  .entry { border-bottom: 1px solid #1d222d; padding: 5px 0; font-size: 12px; }
-  .entry .head { cursor: pointer; display: flex; gap: 8px; align-items: center; font-family: ui-monospace, Consolas, monospace; }
-  .entry .head .t { color: #5c6b84; }
-  .entry pre { margin: 6px 0 2px; white-space: pre-wrap; word-break: break-word; color: #b9c6d8; display: none; }
-  .entry.open pre { display: block; }
+/* ── response ───────────────────────────────────────────────────────── */
+#grip { height:5px; background:var(--bg); border-top:1px solid var(--line); cursor:row-resize; flex:none; }
+#grip:hover { background:var(--line-2); }
+#res { display:flex; flex-direction:column; min-height:90px; height:42%; background:var(--panel); flex:none; }
+#res-bar { display:flex; align-items:center; gap:10px; padding:6px 12px; border-bottom:1px solid var(--line); }
+#status { font:600 12px/1 var(--mono); color:var(--faint); }
+#status[data-tone="ok"] { color:var(--ok); }
+#status[data-tone="bad"] { color:var(--bad); }
+#meta { color:var(--faint); font-size:11.5px; font-family:var(--mono); }
+#body { overflow:auto; padding:10px 12px; flex:1; }
+#body pre { font-family:var(--mono); font-size:12px; line-height:1.6; white-space:pre-wrap; word-break:break-word; }
+#body img { max-width:100%; border:1px solid var(--line); border-radius:var(--r); }
+.t-key { color:var(--mut); }
+.t-str { color:var(--post); }
+.t-num { color:var(--put); }
+.t-lit { color:var(--patch); }
+.uuid {
+  color:var(--get); text-decoration:underline; text-decoration-style:dotted;
+  text-underline-offset:2px; cursor:pointer; font:inherit;
+}
+.uuid:hover { background:color-mix(in srgb,var(--get) 16%,transparent); border-radius:2px; }
 
-  @media (prefers-reduced-motion: no-preference) {
-    #side button, .act, .plain, .mini, .chip-acc { transition: background .12s ease; }
-  }
+/* ── id tray: catch an id from a response, paste it into the next request ── */
+#tray {
+  display:flex; align-items:center; gap:8px; padding:0 12px; height:38px;
+  background:var(--panel); border-top:1px solid var(--line); overflow-x:auto;
+}
+#tray .cap { font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); flex:none; }
+#tray .none { color:var(--faint); font-size:11.5px; }
+.id {
+  display:flex; align-items:center; gap:6px; flex:none;
+  border:1px solid var(--line); border-radius:99px; padding:2px 4px 2px 9px; font-size:11px;
+}
+.id:hover { border-color:var(--focus); }
+.id .src { color:var(--faint); white-space:nowrap; }
+.id .val { font-family:var(--mono); color:var(--ink); }
+.id .x { color:var(--faint); padding:0 3px; font-size:13px; line-height:1; }
+.id .x:hover { color:var(--bad); }
+
+/* ── toast ──────────────────────────────────────────────────────────── */
+#toast {
+  position:fixed; bottom:52px; left:50%; transform:translateX(-50%) translateY(6px);
+  background:var(--ink); color:var(--panel); padding:7px 14px; border-radius:99px;
+  font-size:12px; opacity:0; pointer-events:none; transition:opacity .16s,transform .16s;
+  z-index:5; max-width:70vw; text-align:center;
+}
+#toast[data-on] { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── dialogs ────────────────────────────────────────────────────────── */
+dialog {
+  border:1px solid var(--line); border-radius:10px; padding:0; background:var(--panel);
+  color:var(--ink); width:min(430px,92vw);
+}
+dialog::backdrop { background:rgba(0,0,0,.35); }
+dialog h2 { font-size:14px; padding:14px 16px; border-bottom:1px solid var(--line); }
+dialog .in { padding:16px; display:grid; gap:10px; }
+dialog label { font-size:11px; color:var(--mut); display:grid; gap:4px; }
+dialog input {
+  border:1px solid var(--line); border-radius:var(--r); padding:7px 9px;
+  background:var(--bg); font-size:13px;
+}
+dialog input:focus { border-color:var(--focus); outline:none; }
+dialog .act { display:flex; justify-content:flex-end; gap:8px; padding:0 16px 16px; }
+dialog .go { background:var(--ink); color:var(--panel); padding:7px 14px; border-radius:var(--r); font-weight:600; font-size:12px; }
+dialog .go:disabled { opacity:.5; cursor:default; }
+#login-err { color:var(--bad); font-size:12px; min-height:1.2em; }
+#login-hint { color:var(--faint); font-size:11.5px; }
+
+@media (max-width:860px) {
+  main { grid-template-columns:1fr; }
+  #side { display:none; }
+}
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
 </style>
 </head>
-<body data-role="">
+<body>
 
-<header id="top">
-  <h1>نخبة الأوائل · API bench<small>requests go out exactly as typed — the backend does the validating</small></h1>
-  <select id="h-env" title="target API"></select>
-  <span id="h-prod">PROD</span>
-  <button id="h-reload" title="reload tracks + school lists" onclick="reloadRefs()">↻ refs</button>
-  <div id="h-accounts"></div>
-  <span id="h-status">signed out</span>
+<header>
+  <div class="brand">Nukhba <span>console</span></div>
+  <div class="seg" id="env" role="group" aria-label="Environment"></div>
+  <div id="prod-warn">LIVE</div>
+  <div class="spacer"></div>
+  <div id="sessions"></div>
+  <button class="ghost" id="add-session">Sign in</button>
+  <button class="ghost" id="theme" aria-label="Switch theme" title="Switch theme">◐</button>
 </header>
 
-<div id="picker">
-  <div class="hop"><label>Track</label><select id="pk-track"></select></div>
-  <span class="sep">›</span>
-  <div class="hop"><label>Course</label><select id="pk-course"></select></div>
-  <span class="sep">›</span>
-  <div class="hop"><label>Unit</label><select id="pk-unit"></select></div>
-  <span class="sep">›</span>
-  <div class="hop"><label>Lesson</label><select id="pk-lesson"></select></div>
-  <span class="hint" id="pk-hint">owner cascade — sign in as the school owner</span>
+<main>
+  <nav id="side">
+    <input id="search" placeholder="Search requests" autocomplete="off" spellcheck="false">
+    <div id="tree"></div>
+  </nav>
+
+  <section id="work">
+    <div id="bar">
+      <span class="verb" id="verb"></span>
+      <div id="url" class="mono"></div>
+      <button id="send">Send</button>
+    </div>
+    <div id="tabs" role="tablist"></div>
+    <div id="panes">
+      <div class="pane" data-pane="path"></div>
+      <div class="pane" data-pane="query"></div>
+      <div class="pane" data-pane="body"></div>
+      <div class="pane" data-pane="headers"></div>
+      <div class="pane" data-pane="docs"></div>
+    </div>
+
+    <div id="grip" role="separator" aria-label="Resize response"></div>
+    <div id="res">
+      <div id="res-bar">
+        <span id="status">Ready</span>
+        <span id="meta"></span>
+        <div class="spacer"></div>
+        <button class="ghost" id="copy-res">Copy</button>
+      </div>
+      <div id="body"><div class="empty">Pick a request and send it.</div></div>
+    </div>
+  </section>
+</main>
+
+<div id="tray">
+  <span class="cap">Caught ids</span>
+  <div class="none">Click any id in a response to keep it here.</div>
 </div>
 
-<div id="layout">
-<aside id="side">
-  <div class="group">Session</div>
-  <button data-p="session" data-need="" class="on" onclick="panel('session')">Accounts &amp; sign in</button>
+<div id="toast" role="status" aria-live="polite"></div>
 
-  <div class="group g-stu">Student</div>
-  <button data-p="student" data-need="student" onclick="panel('student')">Profile &amp; subscription</button>
+<dialog id="login">
+  <h2>Sign in</h2>
+  <div class="in">
+    <label>Email <input type="email" id="li-email" autocomplete="off"></label>
+    <label>Password <input type="password" id="li-pass" autocomplete="off"></label>
+    <div id="login-hint"></div>
+    <div id="login-err"></div>
+  </div>
+  <div class="act">
+    <button class="ghost" id="li-cancel">Cancel</button>
+    <button class="go" id="li-go">Sign in</button>
+  </div>
+</dialog>
 
-  <div class="group g-own">School owner</div>
-  <button data-p="school" data-need="owner" onclick="panel('school')">My school</button>
-  <button data-p="tree" data-need="owner" onclick="panel('tree')">Units &amp; lessons</button>
-  <button data-p="questions" data-need="owner" onclick="panel('questions')">Questions</button>
-  <button data-p="dc" data-need="owner" onclick="panel('dc')">Daily challenge</button>
-  <button data-p="books" data-need="owner" onclick="panel('books')">Books</button>
-  <button data-p="okeys" data-need="owner" onclick="panel('okeys')">My keys</button>
-  <button data-p="ostudents" data-need="owner" onclick="panel('ostudents')">My students</button>
-
-  <div class="group g-adm">Admin</div>
-  <button data-p="users" data-need="admin" onclick="panel('users')">Users</button>
-  <button data-p="schools" data-need="admin" onclick="panel('schools')">Schools</button>
-  <button data-p="access" data-need="admin" onclick="panel('access')">Track access</button>
-  <button data-p="browse" data-need="admin" onclick="panel('browse')">Content browse</button>
-  <button data-p="keys" data-need="admin" onclick="panel('keys')">Subscription keys</button>
-  <button data-p="subs" data-need="admin" onclick="panel('subs')">Subscriptions</button>
-  <button data-p="astudents" data-need="admin" onclick="panel('astudents')">Students</button>
-  <button data-p="wis" data-need="admin" onclick="panel('wis')">Daily wisement</button>
-
-  <div class="group">Shared</div>
-  <button data-p="account" data-need="" onclick="panel('account')">My account</button>
-  <button data-p="pubcontent" data-need="" onclick="panel('pubcontent')">Public content</button>
-  <button data-p="tools" data-need="" onclick="panel('tools')">Raw &amp; misc</button>
-</aside>
-
-<div id="panel">
-
-<!-- ============ SESSION ============ -->
-<section class="panel on" id="p-session">
-  <div class="card">
-    <h2>Sign in</h2>
-    <p class="sub">Pick a seeded account or type your own. Sign up mints a brand-new <b>student</b> from just an email. Sessions are saved per environment — use the header chips to hop between roles.</p>
-    <div class="row">
-      <button class="plain" onclick="preset('admin@hul.com')">admin — admin@hul.com</button>
-      <button class="plain" onclick="preset('content@hul.com')">owner — content@hul.com</button>
-    </div>
-    <div class="row">
-      <input id="se-email" placeholder="email" style="width:220px">
-      <input id="se-pass" placeholder="password" type="password" style="width:160px">
-      <span id="s-login"></span>
-      <span id="s-signup"></span>
-    </div>
-    <div class="row">
-      <span id="s-refresh"></span>
-      <span id="s-whoami"></span>
-      <button class="plain" onclick="doLogout()">Sign out (forget this session)</button>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Saved sessions <span class="tag" id="acc-envtag"></span></h2>
-    <p class="sub">Tokens live in this browser only. Switching is instant — no re-login. Foreign-role pages stay clickable on purpose: hitting them is how you test the 403s.</p>
-    <table id="acc-table"><thead><tr><th>email</th><th>role</th><th>name</th><th style="width:160px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="acc-empty">No saved sessions yet — sign in above.</div>
-  </div>
-</section>
-
-<!-- ============ STUDENT ============ -->
-<section class="panel" id="p-student">
-  <div class="cols">
-    <div class="card">
-      <h2>My profile <span class="tag">identity — school + track, fixed at first enrollment</span></h2>
-      <p class="sub">403 until this student has a profile (redeemed key or free trial). 403 Student_2 when the school switched you off.</p>
-      <div class="row"><span id="s-stprofile"></span></div>
-      <div id="st-profile" class="empty">Press “My profile”.</div>
-    </div>
-    <div class="card">
-      <h2>My subscription <span class="tag">latest window — live or expired</span></h2>
-      <div class="row"><span id="s-stsub"></span></div>
-      <div id="st-sub" class="empty">Press “My subscription”.</div>
-    </div>
-  </div>
-  <div class="cols">
-    <div class="card">
-      <h2>Redeem a key</h2>
-      <p class="sub">Single-use, 6 groups. Worth testing: redeem while a paid one is live (400), a key from a different school/track than your profile (400), the same key from two students (second fails).</p>
-      <div class="row">
-        <input id="st-key" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" class="mono" style="width:300px">
-        <span id="s-stredeem"></span>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Free trial</h2>
-      <p class="sub">One-shot, on the default school. 400 if this student ever had any subscription. A live trial can still be upgraded by a paid key.</p>
-      <div class="row">
-        <select id="st-track"><option value="">— track —</option></select>
-        <span id="s-sttrial"></span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ MY SCHOOL (owner) ============ -->
-<section class="panel" id="p-school">
-  <div class="card">
-    <h2>My school <span class="tag">owner role</span></h2>
-    <div class="row"><span id="s-scget"></span></div>
-    <div id="sc-box" class="empty">Press “My school”.</div>
-    <div class="row" style="margin-top:12px">
-      <input id="sc-name" placeholder="new name — empty omits" dir="auto" style="width:200px">
-      <input id="sc-image" type="file">
-      <span id="s-scedit"></span>
-      <span id="s-scdelimg"></span>
-    </div>
-  </div>
-</section>
-
-<!-- ============ TREE (owner) ============ -->
-<section class="panel" id="p-tree">
-  <div class="cols">
-    <div class="card">
-      <h2>Units <span class="tag">of the selected course</span></h2>
-      <div class="row"><input id="u-title" placeholder="new unit title" dir="auto"><span id="s-ucreate"></span></div>
-      <table id="u-table"><thead><tr><th>#</th><th>unit</th><th style="width:290px">actions</th></tr></thead><tbody></tbody></table>
-      <div class="empty" id="u-empty">Pick a course in the bar above.</div>
-      <div class="row"><span id="s-uorder"></span>
-        <small style="color:var(--mut)">order = rows as arranged with Up/Down</small></div>
-    </div>
-    <div class="card">
-      <h2>Lessons <span class="tag">of the selected unit</span></h2>
-      <div class="row">
-        <input id="l-title" placeholder="title" style="width:130px" dir="auto">
-        <input id="l-desc" placeholder="description" style="width:150px" dir="auto">
-        <span id="s-lcreate"></span>
-      </div>
-      <table id="l-table"><thead><tr><th>#</th><th>lesson</th><th>status</th><th style="width:290px">actions</th></tr></thead><tbody></tbody></table>
-      <div class="empty" id="l-empty">Pick a unit in the bar above.</div>
-      <div class="row"><span id="s-lorder"></span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ QUESTIONS (owner) ============ -->
-<section class="panel" id="p-questions">
-  <div class="card">
-    <h2>Questions</h2>
-    <p class="sub">Paginated. Choosing a lesson in the bar above loads its page 1; “pool of selected course” switches to that course's daily-challenge stock.</p>
-    <div class="row">
-      <button class="plain" onclick="useSelectedLesson()">questions of selected lesson</button>
-      <button class="plain" onclick="useSelectedCourse()">pool of selected course</button>
-      <button class="plain" onclick="clearQFilter()">whole school (allowed tracks)</button>
-    </div>
-    <div class="row">
-      <input id="qf-lesson" placeholder="lessonId" class="mono" style="width:280px">
-      <input id="qf-course" placeholder="courseId" class="mono" style="width:280px">
-      <input id="qf-title" placeholder="title contains…" style="width:150px" dir="auto">
-    </div>
-    <div class="row">
-      <span id="s-qload"></span>
-      <label>page size <input id="qf-limit" value="10" style="width:60px"></label>
-      <button class="plain" onclick="qPage(-1)">‹ prev</button>
-      <span id="q-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="qPage(1)">next ›</button>
-    </div>
-    <table id="q-table">
-      <thead><tr><th></th><th>#</th><th>question</th><th>type</th><th>purpose</th><th style="width:320px">actions</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="empty" id="q-empty">Nothing loaded — use one of the three buttons above.</div>
-    <div class="row">
-      <span id="s-qorder"></span>
-      <span id="s-qbulkdel"></span>
-    </div>
-  </div>
-
-  <div class="cols">
-    <div class="card">
-      <h2>Add one question</h2>
-      <p class="sub">Empty fields are omitted. Attaching an image switches the request to multipart.</p>
-      <div class="row">
-        <input id="qc-title" placeholder="title" style="width:200px" dir="auto">
-        <select id="qc-type"><option value="">type — omit</option></select>
-        <select id="qc-purpose"><option value="">purpose — omit</option></select>
-      </div>
-      <div class="row">
-        <input id="qc-lesson" placeholder="lessonId — empty omits" class="mono" style="width:280px">
-        <input id="qc-course" placeholder="courseId — empty omits" class="mono" style="width:280px">
-      </div>
-      <div class="row">
-        <button class="plain" onclick="qcUseLesson()">← selected lesson</button>
-        <button class="plain" onclick="qcUseCourse()">← selected course</button>
-        <input id="qc-image" type="file">
-      </div>
-      <div class="row"><b style="font-size:12px">options</b><button class="plain" onclick="addOptRow()">add option</button></div>
-      <table id="qc-opts"></table>
-      <div class="row"><b style="font-size:12px">matchingItems</b><button class="plain" onclick="addMatchRow()">add item</button></div>
-      <table id="qc-matches"></table>
-      <div class="row"><span id="s-qcreate"></span></div>
-    </div>
-    <div class="card">
-      <h2>Add many <span class="tag">JSON, all-or-nothing</span></h2>
-      <p class="sub">Sent byte-for-byte. One bad question should cancel the whole batch.</p>
-      <textarea id="qb-json" rows="15"></textarea>
-      <div class="row"><span id="s-qbulk"></span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ DAILY CHALLENGE (owner) ============ -->
-<section class="panel" id="p-dc">
-  <div class="row">
-    <span id="s-dcget"></span>
-    <span id="s-dcpost"></span>
-  </div>
-  <div id="dc-challenges"></div>
-  <div class="card">
-    <h2>Question stock per course</h2>
-    <p class="sub">Unused pool questions left. A red row (&lt; 2) makes its whole track skip tomorrow.</p>
-    <table id="dc-report"><thead><tr><th>track</th><th>course</th><th>questions left</th><th>courseId</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="dc-empty">Press “Fetch today”.</div>
-  </div>
-</section>
-
-<!-- ============ BOOKS (owner) ============ -->
-<section class="panel" id="p-books">
-  <div class="card">
-    <h2>Books <span class="tag">of my school</span></h2>
-    <div class="row"><span id="s-bload"></span></div>
-    <table id="b-table"><thead><tr><th>name</th><th>id</th><th style="width:180px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="b-empty">Press “Load books”.</div>
-  </div>
-  <div class="cols">
-    <div class="card">
-      <h2>Create book</h2>
-      <p class="sub">The <code>attachment</code> file is required by the backend — try without one to see it refuse.</p>
-      <div class="row">
-        <input id="bc-name" placeholder="name" dir="auto">
-        <input id="bc-image" type="file">
-        <span id="s-bcreate"></span>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Edit book</h2>
-      <p class="sub">Use “edit” on a row to fill the id. A new file swaps the old one.</p>
-      <div class="row">
-        <input id="be-id" placeholder="bookId" class="mono" style="width:280px">
-        <input id="be-name" placeholder="new name — empty omits" dir="auto">
-        <input id="be-image" type="file">
-        <span id="s-bedit"></span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ MY KEYS (owner) ============ -->
-<section class="panel" id="p-okeys">
-  <div class="card">
-    <h2>My school's keys <span class="tag">owner role — minting is admin-only</span></h2>
-    <div class="row">
-      <select id="ok-track"><option value="">— track —</option></select>
-      <label>page size <input id="ok-limit" value="10" style="width:60px"></label>
-      <span id="s-okload"></span>
-      <button class="plain" onclick="okPage(-1)">‹ prev</button>
-      <span id="ok-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="okPage(1)">next ›</button>
-    </div>
-    <table id="ok-table"><thead><tr><th>key</th><th>track</th><th>used</th><th>created</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="ok-empty">Press “Load my keys”.</div>
-  </div>
-</section>
-
-<!-- ============ MY STUDENTS (owner) ============ -->
-<section class="panel" id="p-ostudents">
-  <div class="card">
-    <h2>My students <span class="tag">owner role — pinned to my school</span></h2>
-    <p class="sub">Only the owning school toggles <code>active</code>. Deactivate someone, then open “Profile &amp; subscription” as them — StudentGuard answers 403 Student_2. Foreign profiles read as 404.</p>
-    <div class="row">
-      <select id="os-track"><option value="">— track —</option></select>
-      <input id="os-name" placeholder="name contains…" dir="auto" style="width:160px">
-      <label>page size <input id="os-limit" value="10" style="width:60px"></label>
-      <span id="s-osload"></span>
-      <button class="plain" onclick="osPage(-1)">‹ prev</button>
-      <span id="os-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="osPage(1)">next ›</button>
-    </div>
-    <table id="os-table"><thead><tr><th>student</th><th>email</th><th>track</th><th>active</th><th style="width:150px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="os-empty">Press “Load students”.</div>
-  </div>
-</section>
-
-<!-- ============ USERS (admin) ============ -->
-<section class="panel" id="p-users">
-  <div class="card">
-    <h2>Users <span class="tag">admin role</span></h2>
-    <div class="row">
-      <input id="uf-name" placeholder="name contains…" style="width:140px" dir="auto">
-      <input id="uf-email" placeholder="email contains…" style="width:160px">
-      <input id="uf-phone" placeholder="phone contains…" style="width:130px">
-      <select id="uf-role">
-        <option value="">— role —</option>
-        <option>admin</option><option>contentWriter</option><option>student</option>
-      </select>
-      <label>page size <input id="uf-limit" value="10" style="width:60px"></label>
-      <span id="s-uload"></span>
-      <button class="plain" onclick="uPage(-1)">‹ prev</button>
-      <span id="u-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="uPage(1)">next ›</button>
-    </div>
-    <table id="usr-table"><thead><tr><th>name</th><th>email</th><th>phone</th><th>role</th><th style="width:250px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="usr-empty">Press “Load users”.</div>
-  </div>
-  <div class="card">
-    <h2>Create user <span class="tag">the backend makes it an admin</span></h2>
-    <div class="row">
-      <input id="uc-name" placeholder="name" style="width:140px" dir="auto">
-      <input id="uc-email" placeholder="email" style="width:190px">
-      <input id="uc-pass" placeholder="password" style="width:130px">
-      <span id="s-ucreateuser"></span>
-    </div>
-  </div>
-</section>
-
-<!-- ============ SCHOOLS (admin) ============ -->
-<section class="panel" id="p-schools">
-  <div class="card">
-    <h2>Schools <span class="tag">admin role</span></h2>
-    <div class="row">
-      <input id="sm-name" placeholder="name contains…" dir="auto" style="width:160px">
-      <label>page size <input id="sm-limit" value="10" style="width:60px"></label>
-      <span id="s-smload"></span>
-      <button class="plain" onclick="smPage(-1)">‹ prev</button>
-      <span id="sm-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="smPage(1)">next ›</button>
-    </div>
-    <table id="sm-table"><thead><tr><th>school</th><th>id</th><th style="width:230px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="sm-empty">Press “Load schools”.</div>
-  </div>
-  <div class="cols">
-    <div class="card">
-      <h2>Create school <span class="tag">also creates its owner user</span></h2>
-      <div class="row">
-        <input id="smc-name" placeholder="owner name" style="width:140px" dir="auto">
-        <input id="smc-email" placeholder="owner email" style="width:180px">
-        <input id="smc-pass" placeholder="owner password" style="width:140px">
-      </div>
-      <div class="row">
-        <input id="smc-school" placeholder="school name" style="width:200px" dir="auto">
-        <input id="smc-image" type="file">
-        <span id="s-smcreate"></span>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Edit school</h2>
-      <p class="sub">Use “edit” on a row to fill the id.</p>
-      <div class="row">
-        <input id="sme-id" placeholder="schoolId" class="mono" style="width:280px">
-        <input id="sme-name" placeholder="new name — empty omits" dir="auto" style="width:180px">
-        <input id="sme-image" type="file">
-      </div>
-      <div class="row">
-        <span id="s-smedit"></span>
-        <span id="s-smdelimg"></span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ ACCESS (admin) ============ -->
-<section class="panel" id="p-access">
-  <div class="card">
-    <h2>Track access</h2>
-    <p class="sub">Grant or revoke a school's track. Worth testing: revoke after today's challenge exists — today survives, tomorrow doesn't. Selects fill on sign-in; use ↻ refs in the header after changes.</p>
-    <div class="row">
-      <select id="ac-school"><option value="">— school —</option></select>
-      <select id="ac-track"><option value="">— track —</option></select>
-    </div>
-    <div class="row">
-      <span id="s-acallow"></span>
-      <span id="s-acrevoke"></span>
-    </div>
-  </div>
-</section>
-
-<!-- ============ ADMIN CONTENT BROWSE ============ -->
-<section class="panel" id="p-browse">
-  <div class="card">
-    <h2>Content browse <span class="tag">read-only, spans every school, no access checks</span></h2>
-    <p class="sub">Pick a school to scope units/lessons/questions — or leave it on “all schools”. The track filter applies to all four lists (courses directly; the rest through their course chain).</p>
-    <div class="row">
-      <select id="ab-school"><option value="">— all schools —</option></select>
-      <select id="ab-track"><option value="">— all tracks —</option></select>
-    </div>
-  </div>
-  <div class="cols">
-    <div class="card">
-      <h2>Courses <span class="tag">not paginated, ignores the school</span></h2>
-      <div class="row">
-        <input id="ab-ctitle" placeholder="title contains…" dir="auto" style="width:160px">
-        <span id="s-abcourses"></span>
-      </div>
-      <table id="ab-ctable"><thead><tr><th>course</th><th>track</th><th style="width:170px">use as filter</th></tr></thead><tbody></tbody></table>
-      <div class="empty" id="ab-cempty">Press “Load courses”.</div>
-    </div>
-    <div class="card">
-      <h2>Units</h2>
-      <div class="row">
-        <input id="ab-ucourse" placeholder="courseId — empty omits" class="mono" style="width:280px">
-      </div>
-      <div class="row">
-        <input id="ab-utitle" placeholder="title contains…" dir="auto" style="width:160px">
-        <span id="s-abunits"></span>
-      </div>
-      <table id="ab-utable"><thead><tr><th>#</th><th>unit</th><th>school</th><th style="width:110px">use as filter</th></tr></thead><tbody></tbody></table>
-      <div class="empty" id="ab-uempty">Press “Load units”.</div>
-    </div>
-  </div>
-  <div class="cols">
-    <div class="card">
-      <h2>Lessons</h2>
-      <div class="row">
-        <input id="ab-lunit" placeholder="unitId — empty omits" class="mono" style="width:280px">
-        <input id="ab-lcourse" placeholder="courseId — empty omits" class="mono" style="width:280px">
-      </div>
-      <div class="row">
-        <input id="ab-ltitle" placeholder="title contains…" dir="auto" style="width:160px">
-        <span id="s-ablessons"></span>
-      </div>
-      <table id="ab-ltable"><thead><tr><th>#</th><th>lesson</th><th>status</th><th>qs</th><th>school</th><th style="width:110px">use as filter</th></tr></thead><tbody></tbody></table>
-      <div class="empty" id="ab-lempty">Press “Load lessons”.</div>
-    </div>
-    <div class="card">
-      <h2>Questions <span class="tag">paginated</span></h2>
-      <div class="row">
-        <input id="ab-qlesson" placeholder="lessonId — empty omits" class="mono" style="width:280px">
-        <input id="ab-qcourse" placeholder="courseId — empty omits" class="mono" style="width:280px">
-      </div>
-      <div class="row">
-        <input id="ab-qtitle" placeholder="title contains…" dir="auto" style="width:150px">
-        <label>page size <input id="ab-qlimit" value="10" style="width:60px"></label>
-        <span id="s-abquestions"></span>
-        <button class="plain" onclick="abQPage(-1)">‹ prev</button>
-        <span id="ab-qpageinfo" class="pageinfo">—</span>
-        <button class="plain" onclick="abQPage(1)">next ›</button>
-      </div>
-      <table id="ab-qtable"><thead><tr><th>#</th><th>question</th><th>type</th><th>purpose</th></tr></thead><tbody></tbody></table>
-      <div class="empty" id="ab-qempty">Press “Load questions”.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ KEYS (admin) ============ -->
-<section class="panel" id="p-keys">
-  <div class="card">
-    <h2>Mint keys <span class="tag">admin role</span></h2>
-    <p class="sub">Target = the school + track below (also the list filter). count 1–500. Minting refuses a track the school has no access to.</p>
-    <div class="row">
-      <select id="kb-school"><option value="">— school —</option></select>
-      <select id="kb-track"><option value="">— track —</option></select>
-      <label>count <input id="kb-count" value="5" style="width:60px"></label>
-      <span id="s-kmint"></span>
-    </div>
-  </div>
-  <div class="card">
-    <h2>All keys <span class="tag">kept after use for audit — “used” marks them</span></h2>
-    <div class="row">
-      <label>page size <input id="ka-limit" value="10" style="width:60px"></label>
-      <span id="s-kaload"></span>
-      <button class="plain" onclick="kaPage(-1)">‹ prev</button>
-      <span id="ka-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="kaPage(1)">next ›</button>
-    </div>
-    <table id="ka-table"><thead><tr><th></th><th>key</th><th>school</th><th>track</th><th>used</th><th>created</th><th style="width:140px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="ka-empty">Press “Load all keys”.</div>
-    <div class="row"><span id="s-kabulkdel"></span></div>
-  </div>
-</section>
-
-<!-- ============ SUBSCRIPTIONS (admin) ============ -->
-<section class="panel" id="p-subs">
-  <div class="card">
-    <h2>Subscriptions <span class="tag">admin role — one row per grant: trial → paid → renewal</span></h2>
-    <div class="row">
-      <input id="sb-user" placeholder="userId — empty omits" class="mono" style="width:280px">
-      <select id="sb-type"><option value="">— type —</option><option>freeTrial</option><option>paid</option></select>
-      <select id="sb-status"><option value="">— status —</option><option>active</option><option>expired</option></select>
-      <select id="sb-sort"><option value="">sort — omit</option><option>DESC</option><option>ASC</option></select>
-      <label>page size <input id="sb-limit" value="10" style="width:60px"></label>
-      <span id="s-sbload"></span>
-      <button class="plain" onclick="sbPage(-1)">‹ prev</button>
-      <span id="sb-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="sbPage(1)">next ›</button>
-    </div>
-    <table id="sb-table"><thead><tr><th>student</th><th>email</th><th>type</th><th>expires</th><th>created</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="sb-empty">Press “Load subscriptions”.</div>
-  </div>
-</section>
-
-<!-- ============ STUDENTS (admin) ============ -->
-<section class="panel" id="p-astudents">
-  <div class="card">
-    <h2>All students <span class="tag">admin role — spans every school</span></h2>
-    <div class="row">
-      <select id="as-school"><option value="">— school —</option></select>
-      <select id="as-track"><option value="">— track —</option></select>
-      <input id="as-name" placeholder="name contains…" dir="auto" style="width:160px">
-      <label>page size <input id="as-limit" value="10" style="width:60px"></label>
-      <span id="s-asload"></span>
-      <button class="plain" onclick="asPage(-1)">‹ prev</button>
-      <span id="as-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="asPage(1)">next ›</button>
-    </div>
-    <table id="as-table"><thead><tr><th>student</th><th>email</th><th>school</th><th>track</th><th>active</th><th style="width:70px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="as-empty">Press “Load students”.</div>
-  </div>
-</section>
-
-<!-- ============ DAILY WISEMENT ============ -->
-<section class="panel" id="p-wis">
-  <div class="card">
-    <h2>Today's wisement <span class="tag">public — no auth needed</span></h2>
-    <p class="sub">Nothing selected yet → the GET itself picks one (same logic as the midnight rotation). Empty table → null.</p>
-    <div class="row"><span id="s-wtoday"></span></div>
-    <div id="w-today" class="empty">Press “Fetch today”.</div>
-  </div>
-  <div class="card">
-    <h2>All wisements <span class="tag">admin role</span></h2>
-    <p class="sub">Worth testing: Edit/Delete on the ✓ selected row must be refused with 400; a bulk delete containing it must cancel the whole batch.</p>
-    <div class="row">
-      <input id="wf-text" placeholder="text contains…" dir="auto" style="width:170px">
-      <select id="wf-sort"><option value="">sort — omit (DESC)</option><option>DESC</option><option>ASC</option></select>
-      <label>page size <input id="wf-limit" value="10" style="width:60px"></label>
-      <span id="s-wload"></span>
-      <button class="plain" onclick="wPage(-1)">‹ prev</button>
-      <span id="w-pageinfo" class="pageinfo">—</span>
-      <button class="plain" onclick="wPage(1)">next ›</button>
-    </div>
-    <table id="w-table">
-      <thead><tr><th></th><th>text</th><th>selected</th><th>used</th><th>created</th><th style="width:150px">actions</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="empty" id="w-empty">Press “Load wisements”.</div>
-    <div class="row"><span id="s-wbulkdel"></span></div>
-  </div>
-  <div class="cols">
-    <div class="card">
-      <h2>Add one</h2>
-      <div class="row">
-        <input id="wc-text" placeholder="text — empty omits" dir="auto" style="width:300px">
-        <span id="s-wcreate"></span>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Add many <span class="tag">JSON, all-or-nothing</span></h2>
-      <p class="sub">Sent byte-for-byte — one bad item should cancel the whole batch.</p>
-      <textarea id="wb-json" rows="8"></textarea>
-      <div class="row"><span id="s-wbulk"></span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ MY ACCOUNT (any role) ============ -->
-<section class="panel" id="p-account">
-  <div class="cols">
-    <div class="card">
-      <h2>Profile</h2>
-      <div class="row"><span id="s-mine"></span><span id="s-umeta"></span></div>
-      <div class="row">
-        <input id="me-name" placeholder="new name — empty omits" style="width:170px" dir="auto">
-        <input id="me-phone" placeholder="phone — empty omits" style="width:140px">
-        <input id="me-pass" placeholder="new password — empty omits" style="width:170px">
-        <input id="me-image" type="file">
-        <span id="s-mepatch"></span>
-      </div>
-      <div class="row"><span id="s-medelimg"></span></div>
-      <p class="sub" style="margin-top:10px">Complete a fresh signup (name + phone + password):</p>
-      <div class="row">
-        <input id="me-cname" placeholder="name" style="width:130px" dir="auto">
-        <input id="me-cphone" placeholder="phone" style="width:130px">
-        <input id="me-cpass" placeholder="password" style="width:130px">
-        <span id="s-mecomplete"></span>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Email verify &amp; password <span class="tag">OTP via Redis</span></h2>
-      <div class="row"><span id="s-reqverify"></span>
-        <input id="me-code" placeholder="code" style="width:90px"><span id="s-verify"></span></div>
-      <div class="row">
-        <input id="fp-email" placeholder="email" style="width:190px"><span id="s-forget"></span>
-      </div>
-      <div class="row">
-        <input id="rp-email" placeholder="email" style="width:160px">
-        <input id="rp-code" placeholder="code" style="width:80px">
-        <input id="rp-pass" placeholder="new password" style="width:130px">
-        <span id="s-reset"></span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============ PUBLIC CONTENT ============ -->
-<section class="panel" id="p-pubcontent">
-  <div class="card">
-    <h2>App info <span class="tag">read is public — write is admin</span></h2>
-    <p class="sub">The JSON below is sent byte-for-byte on “Set info”.</p>
-    <div class="row"><span id="s-piget"></span><span id="s-piset"></span></div>
-    <textarea id="pi-json" rows="8"></textarea>
-  </div>
-  <div class="card">
-    <h2>FAQs <span class="tag">read is public — writes are admin</span></h2>
-    <div class="row"><span id="s-pflist"></span></div>
-    <table id="pf-table"><thead><tr><th>title</th><th>description</th><th style="width:150px">actions</th></tr></thead><tbody></tbody></table>
-    <div class="empty" id="pf-empty">Press “Load FAQs”.</div>
-    <div class="row" style="margin-top:10px">
-      <input id="pf-title" placeholder="title" style="width:220px" dir="auto">
-      <input id="pf-desc" placeholder="description" style="width:280px" dir="auto">
-      <span id="s-pfcreate"></span>
-    </div>
-  </div>
-</section>
-
-<!-- ============ TOOLS ============ -->
-<section class="panel" id="p-tools">
-  <div class="card">
-    <h2>Health &amp; metadata <span class="tag">all public</span></h2>
-    <div class="row">
-      <span id="s-ping"></span>
-      <span id="s-errcat"></span>
-      <span id="s-lmeta"></span>
-      <span id="s-tracks"></span>
-    </div>
-  </div>
-  <div class="card">
-    <h2>File by id</h2>
-    <p class="sub">Opens the raw file in a new tab against the current environment.</p>
-    <div class="row">
-      <input id="fi-id" placeholder="fileId" class="mono" style="width:280px">
-      <button class="plain" onclick="openFile()">Open file</button>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Raw request</h2>
-    <p class="sub">Path is relative to <code>/api</code>. Body goes out exactly as typed with <code>Content-Type: application/json</code> — broken JSON included. Auth header of the current session is attached.</p>
-    <div class="row">
-      <select id="raw-method"><option>GET</option><option>POST</option><option>PATCH</option><option>PUT</option><option>DELETE</option></select>
-      <input id="raw-path" placeholder="/school/me/questions" class="mono" style="width:430px">
-      <button class="plain" onclick="rawSend()">Send</button>
-    </div>
-    <textarea id="raw-body" rows="12" placeholder='{"anything": "goes"}'></textarea>
-  </div>
-</section>
-
-</div><!-- /panel -->
-</div><!-- /layout -->
-
-<div id="logwrap">
-  <div id="loghead">
-    <b>Response log</b><span id="log-base" class="mono"></span><span>newest first — click a line for the body</span>
-    <button onclick="document.getElementById('log').innerHTML=''" style="margin-left:auto">Clear</button>
-    <button onclick="document.getElementById('logwrap').classList.toggle('min')">Collapse</button>
-  </div>
-  <div id="log"></div>
-</div>
-
+<script src="collection.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
