@@ -13,7 +13,7 @@
 //     canActivate(context: ExecutionContext): boolean {
 //       const request = context.switchToHttp().getRequest();
 //       const user = request.user;
-//       if (!user?.emailVerfied) {
+//       if (!user?.emailVerified) {
 //         throw new AppHttpError({
 //           code: ErrorCommonCodes.accountNotVerifiedYet,
 //           statusCode: HttpStatus.FORBIDDEN,

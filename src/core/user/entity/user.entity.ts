@@ -32,7 +32,7 @@ export class User {
   password: string;
 
   @Column({ default: false })
-  emailVerfied: boolean;
+  emailVerified: boolean;
 
   @Column({
     type: 'enum',

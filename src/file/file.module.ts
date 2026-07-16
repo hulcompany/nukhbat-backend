@@ -8,7 +8,7 @@ import { FileProvider } from './provider/file.provider';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([AppFile]), FileModule],
+  imports: [TypeOrmModule.forFeature([AppFile])],
   providers: [
     FileService,
     {

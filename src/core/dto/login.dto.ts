@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 import { EmailField } from 'core';
 
-export class AuthLoginDto {
+export class LoginDto {
   @EmailField()
   email: string;
 
@@ -10,8 +10,7 @@ export class AuthLoginDto {
   password: string;
 }
 
-
-export class AuthRefreshTokenDto {
+export class RefreshTokenDto {
   @IsString()
   token: string;
 }

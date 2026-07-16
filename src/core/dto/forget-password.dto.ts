@@ -1,6 +1,6 @@
 import { EmailField } from 'core';
 
-export class UserForgetPasswordDto {
+export class ForgetPasswordDto {
   @EmailField()
   email: string;
 }

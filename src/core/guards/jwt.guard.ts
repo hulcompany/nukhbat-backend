@@ -22,7 +22,7 @@ export class JwtGuardStrict extends AuthGuard('jwt') {
         message: 'Unauthenticated',
       });
     }
-    if (!user?.emailVerfied) {
+    if (!user?.emailVerified) {
       throw new ForbiddenException({
         code: ErrorCommonCodes.accountNotVerifiedYet,
         message: 'Account not verified yet',

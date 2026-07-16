@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
 import { UserUpdateDto } from '../dto/user-update-dto';
-import { UserGetDto } from '../dto/user-get.dto';
+import { UsersGetDto } from '../dto/users-get.dto';
 import { UUID } from 'crypto';
 import { UserService } from './service/user.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -45,7 +45,7 @@ export class UserManageController {
     };
   }
   @Get('/')
-  async get(@Query() query: UserGetDto) {
+  async get(@Query() query: UsersGetDto) {
     return await this.userService.getByCriteria(query);
   }
 

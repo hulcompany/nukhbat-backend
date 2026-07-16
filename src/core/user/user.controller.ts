@@ -17,8 +17,8 @@ import {
 } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
 import { UserVerifyDto } from '../dto/user-verify.dto';
-import { UserForgetPasswordDto } from '../dto/user-forget-password.dto';
-import { UserResetPasswordDto } from '../dto/user-reset-password.dto';
+import { ForgetPasswordDto } from '../dto/forget-password.dto';
+import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { UserUpdateDto } from '../dto/user-update-dto';
 import { JwtGuard, JwtGuardStrict } from '../auth';
 import { UserService } from './service/user.service';
@@ -70,12 +70,12 @@ export class UserController {
   }
 
   @Post('/mine/forget-password')
-  async forgetPassword(@Body() body: UserForgetPasswordDto) {
+  async forgetPassword(@Body() body: ForgetPasswordDto) {
     return await this.userService.requestChangePassword(body);
   }
 
   @Post('/mine/reset-password')
-  async resetPassword(@Body() body: UserResetPasswordDto) {
+  async resetPassword(@Body() body: ResetPasswordDto) {
     await this.userService.resetPassword(body);
   }
 

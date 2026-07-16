@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { EmailField } from 'core';
 
-export class AuthSignUpDto {
+export class SignUpDto {
   @EmailField()
   email: string;
 

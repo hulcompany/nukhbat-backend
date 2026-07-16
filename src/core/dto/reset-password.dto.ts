@@ -1,12 +1,7 @@
-import {
-  IsString,
-  MaxLength,
-  MinLength,
-  Validate,
-} from 'class-validator';
+import { IsString, MaxLength, MinLength, Validate } from 'class-validator';
 import { EmailField, MatchValidator } from 'core';
 
-export class UserResetPasswordDto {
+export class ResetPasswordDto {
   @EmailField()
   email: string;
 
@@ -23,5 +18,4 @@ export class UserResetPasswordDto {
   @MaxLength(32)
   @Validate(MatchValidator, ['newPassword', 'confirmPassword'])
   confirmPassword: string;
-
 }

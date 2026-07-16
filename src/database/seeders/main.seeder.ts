@@ -70,14 +70,14 @@ export class MainSeeder implements Seeder {
       name: 'admin',
       email: 'admin@hul.com',
       password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
-      emailVerfied: true,
+      emailVerified: true,
       role: 'admin',
     });
     let content = await dataSource.getRepository(User).save({
       name: 'content-writer',
       email: 'content@hul.com',
       password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
-      emailVerfied: true,
+      emailVerified: true,
       role: 'contentWriter',
       phoneNumber: '+963935000000',
     });
@@ -85,7 +85,7 @@ export class MainSeeder implements Seeder {
       name: 'content-writer-2',
       email: 'content2@hul.com',
       password: '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
-      emailVerfied: true,
+      emailVerified: true,
       role: 'contentWriter',
       phoneNumber: '+963935000001',
     });

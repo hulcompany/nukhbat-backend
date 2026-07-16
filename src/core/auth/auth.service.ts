@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { comparePassword, ErrorCommonCodes } from 'core';
-import { AuthSignUpDto } from '../dto/auth-signup.dto';
+import { SignUpDto } from '../dto/signup.dto';
 import { UserService } from '../user/service/user.service';
 import { AppConfig } from '../../conf';
 
@@ -31,7 +31,7 @@ export class AuthService {
     return this.buildUserResponse(user);
   }
 
-  async signUp(data: AuthSignUpDto) {
+  async signUp(data: SignUpDto) {
     let user = await this.userService.signUp({
       email: data.email,
       name: data.name,

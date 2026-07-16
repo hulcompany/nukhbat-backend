@@ -20,9 +20,9 @@ import {
   transaction,
 } from 'core';
 import { User } from '../entity/user.entity';
-import { UserGetDto } from '../../dto/user-get.dto';
-import { UserResetPasswordDto } from '../../dto/user-reset-password.dto';
-import { UserForgetPasswordDto } from '../../dto/user-forget-password.dto';
+import { UsersGetDto } from '../../dto/users-get.dto';
+import { ResetPasswordDto } from '../../dto/reset-password.dto';
+import { ForgetPasswordDto } from '../../dto/forget-password.dto';
 import { OtpService } from '../../../otp/otp.service';
 import { FileService } from '../../../file/file.service';
 import { OtpReason } from '../../../otp/entity/otp';
@@ -108,7 +108,7 @@ export class UserService {
     );
   }
 
-  async getByCriteria(params?: UserGetDto) {
+  async getByCriteria(params?: UsersGetDto) {
     const qb = this.repo.createQueryBuilder('u').orderBy('u.createdAt', 'DESC');
     applyPsqlFilter({
       queryBuilder: qb,
@@ -138,7 +138,7 @@ export class UserService {
 
   async signUp(data: Partial<User>) {
     let old = await this.repo.findOne({ where: { email: data.email } });
-    if (old?.emailVerfied) {
+    if (old?.emailVerified) {
       throw new BadRequestException(
         ErrorsRecord.getError(UserErrorCodes.User_1),
       );
@@ -146,7 +146,7 @@ export class UserService {
     data.password = await hashPassword(data.password!, 10);
     if (old) {
       // await this.assertPhoneUnique(data.phoneNumber, old.id);
-      old.emailVerfied = false;
+      old.emailVerified = false;
       old.name = data.name!;
       old.password = data.password!;
       old.phoneNumber = data.phoneNumber!;
@@ -156,7 +156,7 @@ export class UserService {
     // await this.assertPhoneUnique(data.phoneNumber);
     let user = this.repo.create(data);
     user.role = RoleType.student;
-    user.emailVerfied = false;
+    user.emailVerified = false;
     user = await this.repo.save(user);
     return user;
   }
@@ -172,7 +172,7 @@ export class UserService {
     }
     data.password = await hashPassword(data.password!, 10);
     let user = repo.create(data);
-    user.emailVerfied = true;
+    user.emailVerified = true;
     user.role = data.role || RoleType.admin;
     user = await repo.save(user);
     return user;
@@ -183,7 +183,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException();
     }
-    if (user.emailVerfied) {
+    if (user.emailVerified) {
       throw new BadRequestException('Email Already Verified');
     }
     let otp = await this.otpService.sendOtp(id, OtpReason.VERIFY);
@@ -194,14 +194,14 @@ export class UserService {
     await this.otpService.verifyOtp(data.id, OtpReason.VERIFY, data.code);
     await this.otpService.deleteOtp(data.id, OtpReason.VERIFY);
     let user = await this.update(data.id, {
-      emailVerfied: true,
+      emailVerified: true,
     });
     return user;
   }
 
-  async requestChangePassword(params: UserForgetPasswordDto) {
+  async requestChangePassword(params: ForgetPasswordDto) {
     let user = await this.repo.findOne({
-      where: { email: params.email, emailVerfied: true },
+      where: { email: params.email, emailVerified: true },
     });
     if (!user) {
       throw new BadRequestException(
@@ -213,7 +213,7 @@ export class UserService {
     return otp;
   }
 
-  async resetPassword(params: UserResetPasswordDto) {
+  async resetPassword(params: ResetPasswordDto) {
     let user = await this.repo.findOne({
       where: { email: params.email },
     });
