@@ -5,7 +5,7 @@ import { SchoolAccessModule } from './school-access/school-access.module';
 import { TrackModule } from './tracks/tracks.module';
 import { LearningManagementController } from './learning-management.controller';
 import { CourseModule } from './course/course.module';
-// import { LearningSchoolController } from './learning-school.controller';
+import { LearningSchoolController } from './learning-school.controller';
 import { UnitModule } from './units/unit.module';
 import { LessonModule } from './lessons/lessons.module';
 import { LearningController } from './learning.controller';
@@ -13,10 +13,11 @@ import { LearningSchoolService } from './learning-school.service';
 import { QuestionModule } from './questions/questions.module';
 import { DailyChallengeModule } from './daily-challenge/daily-challenge.module';
 import { LearningService } from './learning.service';
+import { SchoolModule } from '../school/school.module';
 
 @Module({
   imports: [
-    // SchoolModule,
+    SchoolModule,
     BookModule,
     SchoolAccessModule,
     TrackModule,
@@ -28,7 +29,7 @@ import { LearningService } from './learning.service';
   ],
   controllers: [
     LearningManagementController,
-    // LearningSchoolController,
+    LearningSchoolController,
     LearningController,
   ],
   providers: [LearningSchoolService, LearningService],
