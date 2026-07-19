@@ -7,22 +7,19 @@ import { SubscriptionService } from './service/subscription.service';
 import { SubscriptionController } from './subscription.controller';
 import { StudentModule } from '../student/student.module';
 import { SchoolModule } from '../school/school.module';
-import { LearningModule } from '../learning/learning.module';
+import { SchoolAccessModule } from '../school-access/school-access.module';
 
 require('./errors');
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SubscriptionKey, Subscription]),
-    // StudentProfileService for subscribe; SchoolService for SchoolOwnerGuard
     StudentModule,
     SchoolModule,
-    LearningModule,
+    SchoolAccessModule,
   ],
   controllers: [SubscriptionController],
   providers: [SubscriptionKeyService, SubscriptionService],
-  // SubscriptionService is exported so SubscriptionGuard can be used by other
-  // modules (e.g. learning content routes)
   exports: [SubscriptionKeyService, SubscriptionService],
 })
 export class SubscriptionModule {}

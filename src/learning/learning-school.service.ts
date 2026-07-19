@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Scope } from '@nestjs/common';
 import { BookService } from './books/book.services';
 import { CourseService } from './course/course.service';
 import { LessonService } from './lessons/lessons.service';
-import { SchoolAccessService } from './school-access/school-access.service';
+import { SchoolAccessService } from '../school-access/school-access.service';
 import { UnitService } from './units/unit.service';
 import { BookCreateDto, BookEditDto } from './books/dto/book.dto';
 import { UUID } from 'crypto';

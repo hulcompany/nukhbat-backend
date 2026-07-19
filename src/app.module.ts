@@ -15,6 +15,7 @@ import { PublicContentModule } from './public-content/public-content.module';
 import { DailyWisementModule } from './daily_wisement/daily-wisement.module';
 import { StudentModule } from './student/student.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { SchoolAccessModule } from './school-access/school-access.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -30,6 +31,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     FileModule,
     CoreModule,
     LearningModule,
+    SchoolAccessModule,
     SchoolModule,
     StudentModule,
     SubscriptionModule,

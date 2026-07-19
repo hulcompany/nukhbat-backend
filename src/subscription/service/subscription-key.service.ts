@@ -22,6 +22,7 @@ import {
 import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { SubscriptionKeyGetDto } from '../dto/subscription.dto';
 import { LearningService } from '../../learning/learning.service';
+import { SchoolAccessService } from '../../school-access/school-access.service';
 
 // no 0/O/1/I — keys get typed by hand
 const KEY_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -34,7 +35,7 @@ export class SubscriptionKeyService {
     @InjectRepository(SubscriptionKey)
     private readonly repo: Repository<SubscriptionKey>,
     private readonly ds: DataSource,
-    private readonly learningService: LearningService,
+    private readonly schoolAccess: SchoolAccessService,
   ) {}
 
   // every function takes an optional EntityManager so callers can join
@@ -93,10 +94,7 @@ export class SubscriptionKeyService {
 
   // `count` keys for the same school+track in one call
   async createMany(params: SubscriptionKeyCreateManyDto, em?: EntityManager) {
-    await this.learningService.assertSchoolTrackAccess(
-      params.schoolId,
-      params.trackId,
-    );
+    await this.schoolAccess.assertTrackAccess(params.schoolId, params.trackId);
     // optional in the shared DTO — callers must have resolved it by now
     let repo = this.getRepo(em);
     let keys: SubscriptionKey[] = [];

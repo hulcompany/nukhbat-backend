@@ -7,7 +7,7 @@ import { User } from '../../core/user/entity/user.entity';
 import { School } from '../../school/entity/school.entity';
 import { Faq } from '../../public-content/faqs/entity/faq.entity';
 import { Info } from '../../public-content/info/entity/info.entity';
-import { SchoolAccess } from '../../learning/school-access/entity/school-access.entity';
+import { SchoolAccess } from '../../school-access/entity/school-access.entity';
 import { Unit } from '../../learning/units/entity/unit.entity';
 import { Lesson } from '../../learning/lessons/entity/lesson.entity';
 import { Question } from '../../learning/questions/entity/questions.entity';

@@ -20,9 +20,9 @@ async function bootstrap() {
 
   // manual API test console (test-ui/) — dev only, never served in prod
   // if (process.env.NODE_ENV !== 'prod') {
-    app.useStaticAssets(join(process.cwd(), 'test-ui'), {
-      prefix: '/test-ui',
-    });
+  app.useStaticAssets(join(process.cwd(), 'test-ui'), {
+    prefix: '/test-ui',
+  });
   // }
   expressApp.get('/api/errors', createErrorRequestHandler());
   expressApp.get('/api/ping', (req, res) => {

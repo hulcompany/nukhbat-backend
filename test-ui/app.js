@@ -1266,10 +1266,10 @@ function renderAdmAccess(m) {
     { name: 'trackId', label: 'Track id', type: 'uuid', ctx: 'trackId', req: true },
   ];
   m.append(formBlock({
-    method: 'POST', title: 'Grant track to school', path: '/learning/admin/schoolAccess/:schoolId/:trackId', fields: flds,
+    method: 'POST', title: 'Grant track to school', path: '/school-access', fields: flds,
   }));
   m.append(formBlock({
-    method: 'DELETE', title: 'Revoke track from school', path: '/learning/admin/schoolAccess/:schoolId/:trackId',
+    method: 'DELETE', title: 'Revoke track from school', path: '/school-access',
     fields: flds, confirmMsg: 'Revoke this track from the school?',
   }));
 }

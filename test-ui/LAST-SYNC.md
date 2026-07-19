@@ -1,7 +1,7 @@
 # test-ui — last sync record
 
-**Last synced:** 2026-07-16 20:36 (daily-challenge owner screen added)
-**Backend state covered (`src/` + `core/src/`):** `04e619c`
+**Last synced:** 2026-07-19 (school-access moved to standalone `POST`/`DELETE /api/school-access`)
+**Backend state covered (`src/` + `core/src/`):** `c7415f3`
 
 > The hash always trails one commit — this file is committed right after the sync it records, and that bump commit never touches `src/`. Diffing from it can only over-report, never miss backend changes.
 
@@ -11,7 +11,7 @@ The test-ui (`index.html` + `app.js`) covers every active controller/DTO in `src
 
 1. Read this file to get the last sync date + commit.
 2. Find backend changes since then (whichever is easier/more reliable):
-   - `git -C e:\projects\nukhba_alawael diff --name-status 04e619c -- src/ core/src/`
+   - `git -C e:\projects\nukhba_alawael diff --name-status c7415f3 -- src/ core/src/`
    - plus uncommitted work: `git status --porcelain` (new/modified `*.controller.ts`, `*/dto/*.ts`, enums, entities)
 3. For each new/changed controller or DTO: read it, then add/adjust the matching screen or block in `test-ui/app.js`
    (follow the existing patterns: `formBlock`, `listBlock`, context slots, role groups in `NAV`).

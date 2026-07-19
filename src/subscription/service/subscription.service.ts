@@ -27,6 +27,7 @@ import { LearningService } from '../../learning/learning.service';
 import { SchoolService } from '../../school/school.service';
 import { SubscriptionErrorCodes } from '../errors';
 import { SubscriptionKey } from '../entity/subscription-key.entity';
+import { SchoolAccessService } from '../../school-access/school-access.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -35,7 +36,7 @@ export class SubscriptionService {
     private readonly repo: Repository<Subscription>,
     private readonly keys: SubscriptionKeyService,
     private readonly profiles: StudentProfileService,
-    private readonly learningService: LearningService,
+    private readonly schoolAccess: SchoolAccessService,
     private readonly schoolService: SchoolService,
     private readonly ds: DataSource,
   ) {}
@@ -90,10 +91,7 @@ export class SubscriptionService {
     const defaultSchool = await this.schoolService.findOneOrFail({
       default: true,
     });
-    await this.learningService.assertSchoolTrackAccess(
-      defaultSchool.id,
-      trackId,
-    );
+    await this.schoolAccess.assertTrackAccess(defaultSchool.id, trackId);
 
     return await transaction(this.ds, async (em) => {
       // free trial is once ever: block if the student has any subscription.
@@ -157,10 +155,7 @@ export class SubscriptionService {
           ErrorsRecord.getError(SubscriptionErrorCodes.Subscription_2),
         );
       }
-      await this.learningService.assertSchoolTrackAccess(
-        key.schoolId,
-        key.trackId,
-      );
+      await this.schoolAccess.assertTrackAccess(key.schoolId, key.trackId);
       const expireDate = new Date();
       expireDate.setFullYear(expireDate.getFullYear() + AppConfig.KEY_AGE_YEAR);
       let profile = await this.profiles.enroll(

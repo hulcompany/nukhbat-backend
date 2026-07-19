@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { SchoolAccessService } from './school-access/school-access.service';
+import { SchoolAccessService } from '../school-access/school-access.service';
 import { UUID } from 'crypto';
 
 @Injectable()

@@ -8,7 +8,7 @@ import { AppConfig } from '../../conf';
 import { LearningErrorCodes } from '../errors';
 import { School } from '../../school/entity/school.entity';
 import { Course } from '../course/entity/course.entity';
-import { SchoolAccess } from '../school-access/entity/school-access.entity';
+import { SchoolAccess } from '../../school-access/entity/school-access.entity';
 import { QuestionPurpose } from '../questions/entity/enum/question-purpose.type';
 import { Question } from '../questions/entity/questions.entity';
 import { DailyChallengeUsedQuestions } from './entity/daily-challenge-used-questions.entity';

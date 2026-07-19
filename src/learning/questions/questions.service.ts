@@ -185,6 +185,7 @@ export class QuestionService {
             course: courseRef,
             school: { id: params.ctxt.school?.id },
             imageId: questionImage?.id,
+            tips: params.params.tips ?? [],
             ...options,
           }),
         );
@@ -226,6 +227,7 @@ export class QuestionService {
             lesson: lessonRef,
             course: courseRef,
             school: { id: params.ctxt.school?.id },
+            tips: dto.tips ?? [],
             ...children,
           }),
         );
@@ -271,6 +273,10 @@ export class QuestionService {
           imageId: replaced,
           title: params.params.title,
           type: params.params.type,
+          // pass the whole new list to replace; [] clears; undefined keeps
+          ...(params.params.tips !== undefined
+            ? { tips: params.params.tips }
+            : {}),
           // the school relation isn't loaded here; schoolId is the @RelationId
           ...this.getNewOptions(params.params, question.schoolId!),
         };

@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../../core/user/entity/user.entity';
-import { SchoolAccess } from '../../learning/school-access/entity/school-access.entity';
+import { SchoolAccess } from '../../school-access/entity/school-access.entity';
 import { Exclude, Expose } from 'class-transformer';
 
 @Entity()

@@ -62,6 +62,12 @@ export class QuestionCreateDto {
   )
   @IsBoolean()
   correctAnswer?: boolean;
+
+  // orderless hints; optional on create, defaults to []
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tips?: string[];
 }
 
 export class QuestionBulkCreateDto {
@@ -122,4 +128,10 @@ export class QuestionEditDto {
   )
   @IsBoolean()
   correctAnswer?: boolean;
+
+  // pass the full new list to replace tips; [] clears them; omit to keep
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tips?: string[];
 }
