@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/courses/:trackId"
+url: "{{baseUrl}}/api/curriculum/school/courses/:trackId"
 method: GET
 queryParams:
   - key: title

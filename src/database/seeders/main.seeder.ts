@@ -1,62 +1,26 @@
 import { DataSource } from 'typeorm';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 import { learningFactory } from '../factory/learning.factory';
-import { Track } from '../../learning/tracks/entity/track.entity';
-import { Course } from '../../learning/course/entity/course.entity';
+import { Track } from '../../curriculum/tracks/entity/track.entity';
+import { Course } from '../../curriculum/course/entity/course.entity';
 import { User } from '../../core/user/entity/user.entity';
 import { School } from '../../school/entity/school.entity';
 import { Faq } from '../../public-content/faqs/entity/faq.entity';
 import { Info } from '../../public-content/info/entity/info.entity';
 import { SchoolAccess } from '../../school-access/entity/school-access.entity';
-import { Unit } from '../../learning/units/entity/unit.entity';
-import { Lesson } from '../../learning/lessons/entity/lesson.entity';
-import { Question } from '../../learning/questions/entity/questions.entity';
-import { QuestionOption } from '../../learning/questions/entity/question-options.entity';
-import { QuestionMatch } from '../../learning/questions/entity/question-match.entity';
-import { QuestionType } from '../../learning/questions/entity/enum/question.type';
-import { QuestionPurpose } from '../../learning/questions/entity/enum/question-purpose.type';
-import { QuestionMatchType } from '../../learning/questions/entity/enum/question-match.type';
+import { Unit } from '../../curriculum/units/entity/unit.entity';
+import { Lesson } from '../../curriculum/lessons/entity/lesson.entity';
+import { Question } from '../../curriculum/questions/entity/questions.entity';
+import { QuestionOption } from '../../curriculum/questions/entity/question-options.entity';
+import { QuestionMatch } from '../../curriculum/questions/entity/question-match.entity';
+import { QuestionType } from '../../curriculum/questions/entity/enum/question.type';
+import { QuestionPurpose } from '../../curriculum/questions/entity/enum/question-purpose.type';
+import { QuestionMatchType } from '../../curriculum/questions/entity/enum/question-match.type';
 import { DailyWisement } from '../../daily_wisement/entity/daily-wisement.entity';
 import { UUID } from 'crypto';
+import { NUKHBA_FAQS } from '../factory/faq.factory';
 
 // The only FAQs we seed — the real product Q&A (Arabic).
-const NUKHBA_FAQS: { title: string; description: string }[] = [
-  {
-    title: 'ما هو تطبيق النخبة؟',
-    description:
-      'تطبيق النخبة هو تطبيق تعليمي سوري يساعد الطلاب على دراسة المنهاج وحل الأسئلة المؤتمتة بطريقة تفاعلية ومنظمة، مع شرح للإجابات، مراجعة للأخطاء، وتتبع لمستوى الطالب خطوة بخطوة.',
-  },
-  {
-    title: 'هل تطبيق النخبة تطبيق سوري؟',
-    description:
-      'نعم، تطبيق النخبة هو تطبيق تعليمي سوري تم تطويره لخدمة الطلاب ومساعدتهم على الدراسة بطريقة حديثة، ويستهدف بشكل أساسي الطلاب في سوريا من خلال محتوى تعليمي منظم وتجربة استخدام مناسبة للطلاب.',
-  },
-  {
-    title: 'أين يقع تطبيق النخبة؟',
-    description:
-      'يقع تطبيق النخبة في سوريا، في محافظة إدلب — سرمدة، ويقدّم خدماته التعليمية للطلاب من خلال التطبيق، مع إمكانية التواصل مع الإدارة للحصول على الاشتراك ومفتاح التفعيل.',
-  },
-  {
-    title: 'لمن مخصص تطبيق النخبة؟',
-    description:
-      'تطبيق النخبة مخصص للطلاب الذين يريدون التدريب على الأسئلة المؤتمتة وتحسين مستواهم الدراسي، ويدعم حالياً طلاب الصف التاسع وطلاب البكالوريا العلمي والأدبي، ضمن تجربة تعليمية مناسبة للطلاب في سوريا.',
-  },
-  {
-    title: 'كيف يساعد تطبيق النخبة الطلاب في سوريا؟',
-    description:
-      'يساعد تطبيق النخبة الطلاب في سوريا على الدراسة من خلال أسئلة مؤتمتة، تلميحات ذكية، شرح بعد كل إجابة، مراجعة للأسئلة الخاطئة، إحصائيات للتقدم، ونظام منافسة وجواهر يشجع الطالب على الاستمرار والتحسن.',
-  },
-  {
-    title: 'هل تطبيق النخبة مجرد بنك أسئلة؟',
-    description:
-      'لا، تطبيق النخبة ليس مجرد بنك أسئلة تقليدي، بل هو تطبيق تعليمي تفاعلي يساعد الطالب على الفهم والمراجعة واكتشاف نقاط الضعف، من خلال تجربة منظمة تشمل حل الأسئلة، مراجعة الأخطاء، متابعة التقدم، والمنافسة مع الطلاب الآخرين.',
-  },
-  {
-    title: 'كيف يمكن الاشتراك في تطبيق النخبة؟',
-    description:
-      'يمكن الاشتراك في تطبيق النخبة من خلال التواصل مع إدارة التطبيق للحصول على مفتاح تفعيل. بعد إنشاء الحساب وتأكيد البريد الإلكتروني، يقوم الطالب بإدخال مفتاح التفعيل ليتمكن من الوصول إلى محتوى المسار الدراسي الخاص به.',
-  },
-];
 
 export class MainSeeder implements Seeder {
   public async run(

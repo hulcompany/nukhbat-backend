@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Nukhba Alawael API",
-    "description": "Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.\n\nAuth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.\n\nRoles: admin (user/manage, school/manage, learning/admin, public-content writes), contentWriter (school/me tree), public (auth, files, learning metaData/tracks, public-content reads).",
+    "description": "Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.\n\nAuth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.\n\nRoles: admin (user/manage, school/manage, curriculum/admin, public-content writes), contentWriter (curriculum/school tree, books), public (auth, files, curriculum metaData/tracks, public-content reads).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -921,15 +921,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/books",
+                  "raw": "{{baseUrl}}/api/books/school",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
-                    "school",
-                    "me",
-                    "books"
+                    "books",
+                    "school"
                   ]
                 }
               }
@@ -947,22 +946,21 @@
                       "type": "text"
                     },
                     {
-                      "key": "attachment",
+                      "key": "image",
                       "type": "file",
                       "src": []
                     }
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/books",
+                  "raw": "{{baseUrl}}/api/books/school",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
-                    "school",
-                    "me",
-                    "books"
+                    "books",
+                    "school"
                   ]
                 }
               }
@@ -980,22 +978,21 @@
                       "type": "text"
                     },
                     {
-                      "key": "attachment",
+                      "key": "image",
                       "type": "file",
                       "src": []
                     }
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/books/:id",
+                  "raw": "{{baseUrl}}/api/books/school/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
-                    "school",
-                    "me",
                     "books",
+                    "school",
                     ":id"
                   ],
                   "variable": [
@@ -1012,15 +1009,14 @@
               "request": {
                 "method": "DELETE",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/books/:id",
+                  "raw": "{{baseUrl}}/api/books/school/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
-                    "school",
-                    "me",
                     "books",
+                    "school",
                     ":id"
                   ],
                   "variable": [
@@ -1042,14 +1038,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/courses/:trackId",
+                  "raw": "{{baseUrl}}/api/curriculum/school/courses/:trackId",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "courses",
                     ":trackId"
                   ],
@@ -1079,14 +1075,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/units/:courseId",
+                  "raw": "{{baseUrl}}/api/curriculum/school/units/:courseId",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "units",
                     ":courseId"
                   ],
@@ -1126,14 +1122,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/units",
+                  "raw": "{{baseUrl}}/api/curriculum/school/units",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "units"
                   ]
                 }
@@ -1159,14 +1155,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/units/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/units/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "units",
                     ":id"
                   ],
@@ -1184,14 +1180,14 @@
               "request": {
                 "method": "DELETE",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/units/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/units/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "units",
                     ":id"
                   ],
@@ -1224,14 +1220,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/units/order/:courseId",
+                  "raw": "{{baseUrl}}/api/curriculum/school/units/order/:courseId",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "units",
                     "order",
                     ":courseId"
@@ -1255,14 +1251,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/lessons/:unitId",
+                  "raw": "{{baseUrl}}/api/curriculum/school/lessons/:unitId",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "lessons",
                     ":unitId"
                   ],
@@ -1295,14 +1291,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/lessons",
+                  "raw": "{{baseUrl}}/api/curriculum/school/lessons",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "lessons"
                   ]
                 }
@@ -1328,14 +1324,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/lessons/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/lessons/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "lessons",
                     ":id"
                   ],
@@ -1354,14 +1350,14 @@
               "request": {
                 "method": "DELETE",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/lessons/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/lessons/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "lessons",
                     ":id"
                   ],
@@ -1394,14 +1390,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/lessons/order/:unitId",
+                  "raw": "{{baseUrl}}/api/curriculum/school/lessons/order/:unitId",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "lessons",
                     "order",
                     ":unitId"
@@ -1425,14 +1421,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions?skip=0&limit=10",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions?skip=0&limit=10",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions"
                   ],
                   "query": [
@@ -1468,14 +1464,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     ":id"
                   ],
@@ -1545,14 +1541,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions"
                   ]
                 },
@@ -1602,14 +1598,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions"
                   ]
                 },
@@ -1703,14 +1699,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions"
                   ]
                 },
@@ -1774,14 +1770,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions"
                   ]
                 },
@@ -1808,14 +1804,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/bulk",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/bulk",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     "bulk"
                   ]
@@ -1880,14 +1876,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     ":id"
                   ],
@@ -1934,14 +1930,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     ":id"
                   ],
@@ -2032,14 +2028,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     ":id"
                   ],
@@ -2075,14 +2071,14 @@
                   ]
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     ":id"
                   ],
@@ -2101,14 +2097,14 @@
               "request": {
                 "method": "DELETE",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/:id",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     ":id"
                   ],
@@ -2142,14 +2138,14 @@
                   }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/questions/bulk-delete",
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/bulk-delete",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "questions",
                     "bulk-delete"
                   ]
@@ -2167,14 +2163,14 @@
               "request": {
                 "method": "GET",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/daily-challenge",
+                  "raw": "{{baseUrl}}/api/curriculum/school/daily-challenge",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "daily-challenge"
                   ]
                 }
@@ -2185,14 +2181,14 @@
               "request": {
                 "method": "POST",
                 "url": {
-                  "raw": "{{baseUrl}}/api/school/me/daily-challenge",
+                  "raw": "{{baseUrl}}/api/curriculum/school/daily-challenge",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
+                    "curriculum",
                     "school",
-                    "me",
                     "daily-challenge"
                   ]
                 }
@@ -2203,7 +2199,7 @@
       ]
     },
     {
-      "name": "Learning — public",
+      "name": "Curriculum — public",
       "item": [
         {
           "name": "Meta data (enums)",
@@ -2213,13 +2209,13 @@
             },
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/learning/metaData",
+              "raw": "{{baseUrl}}/api/curriculum/metaData",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "learning",
+                "curriculum",
                 "metaData"
               ]
             }
@@ -2233,13 +2229,13 @@
             },
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/learning/tracks",
+              "raw": "{{baseUrl}}/api/curriculum/tracks",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "learning",
+                "curriculum",
                 "tracks"
               ]
             }
@@ -2248,7 +2244,7 @@
       ]
     },
     {
-      "name": "Learning — admin",
+      "name": "Curriculum — admin",
       "description": "Requires role: admin. Read routes span all schools — no track-access checks.",
       "item": [
         {
@@ -2256,13 +2252,13 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/learning/admin/courses",
+              "raw": "{{baseUrl}}/api/curriculum/admin/courses",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "learning",
+                "curriculum",
                 "admin",
                 "courses"
               ],
@@ -2288,13 +2284,13 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/learning/admin/units",
+              "raw": "{{baseUrl}}/api/curriculum/admin/units",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "learning",
+                "curriculum",
                 "admin",
                 "units"
               ],
@@ -2330,13 +2326,13 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/learning/admin/lessons",
+              "raw": "{{baseUrl}}/api/curriculum/admin/lessons",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "learning",
+                "curriculum",
                 "admin",
                 "lessons"
               ],
@@ -2378,13 +2374,13 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/learning/admin/questions?skip=0&limit=10",
+              "raw": "{{baseUrl}}/api/curriculum/admin/questions?skip=0&limit=10",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
-                "learning",
+                "curriculum",
                 "admin",
                 "questions"
               ],
@@ -3438,6 +3434,273 @@
               "variable": [
                 {
                   "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Learning — student & solving",
+      "item": [
+        {
+          "name": "My curriculum (student)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/curriculum",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "curriculum"
+              ]
+            }
+          }
+        },
+        {
+          "name": "My books (student)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/books/student",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "books",
+                "student"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Saved questions — list",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/saved-questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "saved-questions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Saved questions — save",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/saved-questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "saved-questions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"questionId\": \"{{questionId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Saved questions — unsave",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/saved-questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "saved-questions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"questionId\": \"{{questionId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Solve — start lesson",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"lessonId\": \"{{lessonId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Solve — submit answers",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/solve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "solve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"choiceId\": \"{{optionId}}\"\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"boolAnswer\": true\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"matches\": [\n          {\n            \"baseId\": \"{{baseId}}\",\n            \"matchId\": \"{{matchId}}\"\n          }\n        ]\n      }\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "My attempts (student)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/attempts?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "attempts"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Leaderboard (student, my track)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/leaderboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "leaderboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Attempts (owner)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/school/attempts?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "school",
+                "attempts"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Leaderboard (owner, by track)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/school/leaderboard/:trackId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "school",
+                "leaderboard",
+                ":trackId"
+              ],
+              "variable": [
+                {
+                  "key": "trackId",
                   "value": ""
                 }
               ]

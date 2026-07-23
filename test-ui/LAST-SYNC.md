@@ -1,7 +1,7 @@
 # test-ui — last sync record
 
-**Last synced:** 2026-07-19 (school-access moved to standalone `POST`/`DELETE /api/school-access`)
-**Backend state covered (`src/` + `core/src/`):** `c7415f3`
+**Last synced:** 2026-07-23 (big rename: old `learning/*` content tree → `curriculum/*`; books moved to `/books/school` + `/books/student`; new `src/learning` module = solving/saved-questions/learning-curriculum)
+**Backend state covered (`src/` + `core/src/`):** `1e58e1c` (+ uncommitted solving/ledger/books work)
 
 > The hash always trails one commit — this file is committed right after the sync it records, and that bump commit never touches `src/`. Diffing from it can only over-report, never miss backend changes.
 
@@ -21,7 +21,9 @@ The test-ui (`index.html` + `app.js`) covers every active controller/DTO in `src
 
 ## Notes that keep the UI honest
 
-- Book upload field is `attachment`, not `image`.
+- Book upload field is `image`. Owner CRUD under `/books/school` (`GET`/`POST`/`PATCH :id`/`DELETE :id`, create requires a file); students read `/books/student`.
+- Content tree, questions, daily-challenge are under `/curriculum/school/*` (owner) and `/curriculum/admin/*` (admin); tracks + enums at `/curriculum/tracks` and `/curriculum/metaData`.
+- New `src/learning` student surface: `GET /learning/curriculum`, `/learning/saved-questions` (GET/POST/DELETE, body `{questionId}`), and solving — `POST /learning/solving/student/{start,solve}`, `GET /learning/solving/student/{attempts,leaderboard}`. Owner: `GET /learning/solving/school/attempts`, `GET /learning/solving/school/leaderboard/:trackId`. `/solve` body: `{ snapshotId, answers:[{ id, answer:{ choiceId|boolAnswer|matches[] } }] }`.
 - `QuestionEditDto` whitelists only `title`/`type`/answer-key — never send `purpose`/`lessonId` on PATCH.
 - All validation pipes use `forbidNonWhitelisted` — any new DTO field must be mirrored exactly.
 - List endpoints return `BasePaginationModel` (`{ list, totalRecords, next, back }`); plain finds return arrays.

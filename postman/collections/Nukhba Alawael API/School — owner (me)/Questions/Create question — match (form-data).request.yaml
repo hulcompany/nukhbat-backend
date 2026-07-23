@@ -5,7 +5,7 @@ description: |-
   `correctIndex` is only on base rows and is a POSITION in this same array — it must point at a `match` row, each match can back only one base, and matches must be >= bases.
 
   Here base "Cat"(2) -> index 0 = "Meow", base "Dog"(3) -> index 1 = "Bark".
-url: "{{baseUrl}}/api/school/me/questions"
+url: "{{baseUrl}}/api/curriculum/school/questions"
 method: POST
 body:
   type: formdata

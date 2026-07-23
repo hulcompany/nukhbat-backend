@@ -8,7 +8,7 @@ import {
   Unique,
 } from 'typeorm';
 import { School } from '../../school/entity/school.entity';
-import { Track } from '../../learning/tracks/entity/track.entity';
+import { Track } from '../../curriculum/tracks/entity/track.entity';
 
 // Plain schoolId/trackId columns drive the access checks (no relation load
 // needed), while the ManyToOne sides let callers that list a school's tracks

@@ -1,0 +1,17 @@
+//   // every edit replaces the answer key wholesale, so this wipes all three
+//   // shapes regardless of the old type
+//   private async cleanQuestion(question: Question, em: EntityManager) {
+//     await em
+//       .getRepository(Question)
+//       .update({ id: question.id }, { trueOrFalseAnswer: null });
+//     await em
+//       .getRepository(QuestionMatch)
+//       .delete({ question: { id: question.id } });
+//     // options are eager, so the old rows are already loaded on `question`
+//     for (let o of question.options ?? []) {
+//       if (o.imageId) await this.files.softRemove(o.imageId, em);
+//     }
+//     await em
+//       .getRepository(QuestionOption)
+//       .delete({ question: { id: question.id } });
+//   }

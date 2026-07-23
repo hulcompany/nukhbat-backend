@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/books/student"
+method: GET
+order: 2000

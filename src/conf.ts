@@ -12,4 +12,10 @@ export const AppConfig = {
   ],
   KEY_AGE_YEAR: 1,
   FREE_TRIAL_DAYS: 3,
+  // how long a frozen lesson snapshot (start → solve) lives in Redis, in
+  // seconds — the window a student has to finish an attempt they started
+  LESSON_SNAPSHOT_TTL_SEC: 24 * 60 * 60,
+  XP_FACTOR: [15, 10, 5],
+  UNIT_XP: 100,
+  UNIT_GEMS: 50,
 };

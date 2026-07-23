@@ -1,6 +1,6 @@
 $kind: http-request
 description: purpose=dailyChallenge takes `courseId` and NO `lessonId` — sending a lessonId is rejected. These live in the school pool rather than a lesson.
-url: "{{baseUrl}}/api/school/me/questions"
+url: "{{baseUrl}}/api/curriculum/school/questions"
 method: POST
 body:
   type: formdata

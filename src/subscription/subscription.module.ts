@@ -20,6 +20,6 @@ require('./errors');
   ],
   controllers: [SubscriptionController],
   providers: [SubscriptionKeyService, SubscriptionService],
-  exports: [SubscriptionKeyService, SubscriptionService],
+  exports: [SubscriptionKeyService, SubscriptionService, StudentModule],
 })
 export class SubscriptionModule {}

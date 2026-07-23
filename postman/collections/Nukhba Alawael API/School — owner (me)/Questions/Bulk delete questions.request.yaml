@@ -3,7 +3,7 @@ description: |-
   By ids. POST rather than DELETE because DELETE bodies get dropped by some proxies.
 
   All-or-nothing: one undeletable question cancels the batch. Same guards as single delete.
-url: "{{baseUrl}}/api/school/me/questions/bulk-delete"
+url: "{{baseUrl}}/api/curriculum/school/questions/bulk-delete"
 method: POST
 headers:
   Content-Type: application/json

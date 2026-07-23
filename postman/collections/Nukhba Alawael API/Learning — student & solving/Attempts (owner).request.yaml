@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/solving/school/attempts?skip=0&limit=10"
+method: GET
+queryParams:
+  skip: "0"
+  limit: "10"
+order: 10000

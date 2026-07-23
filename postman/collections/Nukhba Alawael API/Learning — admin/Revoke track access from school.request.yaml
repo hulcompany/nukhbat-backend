@@ -1,7 +1,14 @@
 $kind: http-request
-url: "{{baseUrl}}/api/learning/admin/schoolAccess/:schoolId/:trackId"
+description: Admin only. 404 School Not Found; 400 if the school is the default school or does not have this track.
+url: "{{baseUrl}}/api/school-access"
 method: DELETE
-pathVariables:
-  schoolId: ""
-  trackId: ""
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "schoolId": "",
+      "trackId": ""
+    }
 order: 6000

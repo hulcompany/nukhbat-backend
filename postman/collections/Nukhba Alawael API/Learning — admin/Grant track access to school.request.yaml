@@ -1,7 +1,14 @@
 $kind: http-request
-url: "{{baseUrl}}/api/learning/admin/schoolAccess/:schoolId/:trackId"
+description: Admin only. 404 Track/School Not Found; 400 if the school is the default school (has all tracks) or already has this track.
+url: "{{baseUrl}}/api/school-access"
 method: POST
-pathVariables:
-  schoolId: ""
-  trackId: ""
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "schoolId": "",
+      "trackId": ""
+    }
 order: 5000

@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/questions?skip=0&limit=10"
+url: "{{baseUrl}}/api/curriculum/school/questions?skip=0&limit=10"
 method: GET
 queryParams:
   - key: skip

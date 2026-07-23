@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../../core/user/entity/user.entity';
 import { School } from '../../school/entity/school.entity';
-import { Track } from '../../learning/tracks/entity/track.entity';
+import { Track } from '../../curriculum/tracks/entity/track.entity';
 
 @Entity()
 // hey claude here is one profile per user
@@ -40,6 +40,15 @@ export class StudentProfile {
 
   @ManyToOne(() => Track, { eager: true })
   track: Track;
+
+  // cached counters — the running totals of the reward ledger (SUM(xp) /
+  // SUM(gems) over LedgerEntry). Source of truth is the ledger; these are
+  // updated in the same transaction as each ledger insert, for cheap reads.
+  @Column('int', { default: 0 })
+  xp: number;
+
+  @Column('int', { default: 0 })
+  gems: number;
 
   @CreateDateColumn()
   createdAt: Date;

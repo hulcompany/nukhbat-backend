@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/books"
+url: "{{baseUrl}}/api/books/school"
 method: POST
 body:
   type: formdata
@@ -8,6 +8,6 @@ body:
       key: name
       value: Book Name
     - type: file
-      key: attachment
+      key: image
       src: []
 order: 2000

@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/books/:id"
+url: "{{baseUrl}}/api/books/school/:id"
 method: PATCH
 pathVariables:
   id: ""
@@ -10,6 +10,6 @@ body:
       key: name
       value: New Book Name
     - type: file
-      key: attachment
+      key: image
       src: []
 order: 3000

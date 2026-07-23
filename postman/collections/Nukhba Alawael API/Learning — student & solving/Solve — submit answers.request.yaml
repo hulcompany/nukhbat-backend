@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/solving/student/solve"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "snapshotId": "{{snapshotId}}",
+      "answers": [
+        {
+          "id": "{{questionId}}",
+          "answer": {
+            "choiceId": "{{optionId}}"
+          }
+        },
+        {
+          "id": "{{questionId}}",
+          "answer": {
+            "boolAnswer": true
+          }
+        },
+        {
+          "id": "{{questionId}}",
+          "answer": {
+            "matches": [
+              {
+                "baseId": "{{baseId}}",
+                "matchId": "{{matchId}}"
+              }
+            ]
+          }
+        }
+      ]
+    }
+order: 7000

@@ -1,4 +1,4 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/daily-challenge"
+url: "{{baseUrl}}/api/curriculum/school/daily-challenge"
 method: POST
 order: 2000

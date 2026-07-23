@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { StudentProfile } from '../../../student/entity/student-profile.entity';
-import { Question } from '../../questions/entity/questions.entity';
+import { Question } from '../../../curriculum/questions/entity/questions.entity';
 
 // A student's personal bookmark of a question to revisit. One row per
 // (student, question) — the unique index makes save idempotent, and both

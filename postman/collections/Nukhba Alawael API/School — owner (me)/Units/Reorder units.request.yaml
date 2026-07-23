@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/units/order/:courseId"
+url: "{{baseUrl}}/api/curriculum/school/units/order/:courseId"
 method: POST
 headers:
   Content-Type: application/json

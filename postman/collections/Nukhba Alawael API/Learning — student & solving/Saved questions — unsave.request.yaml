@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/saved-questions"
+method: DELETE
+body:
+  type: json
+  content: |-
+    {
+      "questionId": "{{questionId}}"
+    }
+order: 5000

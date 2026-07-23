@@ -1,6 +1,29 @@
 $kind: http-request
-name: Create question — trueFalse (form-data)
 description: trueFalse carries its answer key in the single `correctAnswer` boolean; it is stored on the question as `trueOrFalseAnswer` and reads back there (no option rows). Send no options/matchingItems.
-url: "{{baseUrl}}/api/school/me/questions"
+url: "{{baseUrl}}/api/curriculum/school/questions"
 method: POST
+body:
+  type: formdata
+  content:
+    - type: text
+      key: title
+      value: The earth is round
+    - type: text
+      key: type
+      value: trueFalse
+    - type: text
+      key: purpose
+      value: lesson
+    - type: text
+      key: lessonId
+      value: 00000000-0000-0000-0000-000000000000
+    - type: text
+      key: correctAnswer
+      value: "true"
+      description: true | false — the whole answer key
+    - type: file
+      key: image
+      src: []
+      description: Optional. Enable and pick a file to attach an image.
+      disabled: true
 order: 4000

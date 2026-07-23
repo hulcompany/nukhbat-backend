@@ -7,8 +7,8 @@ import {
   Type,
 } from '@nestjs/common';
 import { ErrorsRecord } from 'core';
-import { StudentProfileService } from '../service/student-profile.service';
 import { StudentErrorCodes } from '../errors';
+import { StudentService } from '../student.service';
 
 // Loads the caller's StudentProfile onto request.context.student. Cares only
 // about identity — subscription/expiry is SubscriptionGuard's job.
@@ -20,10 +20,20 @@ export function StudentGuard(options?: {
 }): Type<CanActivate> {
   @Injectable()
   class StudentGuardMixin implements CanActivate {
-    constructor(private readonly service: StudentProfileService) {}
+    constructor(private readonly service: StudentService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
       const request = context.switchToHttp().getRequest();
+
+      if (
+        request.context.subscription?.studentProfile &&
+        request.context.subscription?.studentProfile?.active &&
+        options?.requireActive
+      ) {
+        throw new ForbiddenException(
+          ErrorsRecord.getError(StudentErrorCodes.StudentError_2),
+        );
+      }
 
       const userId = request.user?.id;
       if (!userId) {

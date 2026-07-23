@@ -7,7 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Track } from '../../learning/tracks/entity/track.entity';
+import { Track } from '../../curriculum/tracks/entity/track.entity';
 import { School } from '../../school/entity/school.entity';
 import { Subscription } from './subscription.entity';
 

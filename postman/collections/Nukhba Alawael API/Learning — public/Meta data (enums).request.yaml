@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/learning/metaData"
+url: "{{baseUrl}}/api/curriculum/metaData"
 method: GET
 auth:
   type: noauth

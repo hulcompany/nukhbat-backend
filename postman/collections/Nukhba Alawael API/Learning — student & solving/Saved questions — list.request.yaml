@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/saved-questions"
+method: GET
+order: 3000

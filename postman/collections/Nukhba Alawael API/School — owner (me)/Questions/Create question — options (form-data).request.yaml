@@ -7,7 +7,7 @@ description: |-
   `type`: options | trueFalse | match. `purpose` is REQUIRED: lesson | dailyChallenge.
 
   Exactly one option must have isCorrect=true, minimum 2 options.
-url: "{{baseUrl}}/api/school/me/questions"
+url: "{{baseUrl}}/api/curriculum/school/questions"
 method: POST
 body:
   type: formdata

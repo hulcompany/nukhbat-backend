@@ -4,7 +4,6 @@ import { UUID } from 'crypto';
 import {
   DataSource,
   EntityManager,
-  FindOptionsWhere,
   MoreThan,
   Repository,
 } from 'typeorm';
@@ -16,18 +15,17 @@ import {
   transaction,
 } from 'core';
 import { SubscriptionKeyService } from './subscription-key.service';
-import { StudentProfileService } from '../../student/service/student-profile.service';
 import { Subscription, SubscriptionType } from '../entity/subscription.entity';
 import {
   SubscriptionGetDto,
   SubscriptionStatusFilter,
 } from '../dto/subscription.dto';
 import { AppConfig } from '../../conf';
-import { LearningService } from '../../learning/learning.service';
 import { SchoolService } from '../../school/school.service';
 import { SubscriptionErrorCodes } from '../errors';
 import { SubscriptionKey } from '../entity/subscription-key.entity';
 import { SchoolAccessService } from '../../school-access/school-access.service';
+import { StudentService } from '../../student/student.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -35,7 +33,7 @@ export class SubscriptionService {
     @InjectRepository(Subscription)
     private readonly repo: Repository<Subscription>,
     private readonly keys: SubscriptionKeyService,
-    private readonly profiles: StudentProfileService,
+    private readonly profiles: StudentService,
     private readonly schoolAccess: SchoolAccessService,
     private readonly schoolService: SchoolService,
     private readonly ds: DataSource,

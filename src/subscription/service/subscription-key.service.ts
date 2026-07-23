@@ -21,7 +21,6 @@ import {
 } from '../dto/subscription.dto';
 import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { SubscriptionKeyGetDto } from '../dto/subscription.dto';
-import { LearningService } from '../../learning/learning.service';
 import { SchoolAccessService } from '../../school-access/school-access.service';
 
 // no 0/O/1/I — keys get typed by hand

@@ -13,7 +13,7 @@ import { SchoolAccess } from './entity/school-access.entity';
 import { SchoolAccessErrorCodes } from './errors';
 import { SchoolAccessDto } from './dto/school-access.dto';
 import { School } from '../school/entity/school.entity';
-import { Track } from '../learning/tracks/entity/track.entity';
+import { Track } from '../curriculum/tracks/entity/track.entity';
 
 @Injectable()
 export class SchoolAccessService {

@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/learning/admin/lessons"
+url: "{{baseUrl}}/api/curriculum/admin/lessons"
 method: GET
 queryParams:
   - key: unitId

@@ -5,7 +5,7 @@ description: |-
   All-or-nothing: one invalid question drops the whole batch (single transaction, everything validated before the first write).
 
   `purpose` is required on every item, same as single create.
-url: "{{baseUrl}}/api/school/me/questions/bulk"
+url: "{{baseUrl}}/api/curriculum/school/questions/bulk"
 method: POST
 headers:
   Content-Type: application/json

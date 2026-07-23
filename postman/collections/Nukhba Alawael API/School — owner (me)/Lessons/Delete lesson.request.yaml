@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/lessons/:id"
+url: "{{baseUrl}}/api/curriculum/school/lessons/:id"
 method: DELETE
 pathVariables:
   id: ""

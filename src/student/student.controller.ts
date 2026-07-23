@@ -11,7 +11,6 @@ import {
 import { JwtGuardStrict, RoleGuard, RoleType } from '../core';
 import { StrictValidation } from '../common';
 import { Context } from '../context';
-import { StudentProfileService } from './service/student-profile.service';
 import { StudentGuard } from './guard/student.guard';
 import {
   StudentActivationEditDto,
@@ -20,13 +19,14 @@ import {
 } from './dto/student.dto';
 import { UUID } from 'crypto';
 import { SchoolOwnerGuard } from '../school/guards/school-owner.guard';
+import { StudentService } from './student.service';
 
 @Controller('student')
 @UseGuards(JwtGuardStrict)
 @StrictValidation()
 export class StudentController {
   constructor(
-    private readonly profiles: StudentProfileService,
+    private readonly profiles: StudentService,
     private readonly ctxt: Context,
   ) {}
 

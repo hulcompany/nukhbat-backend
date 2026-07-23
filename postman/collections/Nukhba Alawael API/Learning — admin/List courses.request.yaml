@@ -1,6 +1,6 @@
 $kind: http-request
 description: Not paginated. Includes the track relation.
-url: "{{baseUrl}}/api/learning/admin/courses"
+url: "{{baseUrl}}/api/curriculum/admin/courses"
 method: GET
 queryParams:
   - key: title

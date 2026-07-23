@@ -3,7 +3,7 @@ description: |-
   status: draft | published.
 
   Publishing requires the lesson to already have at least one question, and a published lesson cannot then be emptied — set it back to draft to delete its last question.
-url: "{{baseUrl}}/api/school/me/lessons/:id"
+url: "{{baseUrl}}/api/curriculum/school/lessons/:id"
 method: PATCH
 headers:
   Content-Type: application/json

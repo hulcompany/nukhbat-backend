@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/solving/student/start"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "lessonId": "{{lessonId}}"
+    }
+order: 6000

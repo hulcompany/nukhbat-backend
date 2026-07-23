@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/school/me/units/:id"
+url: "{{baseUrl}}/api/curriculum/school/units/:id"
 method: PATCH
 headers:
   Content-Type: application/json

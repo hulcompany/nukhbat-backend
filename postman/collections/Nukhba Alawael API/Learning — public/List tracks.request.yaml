@@ -1,5 +1,5 @@
 $kind: http-request
-url: "{{baseUrl}}/api/learning/tracks"
+url: "{{baseUrl}}/api/curriculum/tracks"
 method: GET
 auth:
   type: noauth

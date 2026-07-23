@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/saved-questions"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "questionId": "{{questionId}}"
+    }
+order: 4000
