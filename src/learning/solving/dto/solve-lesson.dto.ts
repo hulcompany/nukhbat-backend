@@ -62,3 +62,13 @@ export class SolveLessonDto {
   @Type(() => SolveAnswerDto)
   answers: SolveAnswerDto[];
 }
+
+// POST /daily-challenge/solve — grade today's challenge for the student's
+// track. No snapshot: the challenge's questions live in the DB, and a student
+// gets exactly one attempt.
+export class SolveDailyChallengeDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SolveAnswerDto)
+  answers: SolveAnswerDto[];
+}

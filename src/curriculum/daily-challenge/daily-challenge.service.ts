@@ -37,6 +37,7 @@ export class DailyChallengeService {
     return await this.repo.find({
       where: { ...params, date: todayDateString() },
       relations: { usedQuestions: true, track: true },
+      relationLoadStrategy: 'query',
     });
   }
 

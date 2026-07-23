@@ -4,7 +4,11 @@ import { StrictValidation } from '../../common';
 import { Context } from '../../context';
 import { SolvingService } from './solving.service';
 import { SolveLessonsService } from './solve-lessons.service';
-import { StartLessonDto, SolveLessonDto } from './dto/solve-lesson.dto';
+import {
+  StartLessonDto,
+  SolveLessonDto,
+  SolveDailyChallengeDto,
+} from './dto/solve-lesson.dto';
 import { AttemptStudentGetDto } from './dto/attempt.dto';
 import { SubscriptionGuard } from '../../subscription/guard/subscription.guard';
 
@@ -40,6 +44,18 @@ export class SolvingStudentController {
       snapshotId: body.snapshotId,
       answers: body.answers,
     });
+  }
+
+  // today's challenge for the student's track — questions (answers hidden)
+  // when unattempted, or the frozen verdict once they've solved it
+  @Get('daily-challenge')
+  async getDailyChallenge() {
+    return this.solve.getDailyChallenge(this.ctx.student);
+  }
+
+  @Post('daily-challenge/solve')
+  async solveDailyChallenge(@Body() body: SolveDailyChallengeDto) {
+    return this.solve.solveDailyChallenge(this.ctx.student, body.answers);
   }
 
   @Get('attempts')

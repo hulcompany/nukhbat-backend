@@ -13,3 +13,4 @@ export * from './questions/entity/enum/question-purpose.type';
 export * from './questions/entity/enum/question.type';
 export * from './lessons/entity/lesson.entity';
 export * from './lessons/entity/lesson.status.type';
+export * from './daily-challenge/entity/daily-challenge.entity';

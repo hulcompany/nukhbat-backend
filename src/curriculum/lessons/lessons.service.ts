@@ -10,10 +10,12 @@ import {
   DataSource,
   DeepPartial,
   EntityManager,
+  FindOptionsOrder,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
   ILike,
+  In,
   Repository,
 } from 'typeorm';
 import { LessonEditDto } from './dto/lessons.dto';
@@ -45,6 +47,22 @@ export class LessonService {
     return await repo.exists({ where: { lessonId: lessonId } });
   }
 
+  // Stamps each lesson's transient `used` flag from the LessonUsed table in a
+  // single query. Lessons with no LessonUsed row (or used=false) get `false`.
+  private async attachUsed(lessons: Lesson[], em?: EntityManager) {
+    const ids = lessons.map((l) => l.id).filter((id): id is UUID => !!id);
+    if (!ids.length) return;
+    const repo = em ? em.getRepository(LessonUsed) : this.usedRepo;
+    const rows = await repo.find({
+      where: { lessonId: In(ids), used: true },
+      select: { lessonId: true },
+    });
+    const usedSet = new Set(rows.map((r) => r.lessonId));
+    for (const lesson of lessons) {
+      lesson.used = usedSet.has(lesson.id);
+    }
+  }
+
   async create(params: DeepPartial<Lesson>) {
     // max+1, not count+1, so gaps left by deletions can't duplicate an index
     let last = await this.repo.find({
@@ -60,18 +78,21 @@ export class LessonService {
     params: FindOptionsWhere<Lesson>,
     relations?: FindOptionsRelations<Lesson>,
     select?: FindOptionsSelect<Lesson>,
+    order?: FindOptionsOrder<Lesson>,
   ) {
     if (params.title) {
       params.title = ILike(`%${params.title}%`);
     }
-    return await this.repo.find({
+    const lessons = await this.repo.find({
       where: params,
-      order: { index: 'ASC' },
+      order: { index: 'ASC', ...order },
       relations: relations
         ? { ...relations, questions: true }
         : { questions: true },
       select: select,
     });
+    await this.attachUsed(lessons);
+    return lessons;
   }
 
   async findOneOrFail(params: FindOptionsWhere<Lesson>) {
@@ -79,6 +100,7 @@ export class LessonService {
     if (!res) {
       throw new NotFoundException();
     }
+    await this.attachUsed([res]);
     return res;
   }
 

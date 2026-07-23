@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LessonAttempt } from './entity/lesson-attempt.entity';
 import { QuestionAttempt } from './entity/question-attempt.entity';
+import { SolvedDailyChallenges } from './entity/solved-daily-challenges.entity';
 import { SolvingService } from './solving.service';
 import { SnapshotsService } from './snapshots.service';
 import { SolveLessonsService } from './solve-lessons.service';
@@ -16,7 +17,11 @@ import { SubscriptionModule } from '../../subscription/subscription.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LessonAttempt, QuestionAttempt]),
+    TypeOrmModule.forFeature([
+      LessonAttempt,
+      QuestionAttempt,
+      SolvedDailyChallenges,
+    ]),
     // CurriculumService (lesson/question reads, grading), LedgerService
     // (rewards), StudentService (profile balance). SubscriptionModule powers
     // the SubscriptionGuard on the student controller; SchoolModule powers the

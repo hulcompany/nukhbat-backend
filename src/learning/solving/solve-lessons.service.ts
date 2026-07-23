@@ -16,6 +16,8 @@ import { LessonAttempt } from './entity/lesson-attempt.entity';
 import { AppConfig } from '../../conf';
 import { LedgerService } from '../ledger/ledger.service';
 import { StudentService } from '../../student/student.service';
+import { SolvedDailyChallenges } from './entity/solved-daily-challenges.entity';
+import { StudentProfile } from '../../student/entity/student-profile.entity';
 
 // The student attempt flow: /start freezes a lesson and hands back the
 // questions without keys; /solve grades the submitted answers. Reads go
@@ -50,10 +52,14 @@ export class SolveLessonsService {
         status: LessonStatusType.published,
       },
       { unit: true, questions: true },
+      undefined,
     );
     if (!lesson) {
       throw new NotFoundException('Lesson not found');
     }
+    let questions = await this.curriculum.findQuestions({
+      lesson: { id: lesson.id },
+    });
 
     // // STOPPED FOR NOW MY FRIEND CLAUDE — MAYBE WE WILL USE IT LATER
     // // sequential gate — a lesson unlocks only once the previous lesson in its
@@ -95,7 +101,7 @@ export class SolveLessonsService {
         trackId: params.trackId,
         courseId: lesson.unit.courseId,
         unitId: lesson.unitId,
-        questions: lesson.questions,
+        questions: questions,
         createdAt: new Date().toISOString(),
       });
 
@@ -106,9 +112,11 @@ export class SolveLessonsService {
           title: lesson.title,
           description: lesson.description,
         },
-        questions: lesson.questions.map((e) =>
-          _.omit(e, ['trueOrFalseAnswer', 'options', 'matchingItems']),
-        ),
+        questions: questions.map((e) => ({
+          ...e,
+          options: e.options.map((o) => _.omit(o, 'isCorrect')),
+          matchingItems: e.matchingItems.map((m) => _.omit(m, 'correctIndex')),
+        })),
       };
     });
   }
@@ -218,5 +226,102 @@ export class SolveLessonsService {
     await this.snapshots.removeQuestionSnapshot(params.snapshotId);
 
     return { verdict, xps, gems };
+  }
+
+  async solveDailyChallenge(
+    student: StudentProfile,
+    answers: SolveAnswerDto[],
+  ) {
+    let dailyChallenge = (
+      await this.curriculum.getDailyChallenge({
+        schoolId: student.schoolId,
+        trackId: student.trackId,
+      })
+    ).at(0);
+    if (!dailyChallenge) {
+      throw new NotFoundException('No Daily Challenge For Now');
+    }
+    let exists = await this.ds.getRepository(SolvedDailyChallenges).exists({
+      where: {
+        dailyChallengeId: dailyChallenge.id,
+        student: { id: student.id },
+      },
+    });
+    if (exists) {
+      throw new BadRequestException('Already Attempted Daily Challenge');
+    }
+    const questions = dailyChallenge.usedQuestions.map((e) => e.question);
+    for (let i = 0; i < answers.length; i++) {
+      if (!questions.find((e) => e.id == answers[i].id)) {
+        throw new BadRequestException(
+          'Answer ' +
+            answers[i].id +
+            ' references a question not in this attempt',
+        );
+      }
+    }
+    const verdict = await this.curriculum.checkQuestionAnswers(answers, true);
+    await transaction(this.ds, async (em) => {
+      let dailyRepo = em.getRepository(SolvedDailyChallenges);
+      await dailyRepo.save({
+        dailyChallengeId: dailyChallenge.id,
+        studentId: student.id,
+        score: verdict.passed,
+        total: verdict.total,
+        // freeze the graded verdict so the review read never recomputes
+        verdict: verdict.verdict,
+      });
+      if (verdict.passed == verdict.total) {
+        let xp = dailyChallenge.usedQuestions.length * 5;
+        await this.studentService.ledgeBalance(student.id, { xp: xp, em: em });
+        await this.ledger.insertLedge(student.id, {
+          schoolId: student.schoolId,
+          trackId: student.trackId,
+          xp: xp,
+          em: em,
+        });
+      }
+    });
+    return { verdict };
+  }
+
+  async getDailyChallenge(student: StudentProfile) {
+    let dailyChallenge = (
+      await this.curriculum.getDailyChallenge({
+        schoolId: student.schoolId,
+        trackId: student.trackId,
+      })
+    ).at(0);
+    if (!dailyChallenge) {
+      throw new NotFoundException('No Daily Challenge For Now');
+    }
+    // one attempt only: once solved, hand back the frozen verdict — never the
+    // questions again (they carry the answer keys via review)
+    let solved = await this.ds.getRepository(SolvedDailyChallenges).findOne({
+      where: {
+        dailyChallengeId: dailyChallenge.id,
+        studentId: student.id,
+      },
+    });
+    if (solved) {
+      return {
+        ..._.omit(dailyChallenge, 'usedQuestions'),
+        solved: true,
+        score: solved.score,
+        total: solved.total,
+        verdict: solved.verdict,
+      };
+    }
+    let questions = dailyChallenge.usedQuestions.map((e) => e.question);
+    let sanatized = questions.map((e) => ({
+      ...e,
+      options: e.options.map((o) => _.omit(o, 'isCorrect')),
+      matchingItems: e.matchingItems.map((m) => _.omit(m, 'correctIndex')),
+    }));
+    return {
+      ..._.omit(dailyChallenge, 'usedQuestions'),
+      solved: false,
+      questions: sanatized,
+    };
   }
 }

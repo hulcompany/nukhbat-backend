@@ -19,6 +19,17 @@ import { QuestionMatchType } from '../../curriculum/questions/entity/enum/questi
 import { DailyWisement } from '../../daily_wisement/entity/daily-wisement.entity';
 import { UUID } from 'crypto';
 import { NUKHBA_FAQS } from '../factory/faq.factory';
+import { LessonStatusType } from '../../curriculum/lessons/entity/lesson.status.type';
+import { QuestionVerdict } from '../../curriculum/questions/types/question-verdict.type';
+import { StudentProfile } from '../../student/entity/student-profile.entity';
+import {
+  Subscription,
+  SubscriptionType,
+} from '../../subscription/entity/subscription.entity';
+import { LessonAttempt } from '../../learning/solving/entity/lesson-attempt.entity';
+import { QuestionAttempt } from '../../learning/solving/entity/question-attempt.entity';
+import { LedgerEntry } from '../../learning/ledger/entity/ledger-entry.entity';
+import { AppConfig } from '../../conf';
 
 // The only FAQs we seed — the real product Q&A (Arabic).
 
@@ -68,10 +79,14 @@ export class MainSeeder implements Seeder {
     // daily-challenge pool needs EVERY course (school has all tracks)
     let firstTrackCourses: Course[] = [];
     let allCourses: Course[] = [];
+    let firstTrackId!: UUID;
     for (const [t, track] of data.tracks.entries()) {
       const savedTrack = await dataSource.getRepository(Track).save({
         name: track.name,
       });
+      if (t === 0) {
+        firstTrackId = savedTrack.id;
+      }
       // both schools get all three tracks
       for (const s of [school, school2]) {
         await dataSource.getRepository(SchoolAccess).save({
@@ -111,6 +126,201 @@ export class MainSeeder implements Seeder {
       firstTrackCourses,
       allCourses,
     );
+
+    // students + their solving history (attempts, question attempts, reward
+    // ledger) on the first track of each school
+    await this.seedStudentsAndSolving(dataSource, school.id, firstTrackId, 's1');
+    await this.seedStudentsAndSolving(
+      dataSource,
+      school2.id,
+      firstTrackId,
+      's2',
+    );
+  }
+
+  // Enrolls a handful of students on `schoolId`/`trackId` (each with a live
+  // free-trial subscription so the guards pass), then replays a slice of the
+  // published lessons as fully-correct attempts — writing the frozen
+  // LessonAttempt/QuestionAttempt marks, the reward LedgerEntry rows, and the
+  // cached xp/gems counters exactly like SolveLessonsService.solve would.
+  // Students solve a decreasing number of lessons so the leaderboard has spread.
+  private async seedStudentsAndSolving(
+    dataSource: DataSource,
+    schoolId: UUID,
+    trackId: UUID,
+    tag: string,
+  ) {
+    const userRepo = dataSource.getRepository(User);
+    const profileRepo = dataSource.getRepository(StudentProfile);
+    const subRepo = dataSource.getRepository(Subscription);
+    const attemptRepo = dataSource.getRepository(LessonAttempt);
+    const qAttemptRepo = dataSource.getRepository(QuestionAttempt);
+    const ledgerRepo = dataSource.getRepository(LedgerEntry);
+
+    // published, question-bearing lessons on this track, ordered for a stable
+    // "solve the first N" slice
+    const published = (
+      await dataSource.getRepository(Lesson).find({
+        where: { schoolId, status: LessonStatusType.published },
+        relations: { unit: { course: true }, questions: true },
+        order: { index: 'ASC' },
+      })
+    ).filter(
+      (l) => l.unit.course.trackId === trackId && l.questions.length > 0,
+    );
+    // total published lessons per unit — used to award the unit-completion bonus
+    const unitTotals = new Map<UUID, number>();
+    for (const l of published) {
+      unitTotals.set(l.unitId, (unitTotals.get(l.unitId) ?? 0) + 1);
+    }
+
+    const STUDENTS = 5;
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
+    for (let s = 0; s < STUDENTS; s++) {
+      const user = await userRepo.save({
+        name: `student ${tag}-${s + 1}`,
+        email: `student.${tag}.${s + 1}@hul.com`,
+        emailVerified: true,
+        role: 'student',
+        // same shared hash as the other seeded accounts
+        password:
+          '$2b$10$AqgwtZDkdiKMVC4yXi1fnuK.xEhIahxnCap8KX9kbXU7Njloz.vo6',
+      });
+      const profile = await profileRepo.save({
+        userId: user.id,
+        schoolId,
+        trackId,
+      });
+      // live free trial so StudentGuard/SubscriptionGuard let them through
+      await subRepo.save({
+        type: SubscriptionType.freeTrial,
+        expireDate: new Date(Date.now() + THIRTY_DAYS),
+        studentProfileId: profile.id,
+      });
+
+      // student 0 solves every lesson, each next one solves one fewer
+      const solveCount = Math.max(0, published.length - s);
+      const solvedPerUnit = new Map<UUID, number>();
+      let totalXp = 0;
+      let totalGems = 0;
+
+      for (let i = 0; i < solveCount; i++) {
+        const lesson = published[i];
+        const verdicts = lesson.questions.map((q) => this.buildVerdict(q));
+
+        const attempt = await attemptRepo.save({
+          studentId: profile.id,
+          lessonId: lesson.id,
+          schoolId,
+          trackId,
+          courseId: lesson.unit.courseId,
+          unitId: lesson.unitId,
+          lessonTitle: lesson.title,
+          attemptNumber: 1,
+          questionsTotal: verdicts.length,
+          questionsCorrect: verdicts.length,
+          score: 100,
+          completed: true,
+          xpAwarded: 0, // set below once the reward is computed
+        });
+
+        for (let q = 0; q < lesson.questions.length; q++) {
+          await qAttemptRepo.save({
+            lessonAttemptId: attempt.id,
+            studentId: profile.id,
+            questionId: lesson.questions[q].id,
+            questionType: lesson.questions[q].type,
+            score: 1,
+            total: 1,
+            isCorrect: true,
+            result: verdicts[q],
+          });
+        }
+
+        // first fully-correct completion → XP_FACTOR[0] per question
+        const lessonXp = AppConfig.XP_FACTOR[0] * lesson.questions.length;
+        await attemptRepo.update(attempt.id, { xpAwarded: lessonXp });
+        await ledgerRepo.save({
+          studentId: profile.id,
+          sourceName: lesson.title,
+          xp: lessonXp,
+          gems: 0,
+          schoolId,
+          trackId,
+        });
+        totalXp += lessonXp;
+
+        // unit-completion bonus once every published lesson of the unit is done
+        const done = (solvedPerUnit.get(lesson.unitId) ?? 0) + 1;
+        solvedPerUnit.set(lesson.unitId, done);
+        if (done === unitTotals.get(lesson.unitId)) {
+          await ledgerRepo.save({
+            studentId: profile.id,
+            sourceName: `${lesson.unit.title} - unit complete`,
+            xp: AppConfig.UNIT_XP,
+            gems: AppConfig.UNIT_GEMS,
+            schoolId,
+            trackId,
+          });
+          totalXp += AppConfig.UNIT_XP;
+          totalGems += AppConfig.UNIT_GEMS;
+        }
+      }
+
+      // cached counters mirror SUM(xp)/SUM(gems) over the ledger
+      await profileRepo.update(profile.id, { xp: totalXp, gems: totalGems });
+    }
+  }
+
+  // A fully-correct QuestionVerdict for a seeded question, matching the shape
+  // SolveLessonsService freezes into QuestionAttempt.result.
+  private buildVerdict(question: Question): QuestionVerdict {
+    if (question.type === QuestionType.OPTIONS) {
+      // seed always marks exactly one option correct
+      const correct = question.options.find((o) => o.isCorrect)!;
+      return {
+        id: question.id,
+        type: question.type,
+        choiceVerdict: {
+          answered: correct,
+          verdict: true,
+          correctOption: correct,
+        },
+      };
+    }
+    if (question.type === QuestionType.TRUE_FALSE) {
+      return {
+        id: question.id,
+        type: question.type,
+        trueOrFalseVerdict: {
+          answered: !!question.trueOrFalseAnswer,
+          correct: true,
+          correctAnswer: !!question.trueOrFalseAnswer,
+        },
+      };
+    }
+    // MATCH — pair each base with the match at its correctIndex
+    const bases = question.matchingItems.filter(
+      (m) => m.type === QuestionMatchType.base,
+    );
+    const matches = question.matchingItems.filter(
+      (m) => m.type === QuestionMatchType.match,
+    );
+    return {
+      id: question.id,
+      type: question.type,
+      matchVerdicts: bases.map((base) => {
+        // seed pairs every base with the match at its correctIndex
+        const pair = matches.find((m) => m.index === base.correctIndex)!;
+        return {
+          answeredBase: base,
+          answeredMatch: pair,
+          verdict: true,
+          baseCorrectMatch: pair,
+        };
+      }),
+    };
   }
 
   // 10 units (2 per course), 2 lessons per unit, 21 lesson questions on
@@ -153,9 +363,14 @@ export class MainSeeder implements Seeder {
       }
     }
 
-    // 21 lesson questions: first 7 lessons × 3 — one of each type per triple
+    // 21 lesson questions: first 7 lessons × 3 — one of each type per triple.
+    // Publish the lessons that get questions so seeded students can solve them.
     let n = 0;
     for (const lesson of lessons.slice(0, 7)) {
+      await lessonRepo.save({
+        id: lesson.id,
+        status: LessonStatusType.published,
+      });
       for (let i = 1; i <= 3; i++) {
         n++;
         await this.seedQuestion(dataSource, {

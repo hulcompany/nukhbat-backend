@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 import {
   EntityManager,
+  FindOptionsOrder,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
@@ -19,6 +20,7 @@ import { Lesson } from '../lessons/entity/lesson.entity';
 import { LessonStatusType } from '../lessons/entity/lesson.status.type';
 import { TrackService } from '../tracks/tracks.service';
 import { Question } from '../questions/entity/questions.entity';
+import { DailyChallengeService } from '../daily-challenge/daily-challenge.service';
 
 // Read-only content layer. It holds NO request context: every method takes
 // explicit filters/scope, and the caller (controller or role facade) is
@@ -34,6 +36,7 @@ export class CurriculumService {
     private readonly lessonService: LessonService,
     private readonly questionService: QuestionService,
     private readonly trackService: TrackService,
+    private readonly dailyChallengeService: DailyChallengeService,
   ) {}
 
   getTracks() {
@@ -165,5 +168,15 @@ export class CurriculumService {
     select?: FindOptionsSelect<Question>,
   ) {
     return await this.questionService.find(params, select);
+  }
+
+  // A track can be shared by several schools, each with its own challenge for
+  // the day, so scope by BOTH — filtering by track alone would return another
+  // school's challenge.
+  async getDailyChallenge(params: { schoolId: UUID; trackId: UUID }) {
+    return await this.dailyChallengeService.getToday({
+      school: { id: params.schoolId },
+      track: { id: params.trackId },
+    });
   }
 }

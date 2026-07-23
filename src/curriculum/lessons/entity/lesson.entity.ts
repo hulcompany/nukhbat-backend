@@ -52,6 +52,11 @@ export class Lesson {
   @Exclude()
   questions: Question[];
 
+  // Transient (not a column): true once a student has any attempt on the
+  // lesson, so its content is frozen. Stamped by LessonService reads from the
+  // LessonUsed table; undefined on lessons fetched through other paths.
+  used?: boolean;
+
   @Expose()
   get questionCount() {
     return this.questions?.length;
