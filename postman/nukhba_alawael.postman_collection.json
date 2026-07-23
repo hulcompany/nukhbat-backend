@@ -3605,6 +3605,54 @@
           }
         },
         {
+          "name": "Daily challenge — today (student)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/daily-challenge",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "daily-challenge"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daily challenge — solve (student)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/daily-challenge/solve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "daily-challenge",
+                "solve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n  \"answers\": [\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"choiceId\": \"{{optionId}}\"\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"boolAnswer\": true\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"matches\": [\n          {\n            \"baseId\": \"{{baseId}}\",\n            \"matchId\": \"{{matchId}}\"\n          }\n        ]\n      }\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
           "name": "My attempts (student)",
           "request": {
             "method": "GET",
@@ -3628,6 +3676,18 @@
                 {
                   "key": "limit",
                   "value": "10"
+                },
+                {
+                  "key": "completed",
+                  "value": "true",
+                  "disabled": true,
+                  "description": "true|false — filter by completion state"
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "disabled": true,
+                  "description": "ASC|DESC by createdAt"
                 }
               ]
             }
@@ -3676,6 +3736,24 @@
                 {
                   "key": "limit",
                   "value": "10"
+                },
+                {
+                  "key": "studentId",
+                  "value": "{{studentId}}",
+                  "disabled": true,
+                  "description": "filter to a single student"
+                },
+                {
+                  "key": "completed",
+                  "value": "true",
+                  "disabled": true,
+                  "description": "true|false — filter by completion state"
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "disabled": true,
+                  "description": "ASC|DESC by createdAt"
                 }
               ]
             }

@@ -3991,6 +3991,48 @@ function renderStuSolving(m) {
   );
 
   m.append(
+    formBlock({
+      method: 'GET',
+      title: 'Daily challenge (today)',
+      path: '/learning/solving/student/daily-challenge',
+      note: 'Today’s challenge for your profile’s track. Unattempted → { solved:false, questions } with answer keys hidden; already solved → { solved:true, score, total, verdict } (no questions).',
+    }),
+  );
+
+  m.append(
+    formBlock({
+      method: 'POST',
+      title: 'Solve daily challenge',
+      path: '/learning/solving/student/daily-challenge/solve',
+      note: 'One attempt only per student. No snapshot — answers reference the challenge’s question ids. Returns { verdict }.',
+      fields: [
+        {
+          name: 'answers',
+          label: 'answers array',
+          type: 'json',
+          req: true,
+          wide: true,
+          def: JSON.stringify(
+            [
+              { id: '⟨questionId⟩', answer: { choiceId: '⟨optionId⟩' } },
+              { id: '⟨questionId⟩', answer: { boolAnswer: true } },
+              {
+                id: '⟨questionId⟩',
+                answer: {
+                  matches: [{ baseId: '⟨baseId⟩', matchId: '⟨matchId⟩' }],
+                },
+              },
+            ],
+            null,
+            2,
+          ),
+        },
+      ],
+      buildBody: (v) => ({ answers: v.answers }),
+    }),
+  );
+
+  m.append(
     listBlock({
       title: 'My attempts',
       path: '/learning/solving/student/attempts',

@@ -10,7 +10,8 @@ import {
 } from 'typeorm';
 import { QuestionAttempt } from './question-attempt.entity';
 import { StudentProfile } from '../../../student/entity/student-profile.entity';
-import { Lesson } from '../../../curriculum';
+import { Lesson, Track } from '../../../curriculum';
+import { Course } from '../../../curriculum/course/entity/course.entity';
 
 // One row per /solve. The self-contained review record: its marks and title
 // snapshot stay readable even after the lesson's questions change, and it
@@ -51,8 +52,18 @@ export class LessonAttempt {
   @Column('uuid')
   schoolId: UUID;
 
+  // track/course are also exposed as FK-less relations so reads can populate
+  // them off the denormalized ids. createForeignKeyConstraints:false keeps the
+  // "no FK, survives a curriculum reorg" guarantee — the id columns below stay
+  // the source of truth, the relations are read-only join sugar.
+  @ManyToOne(() => Track, { createForeignKeyConstraints: false })
+  track: Track;
+
   @Column('uuid')
   trackId: UUID;
+
+  @ManyToOne(() => Course, { createForeignKeyConstraints: false })
+  course: Course;
 
   @Column('uuid')
   courseId: UUID;
