@@ -1,6 +1,7 @@
 $kind: http-request
+name: Curriculum tree (school)
 url: "{{baseUrl}}/api/curriculum/school/tree/:trackId"
 method: GET
 pathVariables:
-  trackId: ""
+  trackId: 109e8ca9-12a2-45db-b4c7-04996ffff36f
 order: 10000
