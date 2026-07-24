@@ -4,13 +4,13 @@ description: |-
 
   Auth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.
 
-  Roles: admin (user/manage, school/manage, learning/admin, public-content writes), contentWriter (school/me tree), public (auth, files, learning metaData/tracks, public-content reads).
+  Roles: admin (user/manage, school/manage, curriculum/admin, public-content writes), contentWriter (curriculum/school tree, books), public (auth, files, curriculum metaData/tracks, public-content reads).
 variables:
   baseUrl: http://localhost:3000
   accessToken: ""
   refreshToken: ""
 auth:
-  - id: c8deb3b6-4967-4f62-a37e-dc7472ff16e5
+  - id: ede8d1bf-4ace-4c32-9050-28d59b4e8af1
     type: bearer
     name: bearer auth
     credentials:

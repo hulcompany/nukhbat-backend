@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { UUID } from 'crypto';
 import { JwtGuardStrict, RoleGuard, RoleType } from '../../core';
 import { StrictValidation } from '../../common';
 import { Context } from '../../context';
@@ -65,6 +75,17 @@ export class SolvingStudentController {
       params: query,
       schoolId: student.schoolId,
       studentId: student.id,
+    });
+  }
+
+  // per-question breakdown of one of my own lesson attempts
+  @Get('attempts/:attemptId/questions')
+  async getAttemptQuestions(
+    @Param('attemptId', ParseUUIDPipe) attemptId: UUID,
+  ) {
+    return this.solving.getQuestionAttempts({
+      lessonAttemptId: attemptId,
+      studentId: this.ctx.student.id,
     });
   }
 

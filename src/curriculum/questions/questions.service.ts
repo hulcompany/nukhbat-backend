@@ -402,6 +402,7 @@ export class QuestionService {
 
         res.push({
           id: question.id,
+          title: question.title,
           type: question.type,
           choiceVerdict: {
             answered: option,
@@ -415,6 +416,7 @@ export class QuestionService {
         let verdict = question.trueOrFalseAnswer == answer.boolAnswer;
         res.push({
           id: question.id,
+          title: question.title,
           type: question.type,
           trueOrFalseVerdict: {
             answered: answer.boolAnswer == true,
@@ -433,13 +435,16 @@ export class QuestionService {
         let bases = question.matchingItems.filter(
           (e) => e.type == QuestionMatchType.base,
         );
+        // no submitted pairs (missing/empty `matches`) → no verdicts → the
+        // question scores as wrong via the `passed` filter below (never a 500)
+        let submitted = answer.matches ?? [];
         let matchVerdicts: MatchVerdict[] = [];
-        for (let i = 0; i < answer.matches!.length; i++) {
-          let base = bases.find((e) => e.id == answer.matches![i].baseId);
+        for (let i = 0; i < submitted.length; i++) {
+          let base = bases.find((e) => e.id == submitted[i].baseId);
           if (!base) {
             throw new BadRequestException('Base not found');
           }
-          let match = matches.find((e) => e.id == answer.matches![i].matchId);
+          let match = matches.find((e) => e.id == submitted[i].matchId);
           if (!match) {
             throw new BadRequestException('Match not found');
           }
@@ -463,6 +468,7 @@ export class QuestionService {
         }
         res.push({
           id: question.id,
+          title: question.title,
           type: question.type,
           matchVerdicts: matchVerdicts,
         });

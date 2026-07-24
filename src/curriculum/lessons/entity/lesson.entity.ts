@@ -12,7 +12,7 @@ import { UUID } from 'crypto';
 import { School } from '../../../school/entity/school.entity';
 import { LessonStatusType } from './lesson.status.type';
 import { Question } from '../../questions/entity/questions.entity';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 
 @Index(['schoolId', 'unitId', 'index'])
 @Entity()
@@ -56,9 +56,4 @@ export class Lesson {
   // lesson, so its content is frozen. Stamped by LessonService reads from the
   // LessonUsed table; undefined on lessons fetched through other paths.
   used?: boolean;
-
-  @Expose()
-  get questionCount() {
-    return this.questions?.length;
-  }
 }

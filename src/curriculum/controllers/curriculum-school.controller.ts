@@ -55,6 +55,17 @@ export class CurriculumSchoolController {
     private readonly ctx: Context,
   ) {}
 
+  // Full course → unit → lesson tree (active lessons only, no questions) for
+  // this school within the given track
+  @Get('tree/:trackId')
+  async getTree(@Param('trackId', ParseUUIDPipe) trackId: UUID) {
+    await this.access.assertTrackAccess(this.ctx.school.id, trackId);
+    return this.content.getCurriculumTree({
+      trackId,
+      schoolId: this.ctx.school.id,
+    });
+  }
+
   // Courses
   @Get('courses/:trackId')
   async getCourses(

@@ -128,6 +128,58 @@ export class CurriculumService {
     return lessons[0] ?? null;
   }
 
+  // Full course → unit → lesson tree for ONE school within ONE track (both
+  // required). Pure content — only PUBLISHED (active) lessons, no questions and
+  // no progress/attempt data. Courses come from the track (shared across
+  // schools); units and lessons are the school's own, so nothing leaks between
+  // schools. Empty branches are kept (a course with no active lessons → its
+  // units still list, a unit with none → lessons: []).
+  async getCurriculumTree(params: { trackId: UUID; schoolId: UUID }) {
+    const [courses, units, lessons] = await Promise.all([
+      this.getCourses({ trackId: params.trackId }),
+      this.getUnits({ trackId: params.trackId, schoolId: params.schoolId }),
+      this.getLessons({
+        trackId: params.trackId,
+        schoolId: params.schoolId,
+        status: LessonStatusType.published,
+      }),
+    ]);
+
+    const lessonsByUnit = new Map<UUID, Lesson[]>();
+    for (const lesson of lessons) {
+      const list = lessonsByUnit.get(lesson.unitId) ?? [];
+      list.push(lesson);
+      lessonsByUnit.set(lesson.unitId, list);
+    }
+
+    const unitsByCourse = new Map<UUID, Unit[]>();
+    for (const unit of units) {
+      const list = unitsByCourse.get(unit.courseId) ?? [];
+      list.push(unit);
+      unitsByCourse.set(unit.courseId, list);
+    }
+
+    return courses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      units: (unitsByCourse.get(course.id) ?? [])
+        .sort((a, b) => a.index - b.index)
+        .map((unit) => ({
+          id: unit.id,
+          title: unit.title,
+          index: unit.index,
+          lessons: (lessonsByUnit.get(unit.id) ?? [])
+            .sort((a, b) => a.index - b.index)
+            .map((lesson) => ({
+              id: lesson.id,
+              title: lesson.title,
+              index: lesson.index,
+              used: lesson.used ?? false,
+            })),
+        })),
+    }));
+  }
+
   // Seam for the student attempt flow: freezes a lesson's content once a
   // student has an attempt on it. Not reachable from the school facade.
   markLessonUsed(lessonId: UUID, em?: EntityManager) {

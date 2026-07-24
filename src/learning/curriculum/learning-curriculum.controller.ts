@@ -20,6 +20,10 @@ export class LearningCurriculumController {
   @Get('/')
   async getCurriculum() {
     const student = this.ctx.student;
-    return this.service.getCurriculum(student.trackId, student.schoolId);
+    return this.service.getCurriculum(
+      student.trackId,
+      student.schoolId,
+      student.id,
+    );
   }
 }

@@ -1031,6 +1031,31 @@
           ]
         },
         {
+          "name": "Curriculum tree (school)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/curriculum/school/tree/:trackId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "curriculum",
+                "school",
+                "tree",
+                ":trackId"
+              ],
+              "variable": [
+                {
+                  "key": "trackId",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Courses",
           "item": [
             {
@@ -3713,6 +3738,33 @@
           }
         },
         {
+          "name": "Attempt questions (student)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/student/attempts/:attemptId/questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "student",
+                "attempts",
+                ":attemptId",
+                "questions"
+              ],
+              "variable": [
+                {
+                  "key": "attemptId",
+                  "value": "{{attemptId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Attempts (owner)",
           "request": {
             "method": "GET",
@@ -3754,6 +3806,33 @@
                   "value": "DESC",
                   "disabled": true,
                   "description": "ASC|DESC by createdAt"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Attempt questions (owner)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/school/attempts/:attemptId/questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "school",
+                "attempts",
+                ":attemptId",
+                "questions"
+              ],
+              "variable": [
+                {
+                  "key": "attemptId",
+                  "value": "{{attemptId}}"
                 }
               ]
             }

@@ -2,6 +2,20 @@ $kind: http-request
 url: "{{baseUrl}}/api/learning/solving/school/attempts?skip=0&limit=10"
 method: GET
 queryParams:
-  skip: "0"
-  limit: "10"
-order: 10000
+  - key: skip
+    value: "0"
+  - key: limit
+    value: "10"
+  - key: studentId
+    value: "{{studentId}}"
+    disabled: true
+    description: filter to a single student
+  - key: completed
+    value: "true"
+    disabled: true
+    description: true|false — filter by completion state
+  - key: sort
+    value: DESC
+    disabled: true
+    description: ASC|DESC by createdAt
+order: 13000

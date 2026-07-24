@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/solving/student/attempts/:attemptId/questions"
+method: GET
+pathVariables:
+  attemptId: "{{attemptId}}"
+order: 12000

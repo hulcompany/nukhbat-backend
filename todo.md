@@ -1,3 +1,2 @@
 - Aggregations
 - NOTIFICATIONS
-- Curriculum

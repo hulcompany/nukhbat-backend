@@ -281,6 +281,7 @@ export class MainSeeder implements Seeder {
       const correct = question.options.find((o) => o.isCorrect)!;
       return {
         id: question.id,
+        title: question.title,
         type: question.type,
         choiceVerdict: {
           answered: correct,
@@ -292,6 +293,7 @@ export class MainSeeder implements Seeder {
     if (question.type === QuestionType.TRUE_FALSE) {
       return {
         id: question.id,
+        title: question.title,
         type: question.type,
         trueOrFalseVerdict: {
           answered: !!question.trueOrFalseAnswer,
@@ -309,6 +311,7 @@ export class MainSeeder implements Seeder {
     );
     return {
       id: question.id,
+      title: question.title,
       type: question.type,
       matchVerdicts: bases.map((base) => {
         // seed pairs every base with the match at its correctIndex

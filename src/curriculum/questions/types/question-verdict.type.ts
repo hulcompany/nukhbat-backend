@@ -43,6 +43,8 @@ export interface MatchVerdict {
 
 export interface QuestionVerdict {
   id: UUID;
+  // the question's title, snapshotted into the verdict for review display
+  title: string;
   type: QuestionType;
   choiceVerdict?: ChoiceVerdict;
   trueOrFalseVerdict?: TrueOrFalseVerdict;

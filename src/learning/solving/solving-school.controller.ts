@@ -37,6 +37,17 @@ export class SolvingSchoolController {
     });
   }
 
+  // per-question breakdown of one lesson attempt, scoped to the owner's school
+  @Get('attempts/:attemptId/questions')
+  async getAttemptQuestions(
+    @Param('attemptId', ParseUUIDPipe) attemptId: UUID,
+  ) {
+    return this.solving.getQuestionAttempts({
+      lessonAttemptId: attemptId,
+      lessonAttempt: { schoolId: this.ctx.school.id },
+    });
+  }
+
   @Get('leaderboard/:trackId')
   async getLeaderBoard(@Param('trackId', ParseUUIDPipe) trackId: UUID) {
     return this.solving.getLeaderBoard({

@@ -89,12 +89,7 @@ export class LessonAttempt {
   // fully-correct count. completed = questionsCorrect == questionsTotal
   @Column('int')
   questionsCorrect: number;
-
-  // Σ per-question raw score / Σ per-question max — the answer-level accuracy
-  // metric (partial credit, e.g. 3-of-4 matches)
-  @Column('int')
-  score: number;
-
+  
   @Column('boolean')
   completed: boolean;
 

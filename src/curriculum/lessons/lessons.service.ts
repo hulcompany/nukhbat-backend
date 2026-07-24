@@ -86,9 +86,10 @@ export class LessonService {
     const lessons = await this.repo.find({
       where: params,
       order: { index: 'ASC', ...order },
-      relations: relations
-        ? { ...relations, questions: true }
-        : { questions: true },
+      // questions are NOT loaded by default — most reads (the tree, id-only
+      // lookups) don't need them, and each question drags its eager
+      // options/matches. Callers that need them pass questions: true.
+      relations,
       select: select,
     });
     await this.attachUsed(lessons);

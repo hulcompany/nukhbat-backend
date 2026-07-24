@@ -3,4 +3,4 @@ url: "{{baseUrl}}/api/learning/solving/school/leaderboard/:trackId"
 method: GET
 pathVariables:
   trackId: ""
-order: 11000
+order: 15000

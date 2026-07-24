@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { UUID } from 'crypto';
 import { applyPsqlFilter, BasePaginationModel, SortType } from 'core';
 import { LessonAttempt } from './entity/lesson-attempt.entity';
 import { AttemptGetDto } from './dto/attempt.dto';
 import { StudentService } from '../../student/student.service';
+import { QuestionAttempt } from './entity/question-attempt.entity';
 
 // Read side of the solving module: the school/student attempt lists and the
 // per-track leaderboard. Both scope forcefully — the caller passes the
@@ -15,6 +16,8 @@ export class SolvingService {
   constructor(
     @InjectRepository(LessonAttempt)
     private readonly attempts: Repository<LessonAttempt>,
+    @InjectRepository(QuestionAttempt)
+    private readonly questionAttempts: Repository<QuestionAttempt>,
     private readonly students: StudentService,
   ) {}
 
@@ -99,5 +102,18 @@ export class SolvingService {
       xp: Number(r.xp),
       student: byId.get(r.studentId) ?? null,
     }));
+  }
+
+  // Per-question breakdown of a single lesson attempt, oldest-graded first.
+  // The caller forces the scope so a client can never read another's attempt:
+  //   - school:  { lessonAttemptId, lessonAttempt: { schoolId } }
+  //   - student: { lessonAttemptId, studentId }
+  // Each row's `result` already carries the frozen answer-vs-correct snapshot
+  // (incl. the question title), so no live joins are needed for review.
+  async getQuestionAttempts(filter: FindOptionsWhere<QuestionAttempt>) {
+    return await this.questionAttempts.find({
+      where: filter,
+      order: { createdAt: 'ASC' },
+    });
   }
 }

@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { CurriculumService } from '../../curriculum/services/curriculum.service';
-import { LessonStatusType } from '../../curriculum';
+import { LessonStatusType, QuestionVerdict } from '../../curriculum';
+import { QuestionAttempt } from './entity/question-attempt.entity';
 import { SnapshotsService } from './snapshots.service';
 import { SolveAnswerDto } from './dto/solve-lesson.dto';
 import { transaction } from 'core';
@@ -195,7 +196,7 @@ export class SolveLessonsService {
     }
 
     await transaction(this.ds, async (em) => {
-      await em.getRepository(LessonAttempt).save({
+      const savedAttempt = await em.getRepository(LessonAttempt).save({
         attemptNumber: attempts.length + 1,
         completed: verdict.passed == verdict.total,
         lessonTitle: snapshot.lessonTitle,
@@ -209,6 +210,26 @@ export class SolveLessonsService {
         studentId: snapshot.studentId,
         xpAwarded: xps,
       });
+
+      // one frozen QuestionAttempt per graded question — batch-inserted so the
+      // per-question drill-down (getQuestionAttempts) has real data
+      const questionRows = verdict.verdict.map((v) => {
+        const s = this.perQuestionScore(v);
+        return {
+          lessonAttemptId: savedAttempt.id,
+          studentId: snapshot.studentId,
+          questionId: v.id,
+          questionType: v.type,
+          score: s.score,
+          total: s.total,
+          isCorrect: s.isCorrect,
+          result: v,
+        };
+      });
+      if (questionRows.length) {
+        await em.getRepository(QuestionAttempt).insert(questionRows);
+      }
+
       await this.ledger.insertLedge(params.studentId, {
         xp: xps,
         em: em,
@@ -225,7 +246,28 @@ export class SolveLessonsService {
 
     await this.snapshots.removeQuestionSnapshot(params.snapshotId);
 
-    return { verdict, xps, gems };
+    return { ...verdict, xps, gems };
+  }
+
+  // per-question score/total/correct off its verdict, mirroring the lesson-level
+  // pass rule: a MATCH is correct only when every submitted pair is (partial is
+  // wrong, no partial credit); choice/true-false are a flat 0-or-1.
+  private perQuestionScore(v: QuestionVerdict) {
+    if (v.choiceVerdict) {
+      const ok = v.choiceVerdict.verdict;
+      return { score: ok ? 1 : 0, total: 1, isCorrect: ok };
+    }
+    if (v.trueOrFalseVerdict) {
+      const ok = v.trueOrFalseVerdict.correct;
+      return { score: ok ? 1 : 0, total: 1, isCorrect: ok };
+    }
+    const pairs = v.matchVerdicts ?? [];
+    const correct = pairs.filter((p) => p.verdict).length;
+    return {
+      score: correct,
+      total: pairs.length,
+      isCorrect: pairs.length > 0 && correct === pairs.length,
+    };
   }
 
   async solveDailyChallenge(

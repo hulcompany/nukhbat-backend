@@ -1,4 +1,4 @@
 $kind: http-request
 url: "{{baseUrl}}/api/learning/solving/student/leaderboard"
 method: GET
-order: 9000
+order: 11000

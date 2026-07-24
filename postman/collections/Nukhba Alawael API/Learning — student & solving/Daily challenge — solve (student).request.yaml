@@ -1,0 +1,34 @@
+$kind: http-request
+url: "{{baseUrl}}/api/learning/solving/student/daily-challenge/solve"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "answers": [
+        {
+          "id": "{{questionId}}",
+          "answer": {
+            "choiceId": "{{optionId}}"
+          }
+        },
+        {
+          "id": "{{questionId}}",
+          "answer": {
+            "boolAnswer": true
+          }
+        },
+        {
+          "id": "{{questionId}}",
+          "answer": {
+            "matches": [
+              {
+                "baseId": "{{baseId}}",
+                "matchId": "{{matchId}}"
+              }
+            ]
+          }
+        }
+      ]
+    }
+order: 9000
