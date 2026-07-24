@@ -132,8 +132,8 @@ export class CurriculumService {
   // required). Pure content — only PUBLISHED (active) lessons, no questions and
   // no progress/attempt data. Courses come from the track (shared across
   // schools); units and lessons are the school's own, so nothing leaks between
-  // schools. Empty branches are kept (a course with no active lessons → its
-  // units still list, a unit with none → lessons: []).
+  // schools. A unit with no active lessons is dropped, and a course left with
+  // no units is dropped too.
   async getCurriculumTree(params: { trackId: UUID; schoolId: UUID }) {
     const [courses, units, lessons] = await Promise.all([
       this.getCourses({ trackId: params.trackId }),
@@ -159,25 +159,30 @@ export class CurriculumService {
       unitsByCourse.set(unit.courseId, list);
     }
 
-    return courses.map((course) => ({
-      id: course.id,
-      title: course.title,
-      units: (unitsByCourse.get(course.id) ?? [])
-        .sort((a, b) => a.index - b.index)
-        .map((unit) => ({
-          id: unit.id,
-          title: unit.title,
-          index: unit.index,
-          lessons: (lessonsByUnit.get(unit.id) ?? [])
-            .sort((a, b) => a.index - b.index)
-            .map((lesson) => ({
-              id: lesson.id,
-              title: lesson.title,
-              index: lesson.index,
-              used: lesson.used ?? false,
-            })),
-        })),
-    }));
+    return courses
+      .map((course) => ({
+        id: course.id,
+        title: course.title,
+        units: (unitsByCourse.get(course.id) ?? [])
+          .sort((a, b) => a.index - b.index)
+          .map((unit) => ({
+            id: unit.id,
+            title: unit.title,
+            index: unit.index,
+            lessons: (lessonsByUnit.get(unit.id) ?? [])
+              .sort((a, b) => a.index - b.index)
+              .map((lesson) => ({
+                id: lesson.id,
+                title: lesson.title,
+                index: lesson.index,
+                used: lesson.used ?? false,
+              })),
+          }))
+          // a unit with no active lessons is dropped from the tree
+          .filter((unit) => unit.lessons.length > 0),
+      }))
+      // a course left with no units is dropped too
+      .filter((course) => course.units.length > 0);
   }
 
   // Seam for the student attempt flow: freezes a lesson's content once a

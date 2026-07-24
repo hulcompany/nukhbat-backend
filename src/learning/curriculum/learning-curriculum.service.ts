@@ -3,6 +3,7 @@ import { UUID } from 'crypto';
 import { DataSource } from 'typeorm';
 
 type CurriculumResponse = {
+  id?: UUID;
   title?: string;
   progress?: number;
   units?: {
@@ -27,8 +28,9 @@ export class LearningCurriculumService {
   //   - lesson.passed  = the student has a COMPLETED lesson_attempt on it
   //   - unit.progress  = round(100 * passed lessons / total lessons in the unit)
   //   - course.progress= round(100 * passed lessons / total lessons in the course)
-  // Only published lessons and in-track/in-school units are considered.
-  // Units order by their index, lessons by theirs; courses by title.
+  // Only published lessons and in-track/in-school units are considered; a unit
+  // with no published lessons is omitted, and a course left with no units is
+  // dropped too. Units order by their index, lessons by theirs; courses by title.
   async getCurriculum(
     trackId: UUID,
     schoolId: UUID,
@@ -81,6 +83,7 @@ export class LearningCurriculumService {
         GROUP BY u.id, u.title, u."courseId", u."index"
       )
       SELECT
+        c.id    AS id,
         c.title AS title,
         COALESCE(
           round(100.0 * SUM(ud.passed_lessons) / NULLIF(SUM(ud.total_lessons), 0)),
@@ -96,13 +99,15 @@ export class LearningCurriculumService {
                                   / NULLIF(ud.total_lessons, 0)), 0)::int,
               'lessons',  ud.lessons
             ) ORDER BY ud.idx
-          ) FILTER (WHERE ud.id IS NOT NULL),
+          ) FILTER (WHERE ud.id IS NOT NULL AND ud.total_lessons > 0),
           '[]'::json
         ) AS units
       FROM "course" c
       LEFT JOIN unit_data ud ON ud.course_id = c.id
       WHERE c."trackId" = $2
       GROUP BY c.id, c.title
+      -- drop courses with no unit that has any published lesson
+      HAVING COUNT(ud.id) FILTER (WHERE ud.total_lessons > 0) > 0
       ORDER BY c.title
       `,
       [schoolId, trackId, studentId],
