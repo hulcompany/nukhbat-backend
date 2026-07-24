@@ -236,6 +236,7 @@ export class SolveLessonsService {
         schoolId: snapshot.schoolId,
         trackId: snapshot.trackId,
         gem: gems,
+        sourceName: snapshot.lessonTitle,
       });
       await this.studentService.ledgeBalance(snapshot.studentId, {
         em: em,
@@ -303,6 +304,8 @@ export class SolveLessonsService {
       }
     }
     const verdict = await this.curriculum.checkQuestionAnswers(answers, true);
+    let xps = 0,
+      gems = 0;
     await transaction(this.ds, async (em) => {
       let dailyRepo = em.getRepository(SolvedDailyChallenges);
       await dailyRepo.save({
@@ -314,17 +317,18 @@ export class SolveLessonsService {
         verdict: verdict.verdict,
       });
       if (verdict.passed == verdict.total) {
-        let xp = dailyChallenge.usedQuestions.length * 5;
-        await this.studentService.ledgeBalance(student.id, { xp: xp, em: em });
+        xps = dailyChallenge.usedQuestions.length * 5;
+        await this.studentService.ledgeBalance(student.id, { xp: xps, em: em });
         await this.ledger.insertLedge(student.id, {
           schoolId: student.schoolId,
           trackId: student.trackId,
-          xp: xp,
+          xp: xps,
           em: em,
+          sourceName: 'التحدي اليومي' + ' ' + dailyChallenge.date,
         });
       }
     });
-    return { verdict };
+    return { ...verdict, xps, gems };
   }
 
   async getDailyChallenge(student: StudentProfile) {

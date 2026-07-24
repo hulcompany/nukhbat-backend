@@ -1,35 +1,45 @@
 $kind: http-request
+name: Solve — submit answers
 url: "{{baseUrl}}/api/learning/solving/student/solve"
 method: POST
 body:
   type: json
   content: |-
     {
-      "snapshotId": "{{snapshotId}}",
-      "answers": [
-        {
-          "id": "{{questionId}}",
-          "answer": {
-            "choiceId": "{{optionId}}"
-          }
-        },
-        {
-          "id": "{{questionId}}",
-          "answer": {
-            "boolAnswer": true
-          }
-        },
-        {
-          "id": "{{questionId}}",
-          "answer": {
-            "matches": [
-              {
-                "baseId": "{{baseId}}",
-                "matchId": "{{matchId}}"
-              }
-            ]
-          }
-        }
-      ]
+        "snapshotId": "b137c061-1d29-4d46-93de-2c6c7bc49ffb",
+        "answers": [
+            {
+                "id": "96ae0641-ce08-48f3-96b6-a41d9c0eadf7",
+                "answer": {
+                    "matches": [
+                        {
+                            "baseId": "2325a72d-444c-4868-baa3-b6af2f582568",
+                             "matchId": "a1beca10-e5d6-49b5-8412-cdf4d245e69a"
+                        },
+                        {
+                            "baseId": "8d6f24c7-6b49-47f0-80a4-9ceca612179d",
+                            "matchId": "d833799a-abe3-45d4-a011-1519a5b765ff"
+                           
+                        },
+                        {
+                            "baseId": "24503871-a72d-46da-ad25-e1f15e7c2fbf",
+                            "matchId": "26b8cfe5-3cd8-40bb-8e38-7b6bec7d9451"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "a629548f-dc49-42e8-997a-fe09e932936c",
+                "answer": {
+                    "boolAnswer": false
+                }
+            },
+            {
+                "id": "2931d8d6-8a30-4df1-8235-bc36fc6e33bd",
+                "answer": {
+                    "choiceId": "6486b360-f021-4c7f-9c77-54ccf5480f12"
+                }
+            }
+        ]
     }
 order: 7000

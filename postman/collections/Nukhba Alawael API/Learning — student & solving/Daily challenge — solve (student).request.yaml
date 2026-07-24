@@ -1,4 +1,5 @@
 $kind: http-request
+name: Daily challenge — solve (student)
 url: "{{baseUrl}}/api/learning/solving/student/daily-challenge/solve"
 method: POST
 body:
@@ -7,26 +8,9 @@ body:
     {
       "answers": [
         {
-          "id": "{{questionId}}",
+          "id": "20c11928-6121-468f-aa3d-4e4e20a42169",
           "answer": {
-            "choiceId": "{{optionId}}"
-          }
-        },
-        {
-          "id": "{{questionId}}",
-          "answer": {
-            "boolAnswer": true
-          }
-        },
-        {
-          "id": "{{questionId}}",
-          "answer": {
-            "matches": [
-              {
-                "baseId": "{{baseId}}",
-                "matchId": "{{matchId}}"
-              }
-            ]
+            "choiceId": "4e8134f2-8195-4190-b3e6-0e57f56ed0d4"
           }
         }
       ]
