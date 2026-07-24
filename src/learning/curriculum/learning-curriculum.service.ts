@@ -24,10 +24,12 @@ export class LearningCurriculumService {
   constructor(private readonly ds: DataSource) {}
 
   // The student's curriculum tree (course → unit → lesson) with progress,
-  // built entirely in Postgres in one round-trip:
-  //   - lesson.passed  = the student has a COMPLETED lesson_attempt on it
-  //   - unit.progress  = round(100 * passed lessons / total lessons in the unit)
-  //   - course.progress= round(100 * passed lessons / total lessons in the course)
+  // built entirely in Postgres in one round-trip and returned as
+  // { tree, overallProgress }:
+  //   - lesson.passed   = the student has a COMPLETED lesson_attempt on it
+  //   - unit.progress   = round(100 * passed lessons / total lessons in the unit)
+  //   - course.progress = round(100 * passed lessons / total lessons in the course)
+  //   - overallProgress = round(100 * passed / total) across the whole track
   // Only published lessons and in-track/in-school units are considered; a unit
   // with no published lessons is omitted, and a course left with no units is
   // dropped too. Units order by their index, lessons by theirs; courses by title.
@@ -35,7 +37,7 @@ export class LearningCurriculumService {
     trackId: UUID,
     schoolId: UUID,
     studentId: UUID,
-  ): Promise<CurriculumResponse[]> {
+  ): Promise<{ tree: CurriculumResponse[]; overallProgress: number }> {
     // $1 = schoolId, $2 = trackId, $3 = studentId
     const rows = await this.ds.query(
       `
@@ -81,38 +83,60 @@ export class LearningCurriculumService {
         LEFT JOIN lesson_data ld ON ld.unit_id = u.id
         WHERE u."schoolId" = $1
         GROUP BY u.id, u.title, u."courseId", u."index"
+      ),
+      course_data AS (
+        SELECT
+          c.id    AS id,
+          c.title AS title,
+          SUM(ud.passed_lessons) AS passed_lessons,
+          SUM(ud.total_lessons)  AS total_lessons,
+          COALESCE(
+            round(100.0 * SUM(ud.passed_lessons) / NULLIF(SUM(ud.total_lessons), 0)),
+            0
+          )::int AS progress,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id',       ud.id,
+                'title',    ud.title,
+                'progress', COALESCE(
+                              round(100.0 * ud.passed_lessons
+                                    / NULLIF(ud.total_lessons, 0)), 0)::int,
+                'lessons',  ud.lessons
+              ) ORDER BY ud.idx
+            ) FILTER (WHERE ud.id IS NOT NULL AND ud.total_lessons > 0),
+            '[]'::json
+          ) AS units
+        FROM "course" c
+        LEFT JOIN unit_data ud ON ud.course_id = c.id
+        WHERE c."trackId" = $2
+        GROUP BY c.id, c.title
+        -- drop courses with no unit that has any published lesson
+        HAVING COUNT(ud.id) FILTER (WHERE ud.total_lessons > 0) > 0
       )
+      -- collapse the courses into one row: the tree array + the student's
+      -- overall progress across every published lesson in the track
       SELECT
-        c.id    AS id,
-        c.title AS title,
-        COALESCE(
-          round(100.0 * SUM(ud.passed_lessons) / NULLIF(SUM(ud.total_lessons), 0)),
-          0
-        )::int AS progress,
         COALESCE(
           json_agg(
             json_build_object(
-              'id',       ud.id,
-              'title',    ud.title,
-              'progress', COALESCE(
-                            round(100.0 * ud.passed_lessons
-                                  / NULLIF(ud.total_lessons, 0)), 0)::int,
-              'lessons',  ud.lessons
-            ) ORDER BY ud.idx
-          ) FILTER (WHERE ud.id IS NOT NULL AND ud.total_lessons > 0),
+              'id',       cd.id,
+              'title',    cd.title,
+              'progress', cd.progress,
+              'units',    cd.units
+            ) ORDER BY cd.title
+          ),
           '[]'::json
-        ) AS units
-      FROM "course" c
-      LEFT JOIN unit_data ud ON ud.course_id = c.id
-      WHERE c."trackId" = $2
-      GROUP BY c.id, c.title
-      -- drop courses with no unit that has any published lesson
-      HAVING COUNT(ud.id) FILTER (WHERE ud.total_lessons > 0) > 0
-      ORDER BY c.title
+        ) AS tree,
+        COALESCE(
+          round(100.0 * SUM(cd.passed_lessons) / NULLIF(SUM(cd.total_lessons), 0)),
+          0
+        )::int AS "overallProgress"
+      FROM course_data cd
       `,
       [schoolId, trackId, studentId],
     );
 
-    return rows as CurriculumResponse[];
+    return rows[0] as { tree: CurriculumResponse[]; overallProgress: number };
   }
 }
