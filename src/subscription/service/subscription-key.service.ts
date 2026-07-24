@@ -124,6 +124,10 @@ export class SubscriptionKeyService {
   }
 
   async delete(filter: FindOptionsWhere<SubscriptionKey>, em?: EntityManager) {
+    let key = await this.findOneOrFail(filter, em);
+    if (key.usedById) {
+      throw new BadRequestException("Can't delete used key");
+    }
     let res = await this.getRepo(em).delete(filter);
     if (!res.affected) {
       throw new NotFoundException('Subscription key not found');
@@ -138,6 +142,10 @@ export class SubscriptionKeyService {
     em?: EntityManager,
   ) {
     ids = [...new Set(ids)];
+    let keys = await this.getRepo(em).find({ where: { id: In(ids) } });
+    if (keys.find((e) => e.usedById)) {
+      throw new BadRequestException("Can't delete used key ");
+    }
     await transaction(em?.connection || this.ds, async (em) => {
       let res = await em.getRepository(SubscriptionKey).delete({
         ...filter,
