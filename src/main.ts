@@ -24,6 +24,13 @@ async function bootstrap() {
     prefix: '/test-ui',
   });
   // }
+
+  // student-facing web app (src/student-website) — a simple no-signup portal:
+  // login, subscribe (free trial / key), solve lessons + daily challenge,
+  // curriculum, attempts, saved questions, leaderboard, profile.
+  app.useStaticAssets(join(process.cwd(), 'src', 'student-website'), {
+    prefix: '/student',
+  });
   expressApp.get('/api/errors', createErrorRequestHandler());
   expressApp.get('/api/ping', (req, res) => {
     res.send('pong');
