@@ -41,7 +41,9 @@ export interface TrueOrFalseVerdict {
 
 export interface MatchVerdict {
   answeredBase: QuestionMatch;
-  answeredMatch: QuestionMatch;
+  // undefined when the student left this base unpaired (skipped) — verdict is
+  // false and baseCorrectMatch still carries the answer key
+  answeredMatch?: QuestionMatch;
   // whether this base was paired with its correct match
   verdict: boolean;
   // the match that was the correct pair for this base (withAnswers only)

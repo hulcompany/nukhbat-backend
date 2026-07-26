@@ -1,4 +1,5 @@
 $kind: http-request
+name: List units of course
 url: "{{baseUrl}}/api/curriculum/school/units/:courseId"
 method: GET
 queryParams:
@@ -6,5 +7,7 @@ queryParams:
     value: ""
     disabled: true
 pathVariables:
-  courseId: ""
+  - key: courseId
+    value: b1d87156-e281-4f68-a7ea-324f79a7643f
+    description: ""
 order: 1000

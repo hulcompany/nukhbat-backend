@@ -1,4 +1,5 @@
 $kind: http-request
+name: List books
 url: "{{baseUrl}}/api/books/school"
 method: GET
 order: 1000

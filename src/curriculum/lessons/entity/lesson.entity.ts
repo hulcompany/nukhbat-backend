@@ -56,4 +56,8 @@ export class Lesson {
   // lesson, so its content is frozen. Stamped by LessonService reads from the
   // LessonUsed table; undefined on lessons fetched through other paths.
   used?: boolean;
+
+  // Transient (not a column): how many questions the lesson has. Stamped by
+  // LessonService reads (find / findOneOrFail); undefined on other paths.
+  questionCount?: number;
 }

@@ -77,4 +77,7 @@ export class QuestionAttempt {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column('boolean')
+  isSkipped: boolean;
 }

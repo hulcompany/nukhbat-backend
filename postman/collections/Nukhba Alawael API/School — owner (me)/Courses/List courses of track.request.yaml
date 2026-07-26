@@ -1,4 +1,5 @@
 $kind: http-request
+name: List courses of track
 url: "{{baseUrl}}/api/curriculum/school/courses/:trackId"
 method: GET
 queryParams:
@@ -6,5 +7,7 @@ queryParams:
     value: ""
     disabled: true
 pathVariables:
-  trackId: ""
+  - key: trackId
+    value: 7d691471-fa34-473e-928e-8352142d7d1c
+    description: ""
 order: 1000

@@ -50,14 +50,15 @@ export class CurriculumSchoolService {
   ): FindOptionsWhere<T> {
     return { ...extra, schoolId: this.context.school.id } as any;
   }
-  
+
   async createUnit(params: UnitCreateDto) {
     await this.SchoolAccessService.assertCourseAccess(
       this.context.school.id,
       params.courseId,
     );
     return await this.unitService.create({
-      school: { id: this.context.school.id, ...params },
+      schoolId: this.context.school.id,
+      ...params,
     });
   }
 

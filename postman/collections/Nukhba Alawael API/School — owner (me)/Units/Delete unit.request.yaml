@@ -1,6 +1,7 @@
 $kind: http-request
+name: Delete unit
 url: "{{baseUrl}}/api/curriculum/school/units/:id"
 method: DELETE
 pathVariables:
-  id: ""
+  id: 1b3caca9-dd64-4e4c-94ab-ad2f8bf1da0e
 order: 4000

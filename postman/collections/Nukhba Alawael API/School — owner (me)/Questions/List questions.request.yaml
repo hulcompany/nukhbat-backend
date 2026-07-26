@@ -1,18 +1,26 @@
 $kind: http-request
-url: "{{baseUrl}}/api/curriculum/school/questions?skip=0&limit=10"
+name: List questions
+url: "{{baseUrl}}/api/curriculum/school/questions?skip=0&limit=10&lessonId=6e8a74f9-fa71-48df-a5ba-06ac0141c2e0"
 method: GET
 queryParams:
   - key: skip
     value: "0"
+    disabled: false
+    description: ""
   - key: limit
     value: "10"
+    disabled: false
+    description: ""
   - key: courseId
     value: ""
     disabled: true
+    description: ""
   - key: lessonId
-    value: ""
-    disabled: true
+    value: 6e8a74f9-fa71-48df-a5ba-06ac0141c2e0
+    disabled: false
+    description: ""
   - key: title
     value: ""
     disabled: true
+    description: ""
 order: 1000

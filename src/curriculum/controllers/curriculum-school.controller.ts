@@ -92,9 +92,7 @@ export class CurriculumSchoolController {
 
   @Post('units')
   async createUnit(@Body() params: UnitCreateDto) {
-    return await this.service.createUnit({
-      ...params,
-    });
+    return await this.service.createUnit(params);
   }
 
   @Post('units/order/:courseId')

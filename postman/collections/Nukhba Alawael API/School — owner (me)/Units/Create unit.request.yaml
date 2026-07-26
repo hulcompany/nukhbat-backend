@@ -1,4 +1,5 @@
 $kind: http-request
+name: Create unit
 url: "{{baseUrl}}/api/curriculum/school/units"
 method: POST
 headers:
@@ -8,6 +9,6 @@ body:
   content: |-
     {
       "title": "Unit 1",
-      "courseId": "00000000-0000-0000-0000-000000000000"
+      "courseId": "b1d87156-e281-4f68-a7ea-324f79a7643f"
     }
 order: 2000

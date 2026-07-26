@@ -172,7 +172,8 @@ export class SchoolAccessService {
 
   async assertLessonAccess(schoolId: UUID, lessonId: UUID | UUID[]) {
     const ids = this.toIds(lessonId);
-
+    // scoped to the school: a lesson owned by another school reads as
+    // "not found" here, not merely a track-access miss
     const rows = await this.ds.query(
       `
       SELECT
@@ -184,8 +185,9 @@ export class SchoolAccessService {
       JOIN course c
         ON c.id = u."courseId"
       WHERE l.id = ANY($1)
+        AND l."schoolId" = $2
       `,
-      [ids],
+      [ids, schoolId],
     );
 
     if (rows.length !== ids.length) {

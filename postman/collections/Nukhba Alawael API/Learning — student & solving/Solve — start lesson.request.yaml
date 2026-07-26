@@ -1,10 +1,11 @@
 $kind: http-request
+name: Solve — start lesson
 url: "{{baseUrl}}/api/learning/solving/student/start"
 method: POST
 body:
   type: json
   content: |-
     {
-      "lessonId": "{{lessonId}}"
+      "lessonId": "c30cab63-139c-434d-a9e3-949af5f3c861"
     }
 order: 6000

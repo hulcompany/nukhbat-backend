@@ -1,4 +1,5 @@
 $kind: collection
+name: Nukhba Alawael API
 description: |-
   Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.
 

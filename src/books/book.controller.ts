@@ -20,6 +20,7 @@ import { ImageFileValidatorPipeline } from '../common/pipe/image.file.validator.
 import { SubscriptionGuard } from '../subscription/guard/subscription.guard';
 import { JwtGuardStrict, RoleGuard, RoleType } from '../core';
 import { StrictValidation } from '../common';
+import { SchoolOwnerGuard } from '../school/guards/school-owner.guard';
 
 @Controller('books')
 @UseGuards(JwtGuardStrict)
@@ -31,7 +32,7 @@ export class BookController {
   ) {}
 
   @Get('school')
-  @UseGuards(RoleGuard([RoleType.contentWriter]))
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async getSchoolBooks() {
     return await this.bookService.findBooks({
       school: { id: this.ctxt.school.id },
@@ -48,7 +49,7 @@ export class BookController {
 
   @Post('school')
   @UseInterceptors(FileInterceptor('image'))
-  @UseGuards(RoleGuard([RoleType.contentWriter]))
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async createBook(
     @Body() body: BookCreateDto,
     @UploadedFile(new ImageFileValidatorPipeline(true))
@@ -62,7 +63,7 @@ export class BookController {
 
   @Patch('school/:id')
   @UseInterceptors(FileInterceptor('image'))
-  @UseGuards(RoleGuard([RoleType.contentWriter]))
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async editBook(
     @Param('id', ParseUUIDPipe) id: UUID,
     @Body() body: BookEditDto,
@@ -76,7 +77,7 @@ export class BookController {
   }
 
   @Delete('school/:id')
-  @UseGuards(RoleGuard([RoleType.contentWriter]))
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async deleteSchoolBook(@Param('id', ParseUUIDPipe) id: UUID) {
     return await this.bookService.deleteBook({
       id: id,

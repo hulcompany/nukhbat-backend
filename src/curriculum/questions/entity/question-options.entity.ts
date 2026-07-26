@@ -27,9 +27,6 @@ export class QuestionOption {
   @RelationId((o: QuestionOption) => o.question)
   questionId: UUID;
 
-  @Column('uuid', { nullable: true })
-  imageId: UUID | null;
-
   @ManyToOne(() => School)
   school: School;
 

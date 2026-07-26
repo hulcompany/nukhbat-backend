@@ -1,10 +1,11 @@
 $kind: http-request
+name: Update unit
 url: "{{baseUrl}}/api/curriculum/school/units/:id"
 method: PATCH
 headers:
   Content-Type: application/json
 pathVariables:
-  id: ""
+  id: 1b3caca9-dd64-4e4c-94ab-ad2f8bf1da0e
 body:
   type: json
   content: |-

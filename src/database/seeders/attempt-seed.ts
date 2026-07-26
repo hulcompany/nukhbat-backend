@@ -61,6 +61,7 @@ export async function seedAttempts(ds: DataSource) {
       questionsTotal: verdicts.length,
       questionsCorrect: verdicts.length,
       completed: true,
+      questionsSkipped: 0,
       xpAwarded: 0, // set below once the reward is computed
     });
 
@@ -74,6 +75,7 @@ export async function seedAttempts(ds: DataSource) {
         total: 1,
         isCorrect: true,
         result: verdicts[q],
+        isSkipped: false,
       });
     }
 

@@ -44,6 +44,8 @@ export class SolvedDailyChallenges {
 
   @Column('int')
   total: number;
+  @Column('int')
+  skipped: number;
 
   // the frozen per-question verdicts (each answer vs. the correct answer) —
   // same shape stored in QuestionAttempt.result, so review needs no recompute

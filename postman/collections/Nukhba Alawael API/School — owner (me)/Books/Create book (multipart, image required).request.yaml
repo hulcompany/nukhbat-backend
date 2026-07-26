@@ -1,4 +1,5 @@
 $kind: http-request
+name: Create book (multipart, image required)
 url: "{{baseUrl}}/api/books/school"
 method: POST
 body:
@@ -7,7 +8,10 @@ body:
     - type: text
       key: name
       value: Book Name
+      disabled: false
     - type: file
       key: image
-      src: []
+      src:
+        - /E:/cv.pdf
+      disabled: false
 order: 2000

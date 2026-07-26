@@ -111,6 +111,7 @@ export class QuestionService {
       .leftJoinAndSelect('q.options', 'options')
       .leftJoinAndSelect('q.matchingItems', 'matchingItems')
       .leftJoinAndSelect('q.school', 'school')
+      .leftJoinAndSelect('q.lesson', 'lesson')
       .addOrderBy('matchingItems.index', 'ASC');
 
     if (schoolId) {
@@ -124,10 +125,10 @@ export class QuestionService {
     }
     if (params.trackId) {
       // a question's track comes from its pool course (dailyChallenge)
-      // or from lesson → unit → course (lesson questions)
+      // or from lesson → unit → course (lesson questions) — `lesson` is
+      // already joined above, so walk from it
       qb.leftJoin('q.course', 'poolCourse')
-        .leftJoin('q.lesson', 'qLesson')
-        .leftJoin('qLesson.unit', 'qUnit')
+        .leftJoin('lesson.unit', 'qUnit')
         .leftJoin('qUnit.course', 'lessonCourse')
         .andWhere(
           '(poolCourse.trackId = :trackId OR lessonCourse.trackId = :trackId)',
@@ -341,37 +342,6 @@ export class QuestionService {
     return await this.deleteNew(params, opts?.em, opts?.skipGuards);
   }
 
-  // async checkAnswers(data: QuestionMap[], withAnswers: boolean = false) {
-  //   let ids = data.map((e) => e.id);
-  //   let questions = await this.repo.find({
-  //     where: { id: In(ids) },
-  //     order: matchOrder,
-  //     relations: {
-  //       lesson: true,
-  //       school: true,
-  //       matchingItems: true,
-  //       course: true,
-  //       options: true,
-  //     },
-  //   });
-  //   if (questions.length != ids.length) {
-  //     throw new NotFoundException('Questions not found');
-  //   }
-  //   let k: {
-  //     answer: {
-  //       choiceId?: UUID;
-  //       boolAnswer?: boolean;
-  //       matches?: { baseId: UUID; matchId: UUID }[];
-  //     };
-  //     question: Question;
-  //   }[] = [];
-  //   for (const q of questions) {
-  //     let withIds = data.find((e) => e.id == q.id)!;
-  //     k.push({ question: q, answer: withIds.answer });
-  //   }
-  //   return this.checkAnswerHelper(k, withAnswers);
-  // }
-
   async checkAnswerHelper(params: QuestionMap[]) {
     let res: QuestionVerdict[] = [];
     for (const data of params) {
@@ -421,37 +391,45 @@ export class QuestionService {
         let bases = question.matchingItems.filter(
           (e) => e.type == QuestionMatchType.base,
         );
-        // no submitted pairs (missing/empty `matches`) → no verdicts → the
-        // question scores as wrong via the `passed` filter below (never a 500)
         let submitted = answer.matches ?? [];
-        let matchVerdicts: MatchVerdict[] = [];
-        for (let i = 0; i < submitted.length; i++) {
-          let base = bases.find((e) => e.id == submitted[i].baseId);
-          if (!base) {
+        // reject a submitted pair that points at a base/match this question
+        // doesn't own (before we ignore unmatched submissions below)
+        for (const s of submitted) {
+          if (!bases.find((e) => e.id == s.baseId)) {
             throw new BadRequestException('Base not found');
           }
-          let match = matches.find((e) => e.id == submitted[i].matchId);
-          if (!match) {
+          if (!matches.find((e) => e.id == s.matchId)) {
             throw new BadRequestException('Match not found');
           }
+        }
+        // one verdict PER BASE (not per submitted pair): a base the student
+        // left unpaired comes back with answeredMatch undefined and verdict
+        // false, but still carries baseCorrectMatch so review shows the answer
+        let matchVerdicts: MatchVerdict[] = bases.map((base) => {
           // correctIndex is the `index` value of the correct match row, not a
           // position in the filtered `matches` array — resolve it by value
           let correct = question.matchingItems.find(
-            (e) => e.index == base!.correctIndex,
+            (e) => e.index == base.correctIndex,
           );
-          // the base this match is the correct answer for (its correctIndex
-          // names this match's index) — null if the match pairs with nothing
-          let matchCorrectBase = bases.find(
-            (b) => b.correctIndex == match!.index,
-          );
-          matchVerdicts.push({
-            verdict: match.id == correct?.id,
+          // the match the student paired with this base, if they answered it
+          let sub = submitted.find((s) => s.baseId == base.id);
+          let match = sub
+            ? matches.find((e) => e.id == sub!.matchId)
+            : undefined;
+          // the base this chosen match is the correct answer for (its
+          // correctIndex names this match's index) — only when answered
+          let matchCorrectBase = match
+            ? bases.find((b) => b.correctIndex == match!.index)
+            : undefined;
+          return {
+            // skipped base → no answeredMatch → verdict false
+            verdict: !!match && match.id == correct?.id,
             answeredBase: base,
             answeredMatch: match,
             baseCorrectMatch: correct,
             matchCorrectBase: matchCorrectBase,
-          });
-        }
+          };
+        });
         res.push({
           id: question.id,
           title: question.title,
