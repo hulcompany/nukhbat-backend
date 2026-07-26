@@ -4,6 +4,6 @@ url: "{{baseUrl}}/api/curriculum/school/tree/:trackId"
 method: GET
 pathVariables:
   - key: trackId
-    value: 8f25148e-64c8-4f98-83af-28894f2ba7ce
+    value: a4d18807-6e10-4f4b-b539-0bb197271695
     description: ""
 order: 10000

@@ -12,7 +12,7 @@ import { UUID } from 'crypto';
 import { School } from '../../../school/entity/school.entity';
 import { LessonStatusType } from './lesson.status.type';
 import { Question } from '../../questions/entity/questions.entity';
-import { Exclude } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 
 @Index(['schoolId', 'unitId', 'index'])
 @Entity()
@@ -48,7 +48,7 @@ export class Lesson {
   })
   status: LessonStatusType;
 
-  @OneToMany(() => Question, (q) => q.lesson)
+  @OneToMany(() => Question, (q) => q.lesson, { eager: true })
   @Exclude()
   questions: Question[];
 
@@ -59,5 +59,8 @@ export class Lesson {
 
   // Transient (not a column): how many questions the lesson has. Stamped by
   // LessonService reads (find / findOneOrFail); undefined on other paths.
-  questionCount?: number;
+  @Expose()
+  get questionCount() {
+    return this.questions?.length;
+  }
 }

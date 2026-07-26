@@ -65,20 +65,20 @@ export class LessonService {
 
   // Stamps each lesson's transient `questionCount` in a single grouped query
   // (COUNT over the questions relation). Lessons with no questions get 0.
-  private async attachQuestionCount(lessons: Lesson[]) {
-    const ids = lessons.map((l) => l.id).filter((id): id is UUID => !!id);
-    if (!ids.length) return;
-    const rows = await this.repo
-      .createQueryBuilder('l')
-      .select('l.id', 'id')
-      .loadRelationCountAndMap('l.questionCount', 'l.questions')
-      .where('l.id IN (:...ids)', { ids })
-      .getMany();
-    const countById = new Map(rows.map((r) => [r.id, r.questionCount ?? 0]));
-    for (const lesson of lessons) {
-      lesson.questionCount = countById.get(lesson.id) ?? 0;
-    }
-  }
+  // private async attachQuestionCount(lessons: Lesson[]) {
+  //   const ids = lessons.map((l) => l.id).filter((id): id is UUID => !!id);
+  //   if (!ids.length) return;
+  //   const rows = await this.repo
+  //     .createQueryBuilder('l')
+  //     .select('l.id', 'id')
+  //     .loadRelationCountAndMap('l.questionCount', 'l.questions')
+  //     .where('l.id IN (:...ids)', { ids })
+  //     .getMany();
+  //   const countById = new Map(rows.map((r) => [r.id, r.questionCount ?? 0]));
+  //   for (const lesson of lessons) {
+  //     lesson.questionCount = countById.get(lesson.id) ?? 0;
+  //   }
+  // }
 
   async create(params: DeepPartial<Lesson>) {
     // max+1, not count+1, so gaps left by deletions can't duplicate an index
@@ -110,7 +110,7 @@ export class LessonService {
       select: select,
     });
     await this.attachUsed(lessons);
-    await this.attachQuestionCount(lessons);
+    // await this.attachQuestionCount(lessons);
     return lessons;
   }
 
@@ -120,7 +120,7 @@ export class LessonService {
       throw new NotFoundException();
     }
     await this.attachUsed([res]);
-    await this.attachQuestionCount([res]);
+    // await this.attachQuestionCount([res]);
     return res;
   }
 
