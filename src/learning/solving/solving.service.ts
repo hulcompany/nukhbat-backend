@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { UUID } from 'crypto';
-import { applyPsqlFilter, BasePaginationModel, SortType } from 'core';
+import {
+  applyPsqlFilter,
+  BasePaginationDto,
+  BasePaginationModel,
+  SortType,
+} from 'core';
 import { LessonAttempt } from './entity/lesson-attempt.entity';
 import { AttemptGetDto } from './dto/attempt.dto';
 import { StudentService } from '../../student/student.service';
@@ -76,32 +81,61 @@ export class SolvingService {
 
   // Leaderboard for a school's track: total XP earned per student, biggest
   // first. Aggregated straight off the attempts (xpAwarded is frozen per row),
-  // so it's live and needs no cached counter here.
-  async getLeaderBoard(params: { schoolId: UUID; trackId: UUID }) {
-    const rows = await this.attempts
-      .createQueryBuilder('a')
+  // so it's live and needs no cached counter here. Paginated (skip/limit/sort)
+  // like the rest of the list endpoints; totalRecords counts the ranked
+  // students, not the underlying attempts.
+  async getLeaderBoard(params: {
+    schoolId: UUID;
+    trackId: UUID;
+    query: BasePaginationDto;
+  }) {
+    const { schoolId, trackId, query } = params;
+    // shared scope for both the count and the page
+    const scoped = () =>
+      this.attempts
+        .createQueryBuilder('a')
+        .where('a.schoolId = :schoolId AND a.trackId = :trackId', {
+          schoolId,
+          trackId,
+        });
+
+    // how many students appear on this board (one row per student)
+    const totalRow = await scoped()
+      .select('COUNT(DISTINCT a.studentId)', 'count')
+      .getRawOne<{ count: string }>();
+    const totalRecords = Number(totalRow?.count ?? 0);
+
+    // raw grouped page — offset/limit, not skip/take, since there's no entity
+    const rows = await scoped()
       .select('a.studentId', 'studentId')
       .addSelect('COALESCE(SUM(a.xpAwarded), 0)', 'xp')
-      .where('a.schoolId = :schoolId AND a.trackId = :trackId', params)
       .groupBy('a.studentId')
-      .orderBy('xp', 'DESC')
+      .orderBy('xp', query.sort || SortType.Desc)
+      .offset(query.skip)
+      .limit(query.limit)
       .getRawMany();
 
-    if (!rows.length) {
-      return [];
-    }
-    // one query for all the ranked students, then stitch each profile (+user)
-    // back onto its aggregate row
-    const students = await this.students.find(
-      { id: In(rows.map((r) => r.studentId)) },
-      { user: true },
-    );
+    // one query for all the ranked students on this page, then stitch each
+    // profile (+user) back onto its aggregate row
+    const students = rows.length
+      ? await this.students.find(
+          { id: In(rows.map((r) => r.studentId)) },
+          { user: true },
+        )
+      : [];
     const byId = new Map(students.map((s) => [s.id, s]));
-    return rows.map((r) => ({
+    const list = rows.map((r) => ({
       studentId: r.studentId,
       xp: Number(r.xp),
       student: byId.get(r.studentId) ?? null,
     }));
+
+    return new BasePaginationModel({
+      list,
+      totalRecords,
+      skip: query.skip,
+      limit: query.limit,
+    });
   }
 
   // Per-question breakdown of a single lesson attempt, oldest-graded first.

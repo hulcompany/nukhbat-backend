@@ -20,6 +20,7 @@ import {
   SolveDailyChallengeDto,
 } from './dto/solve-lesson.dto';
 import { AttemptStudentGetDto } from './dto/attempt.dto';
+import { BasePaginationDto } from 'core';
 import { SubscriptionGuard } from '../../subscription/guard/subscription.guard';
 
 // Student view of solving: the attempt flow (start/solve) plus their own
@@ -90,11 +91,12 @@ export class SolvingStudentController {
   }
 
   @Get('leaderboard')
-  async getLeaderBoard() {
+  async getLeaderBoard(@Query() query: BasePaginationDto) {
     const student = this.ctx.student;
     return this.solving.getLeaderBoard({
       schoolId: student.schoolId,
       trackId: student.trackId,
+      query,
     });
   }
 }

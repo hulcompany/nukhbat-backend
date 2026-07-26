@@ -13,6 +13,7 @@ import { Context } from '../../context';
 import { SchoolOwnerGuard } from '../../school/guards/school-owner.guard';
 import { SolvingService } from './solving.service';
 import { AttemptGetDto } from './dto/attempt.dto';
+import { BasePaginationDto } from 'core';
 
 // School-owner view of solving: read-only. schoolId is forced from the owner's
 // context; the leaderboard is per track (owners may run several).
@@ -49,10 +50,14 @@ export class SolvingSchoolController {
   }
 
   @Get('leaderboard/:trackId')
-  async getLeaderBoard(@Param('trackId', ParseUUIDPipe) trackId: UUID) {
+  async getLeaderBoard(
+    @Param('trackId', ParseUUIDPipe) trackId: UUID,
+    @Query() query: BasePaginationDto,
+  ) {
     return this.solving.getLeaderBoard({
       schoolId: this.ctx.school.id,
       trackId,
+      query,
     });
   }
 }
