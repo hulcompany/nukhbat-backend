@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { UUID } from 'crypto';
 import { CurriculumService } from '../../curriculum/services/curriculum.service';
-import { LessonStatusType, QuestionVerdict } from '../../curriculum';
+import {
+  LessonStatusType,
+  QuestionMap,
+  QuestionVerdict,
+} from '../../curriculum';
 import { QuestionAttempt } from './entity/question-attempt.entity';
 import { SnapshotsService } from './snapshots.service';
 import { SolveAnswerDto } from './dto/solve-lesson.dto';
@@ -131,9 +135,7 @@ export class SolveLessonsService {
     snapshotId: UUID;
     answers: SolveAnswerDto[];
   }) {
-    const snapshot = await this.snapshots.getQuestionSnapshot(
-      params.snapshotId,
-    );
+    let snapshot = await this.snapshots.getQuestionSnapshot(params.snapshotId);
     if (!snapshot || snapshot.studentId != params.studentId) {
       throw new NotFoundException('Snapshot not found or expired');
     }
@@ -148,10 +150,28 @@ export class SolveLessonsService {
       }
     }
 
-    const verdict = await this.curriculum.checkQuestionAnswers(
-      params.answers,
-      true,
-    );
+    let questionMaps: QuestionMap[] = [];
+
+    for (const i of snapshot.questions) {
+      let answer = params.answers.find((a) => a.id == i.id);
+      if (answer) {
+        questionMaps.push({
+          question: i,
+          answer: {
+            boolAnswer: answer.answer.boolAnswer,
+            choiceId: answer.answer.choiceId,
+            matches: answer.answer.matches,
+          },
+        });
+      } else {
+        questionMaps.push({
+          question: i,
+          answer: {},
+        });
+      }
+    }
+
+    const verdict = await this.curriculum.checkQuestionAnswers(questionMaps);
     let solved = await this.lessonAttempts.exists({
       where: {
         completed: true,
@@ -203,6 +223,7 @@ export class SolveLessonsService {
         courseId: snapshot.courseId,
         lessonId: snapshot.lessonId,
         questionsCorrect: verdict.passed,
+        questionsSkipped: verdict.skipped,
         questionsTotal: verdict.total,
         trackId: snapshot.trackId,
         unitId: snapshot.unitId,
@@ -259,7 +280,7 @@ export class SolveLessonsService {
       return { score: ok ? 1 : 0, total: 1, isCorrect: ok };
     }
     if (v.trueOrFalseVerdict) {
-      const ok = v.trueOrFalseVerdict.correct;
+      const ok = v.trueOrFalseVerdict.verdict;
       return { score: ok ? 1 : 0, total: 1, isCorrect: ok };
     }
     const pairs = v.matchVerdicts ?? [];
@@ -294,6 +315,7 @@ export class SolveLessonsService {
       throw new BadRequestException('Already Attempted Daily Challenge');
     }
     const questions = dailyChallenge.usedQuestions.map((e) => e.question);
+    let qm: QuestionMap[] = [];
     for (let i = 0; i < answers.length; i++) {
       if (!questions.find((e) => e.id == answers[i].id)) {
         throw new BadRequestException(
@@ -303,7 +325,21 @@ export class SolveLessonsService {
         );
       }
     }
-    const verdict = await this.curriculum.checkQuestionAnswers(answers, true);
+    for (const i of questions) {
+      let answer = answers.find((e) => e.id == i.id);
+      if (answer) {
+        qm.push({
+          question: i,
+          answer: answer.answer,
+        });
+      } else {
+        qm.push({
+          question: i,
+          answer: {},
+        });
+      }
+    }
+    const verdict = await this.curriculum.checkQuestionAnswers(qm);
     let xps = 0,
       gems = 0;
     await transaction(this.ds, async (em) => {

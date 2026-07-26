@@ -2,6 +2,7 @@ import { UUID } from 'crypto';
 import { QuestionType } from '../entity/enum/question.type';
 import { QuestionOption } from '../entity/question-options.entity';
 import { QuestionMatch } from '../entity/question-match.entity';
+import { Question } from '../entity/questions.entity';
 
 // The graded outcome of a single question, produced by
 // QuestionService.checkAnswers. One of the three verdict fields is set per the
@@ -11,9 +12,18 @@ import { QuestionMatch } from '../entity/question-match.entity';
 // Also the shape frozen into QuestionAttempt.result, so a stored attempt keeps
 // a complete "your answer vs. correct" record independent of the live rows.
 
+export interface QuestionMap {
+  question: Question;
+  answer: {
+    choiceId?: UUID;
+    boolAnswer?: boolean;
+    matches?: { baseId: UUID; matchId: UUID }[];
+  };
+}
+
 export interface ChoiceVerdict {
   // the option the student picked
-  answered: QuestionOption;
+  answered?: QuestionOption;
   // whether that option was correct
   verdict: boolean;
   // the correct option (withAnswers only)
@@ -22,9 +32,9 @@ export interface ChoiceVerdict {
 
 export interface TrueOrFalseVerdict {
   // the boolean the student answered
-  answered: boolean;
+  answered?: boolean | undefined;
   // whether it matched
-  correct: boolean;
+  verdict: boolean;
   // the correct value (withAnswers only)
   correctAnswer?: boolean;
 }
@@ -51,4 +61,5 @@ export interface QuestionVerdict {
   // one entry per submitted pair; the question passes only when every
   // entry's `verdict` is true
   matchVerdicts?: MatchVerdict[];
+  isSkipped?: boolean;
 }

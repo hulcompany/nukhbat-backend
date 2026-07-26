@@ -13,7 +13,7 @@ export class SavedQuestionService {
 
   // no pagination — a student's saved list is small
   async findAll(studentProfileId: UUID) {
-    return this.repo.find({
+    return await this.repo.find({
       where: { studentProfileId },
       order: { createdAt: 'DESC' },
     });

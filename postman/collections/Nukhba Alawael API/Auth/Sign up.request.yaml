@@ -1,4 +1,5 @@
 $kind: http-request
+name: Sign up
 url: "{{baseUrl}}/api/auth/signUp"
 method: POST
 headers:
@@ -7,7 +8,10 @@ body:
   type: json
   content: |-
     {
-      "email": "student@example.com"
+      "email": "salemzakkar.work2@gmail.com",
+      "name" : "Salem Zakkar",
+      "password" : "12345678",
+      "phoneNumber" : "+963949123587"
     }
 auth:
   type: noauth

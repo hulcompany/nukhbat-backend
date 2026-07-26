@@ -21,6 +21,7 @@ import { LessonStatusType } from '../lessons/entity/lesson.status.type';
 import { TrackService } from '../tracks/tracks.service';
 import { Question } from '../questions/entity/questions.entity';
 import { DailyChallengeService } from '../daily-challenge/daily-challenge.service';
+import { QuestionMap } from '../questions/types/question-verdict.type';
 
 // Read-only content layer. It holds NO request context: every method takes
 // explicit filters/scope, and the caller (controller or role facade) is
@@ -159,30 +160,32 @@ export class CurriculumService {
       unitsByCourse.set(unit.courseId, list);
     }
 
-    return courses
-      .map((course) => ({
-        id: course.id,
-        title: course.title,
-        units: (unitsByCourse.get(course.id) ?? [])
-          .sort((a, b) => a.index - b.index)
-          .map((unit) => ({
-            id: unit.id,
-            title: unit.title,
-            index: unit.index,
-            lessons: (lessonsByUnit.get(unit.id) ?? [])
-              .sort((a, b) => a.index - b.index)
-              .map((lesson) => ({
-                id: lesson.id,
-                title: lesson.title,
-                index: lesson.index,
-                used: lesson.used ?? false,
-              })),
-          }))
-          // a unit with no active lessons is dropped from the tree
-          .filter((unit) => unit.lessons.length > 0),
-      }))
-      // a course left with no units is dropped too
-      .filter((course) => course.units.length > 0);
+    return (
+      courses
+        .map((course) => ({
+          id: course.id,
+          title: course.title,
+          units: (unitsByCourse.get(course.id) ?? [])
+            .sort((a, b) => a.index - b.index)
+            .map((unit) => ({
+              id: unit.id,
+              title: unit.title,
+              index: unit.index,
+              lessons: (lessonsByUnit.get(unit.id) ?? [])
+                .sort((a, b) => a.index - b.index)
+                .map((lesson) => ({
+                  id: lesson.id,
+                  title: lesson.title,
+                  index: lesson.index,
+                  used: lesson.used ?? false,
+                })),
+            }))
+            // a unit with no active lessons is dropped from the tree
+            .filter((unit) => unit.lessons.length > 0),
+        }))
+        // a course left with no units is dropped too
+        .filter((course) => course.units.length > 0)
+    );
   }
 
   // Seam for the student attempt flow: freezes a lesson's content once a
@@ -206,18 +209,8 @@ export class CurriculumService {
     });
   }
 
-  async checkQuestionAnswers(
-    data: {
-      id: UUID;
-      answer: {
-        choiceId?: UUID;
-        boolAnswer?: boolean;
-        matches?: { baseId: UUID; matchId: UUID }[];
-      };
-    }[],
-    withCorrectAnswer?: boolean,
-  ) {
-    return await this.questionService.checkAnswers(data, withCorrectAnswer);
+  async checkQuestionAnswers(data: QuestionMap[]) {
+    return await this.questionService.checkAnswerHelper(data);
   }
 
   async findQuestions(

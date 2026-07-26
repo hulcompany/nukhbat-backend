@@ -89,7 +89,10 @@ export class LessonAttempt {
   // fully-correct count. completed = questionsCorrect == questionsTotal
   @Column('int')
   questionsCorrect: number;
-  
+
+  @Column('int')
+  questionsSkipped: number;
+
   @Column('boolean')
   completed: boolean;
 

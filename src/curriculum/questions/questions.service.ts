@@ -26,8 +26,6 @@ import { UUID } from 'crypto';
 import { QuestionType } from './entity/enum/question.type';
 import { QuestionMatchDto } from './dto/question-match.dto';
 import { QuestionMatchType } from './entity/enum/question-match.type';
-import { QuestionOption } from './entity/question-options.entity';
-import { QuestionMatch } from './entity/question-match.entity';
 import { QuestionOptionDto } from './dto/question-option.dto';
 import { FileService } from '../../file/file.service';
 import { LessonStatusType } from '../lessons/entity/lesson.status.type';
@@ -35,7 +33,12 @@ import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { QuestionPurpose } from './entity/enum/question-purpose.type';
 import { DailyChallengeUsedQuestions } from '../daily-challenge/entity/daily-challenge-used-questions.entity';
 import { todayDateString } from '../daily-challenge/daily-challenge.service';
-import { MatchVerdict, QuestionVerdict } from './types/question-verdict.type';
+import {
+  MatchVerdict,
+  QuestionMap,
+  QuestionVerdict,
+} from './types/question-verdict.type';
+import { QuestionOption } from './entity/question-options.entity';
 
 type QuestionImages = {
   question?: Express.Multer.File | null;
@@ -338,66 +341,49 @@ export class QuestionService {
     return await this.deleteNew(params, opts?.em, opts?.skipGuards);
   }
 
-  async checkAnswers(
-    data: {
-      id: UUID;
-      answer: {
-        choiceId?: UUID;
-        boolAnswer?: boolean;
-        matches?: { baseId: UUID; matchId: UUID }[];
-      };
-    }[],
-    withAnswers: boolean = false,
-  ) {
-    let ids = data.map((e) => e.id);
-    let questions = await this.repo.find({
-      where: { id: In(ids) },
-      order: matchOrder,
-      relations: {
-        lesson: true,
-        school: true,
-        matchingItems: true,
-        course: true,
-        options: true,
-      },
-    });
-    if (questions.length != ids.length) {
-      throw new NotFoundException('Questions not found');
-    }
-    let k: {
-      answer: {
-        choiceId?: UUID;
-        boolAnswer?: boolean;
-        matches?: { baseId: UUID; matchId: UUID }[];
-      };
-      question: Question;
-    }[] = [];
-    for (const q of questions) {
-      let withIds = data.find((e) => e.id == q.id)!;
-      k.push({ question: q, answer: withIds.answer });
-    }
-    return this.checkAnswerHelper(k, withAnswers);
-  }
+  // async checkAnswers(data: QuestionMap[], withAnswers: boolean = false) {
+  //   let ids = data.map((e) => e.id);
+  //   let questions = await this.repo.find({
+  //     where: { id: In(ids) },
+  //     order: matchOrder,
+  //     relations: {
+  //       lesson: true,
+  //       school: true,
+  //       matchingItems: true,
+  //       course: true,
+  //       options: true,
+  //     },
+  //   });
+  //   if (questions.length != ids.length) {
+  //     throw new NotFoundException('Questions not found');
+  //   }
+  //   let k: {
+  //     answer: {
+  //       choiceId?: UUID;
+  //       boolAnswer?: boolean;
+  //       matches?: { baseId: UUID; matchId: UUID }[];
+  //     };
+  //     question: Question;
+  //   }[] = [];
+  //   for (const q of questions) {
+  //     let withIds = data.find((e) => e.id == q.id)!;
+  //     k.push({ question: q, answer: withIds.answer });
+  //   }
+  //   return this.checkAnswerHelper(k, withAnswers);
+  // }
 
-  async checkAnswerHelper(
-    params: {
-      question: Question;
-      answer: {
-        choiceId?: UUID;
-        boolAnswer?: boolean;
-        matches?: { baseId: UUID; matchId: UUID }[];
-      };
-    }[],
-    withAnswers: boolean = false,
-  ) {
+  async checkAnswerHelper(params: QuestionMap[]) {
     let res: QuestionVerdict[] = [];
     for (const data of params) {
       let question = data.question;
       let answer = data.answer;
       if (question.type == QuestionType.OPTIONS) {
-        let option = question.options.find((e) => e.id == answer.choiceId);
-        if (!option) {
-          throw new BadRequestException('Option not found');
+        let option: QuestionOption | undefined = undefined;
+        if (answer.choiceId) {
+          option = question.options.find((e) => e.id == answer.choiceId);
+          if (!option) {
+            throw new BadRequestException('Option not found');
+          }
         }
 
         res.push({
@@ -406,9 +392,10 @@ export class QuestionService {
           type: question.type,
           choiceVerdict: {
             answered: option,
-            verdict: option.isCorrect,
+            verdict: option?.isCorrect || false,
             correctOption: question.options.find((e) => e.isCorrect),
           },
+          isSkipped: !answer.choiceId,
         });
         continue;
       }
@@ -418,12 +405,11 @@ export class QuestionService {
           id: question.id,
           title: question.title,
           type: question.type,
+          isSkipped: answer.boolAnswer == undefined,
           trueOrFalseVerdict: {
-            answered: answer.boolAnswer == true,
-            correct: verdict,
-            correctAnswer: withAnswers
-              ? question.trueOrFalseAnswer == true
-              : undefined,
+            answered: answer.boolAnswer,
+            verdict: verdict,
+            correctAnswer: question.trueOrFalseAnswer == true,
           },
         });
         continue;
@@ -462,14 +448,15 @@ export class QuestionService {
             verdict: match.id == correct?.id,
             answeredBase: base,
             answeredMatch: match,
-            baseCorrectMatch: withAnswers ? correct : undefined,
-            matchCorrectBase: withAnswers ? matchCorrectBase : undefined,
+            baseCorrectMatch: correct,
+            matchCorrectBase: matchCorrectBase,
           });
         }
         res.push({
           id: question.id,
           title: question.title,
           type: question.type,
+          isSkipped: answer.matches == undefined || answer.matches?.length == 0,
           matchVerdicts: matchVerdicts,
         });
         continue;
@@ -480,14 +467,22 @@ export class QuestionService {
         return e.choiceVerdict.verdict;
       }
       if (e.trueOrFalseVerdict) {
-        return e.trueOrFalseVerdict.correct;
+        return e.trueOrFalseVerdict.verdict;
       }
       if (e.matchVerdicts?.length) {
         return e.matchVerdicts.every((e) => e.verdict == true);
       }
       return false;
     }).length;
-    return { verdict: res, passed: passed, total: res.length };
+    let skipped = res.filter((e) => {
+      return e.isSkipped;
+    }).length;
+    return {
+      verdict: res,
+      passed: passed,
+      total: res.length,
+      skipped: skipped,
+    };
   }
 
   // Student-facing view of a lesson's questions: strips every answer key —

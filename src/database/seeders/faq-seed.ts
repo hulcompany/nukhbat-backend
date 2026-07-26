@@ -1,13 +1,4 @@
-import { setSeederFactory } from 'typeorm-extension';
-import { Faker } from '@faker-js/faker';
-import { Faq } from '../../public-content/faqs/entity/faq.entity';
-
-export const FaqFactory = setSeederFactory(Faq, (faker: Faker) => {
-  const faq = new Faq();
-  faq.title = faker.book.author();
-  faq.description = faker.finance.transactionDescription();
-  return faq;
-});
+import { DataSource } from 'typeorm';
 
 export const NUKHBA_FAQS: { title: string; description: string }[] = [
   {
@@ -46,3 +37,8 @@ export const NUKHBA_FAQS: { title: string; description: string }[] = [
       'يمكن الاشتراك في تطبيق النخبة من خلال التواصل مع إدارة التطبيق للحصول على مفتاح تفعيل. بعد إنشاء الحساب وتأكيد البريد الإلكتروني، يقوم الطالب بإدخال مفتاح التفعيل ليتمكن من الوصول إلى محتوى المسار الدراسي الخاص به.',
   },
 ];
+
+// The real product FAQs (Arabic) — not random faker ones.
+export async function seedFaqs(ds: DataSource) {
+  await ds.getRepository('Faq').insert(NUKHBA_FAQS);
+}

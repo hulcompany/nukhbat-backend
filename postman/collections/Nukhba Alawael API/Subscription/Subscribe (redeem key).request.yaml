@@ -1,4 +1,5 @@
 $kind: http-request
+name: Subscribe (redeem key)
 description: "Role: student. Enrolls the student (or reuses their profile) and adds a paid subscription (expireDate = now + KEY_AGE_YEAR), consuming the key in one transaction. 400 while a live PAID subscription is still running (a live free trial can be upgraded), or when the key's school/track differ from the existing profile."
 url: "{{baseUrl}}/api/subscription/subscribe"
 method: POST
@@ -8,6 +9,6 @@ body:
   type: json
   content: |-
     {
-      "key": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+      "key": "EBDK-TE8S-RVTE-GCW9-TFTW-JTMJ"
     }
 order: 1000

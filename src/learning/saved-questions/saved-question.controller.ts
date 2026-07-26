@@ -28,6 +28,6 @@ export class SavedQuestionController {
 
   @Get()
   async getSaved() {
-    await this.service.findAll(this.ctxt.student!.id);
+    return await this.service.findAll(this.ctxt.student!.id);
   }
 }

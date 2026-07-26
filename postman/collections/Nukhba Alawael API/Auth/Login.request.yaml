@@ -8,7 +8,7 @@ body:
   type: json
   content: |-
     {
-      "email": "salemzakkar.work@gmail.com",
+      "email": "salemzakkar.work2@gmail.com",
       "password": "12345678"
     }
 auth:

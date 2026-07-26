@@ -15,7 +15,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "seed": "npx ts-node --require tsconfig-paths/register ./src/database/seeders/seed.ts",
+    "seed": "npx ts-node --require tsconfig-paths/register ./src/database/seed.ts",
     "test-ui:sync": "node ./test-ui/sync-collection.js",
     "typeorm": "npx ts-node --require tsconfig-paths/register ./node_modules/typeorm/cli",
     "mig:gen": "npm run typeorm -- migration:generate -d src/database/ds.ts src/database/migrations/mig",
