@@ -21,6 +21,7 @@ import { SubscriptionGuard } from '../subscription/guard/subscription.guard';
 import { JwtGuardStrict, RoleGuard, RoleType } from '../core';
 import { StrictValidation } from '../common';
 import { SchoolOwnerGuard } from '../school/guards/school-owner.guard';
+import { BookFileValidatorPipeline } from './pipeline/book.file.validator.pipeline';
 
 @Controller('books')
 @UseGuards(JwtGuardStrict)
@@ -48,31 +49,32 @@ export class BookController {
   }
 
   @Post('school')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('attachment'))
   @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async createBook(
     @Body() body: BookCreateDto,
-    @UploadedFile(new ImageFileValidatorPipeline(true))
-    image: Express.Multer.File,
+    @UploadedFile(new BookFileValidatorPipeline())
+    attachment: Express.Multer.File,
   ) {
     return await this.bookService.createBook({
       params: { ...body, school: { id: this.ctxt.school.id } },
-      file: image,
+      file: attachment,
     });
   }
 
   @Patch('school/:id')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('attachment'))
   @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async editBook(
     @Param('id', ParseUUIDPipe) id: UUID,
     @Body() body: BookEditDto,
-    @UploadedFile() image?: Express.Multer.File,
+    @UploadedFile(new BookFileValidatorPipeline())
+    attachment?: Express.Multer.File,
   ) {
     return await this.bookService.editBook({
       filters: { id: id, school: { id: this.ctxt.school.id } },
       params: body,
-      file: image,
+      file: attachment,
     });
   }
 
