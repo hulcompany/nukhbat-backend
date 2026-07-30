@@ -22,11 +22,26 @@ export class PingEvent {
 }
 
 /**
+ * Raised when a batch of students should be notified about their daily report
+ * (e.g. today's daily challenge is ready). The emitter resolves the audience —
+ * the set of user ids — so the notifications listener stays decoupled from how
+ * the audience is computed.
+ */
+export class DailyReportNotificationEvent {
+  constructor(
+    public readonly userIds: string[],
+    public readonly title: string,
+    public readonly description: string,
+  ) {}
+}
+
+/**
  * The typed contract of the bus: event name → payload type.
  * Every emittable event MUST be declared here.
  */
 export interface AppEventPayloads {
   'app.ping': PingEvent;
+  'notification.dailyReport': DailyReportNotificationEvent;
 }
 
 /** Union of all valid event names, derived from the payload map. */
@@ -38,4 +53,5 @@ export type AppEventName = keyof AppEventPayloads;
  */
 export const AppEvent = {
   Ping: 'app.ping',
+  DailyReportNotification: 'notification.dailyReport',
 } as const satisfies Record<string, AppEventName>;

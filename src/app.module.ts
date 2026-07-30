@@ -19,6 +19,8 @@ import { SchoolAccessModule } from './school-access/school-access.module';
 import { BookModule } from './books/book.module';
 import { CurriculumModule } from './curriculum/curriculum.module';
 import { LearningModule } from './learning/learning.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { FirebaseModule } from './firebase/firebase-module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -28,6 +30,7 @@ import { LearningModule } from './learning/learning.module';
       inject: [ConfigService],
       useFactory: () => AppDataSource.options,
     }),
+    FirebaseModule,
     RedisModule,
     EventModule,
     ContextModule,
@@ -42,7 +45,8 @@ import { LearningModule } from './learning/learning.module';
     PublicContentModule,
     DailyWisementModule,
     BookModule,
-    LearningModule
+    LearningModule,
+    NotificationsModule
   ],
   providers: [
     {

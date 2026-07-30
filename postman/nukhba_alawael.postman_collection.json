@@ -3865,6 +3865,145 @@
           }
         }
       ]
+    },
+    {
+      "name": "Notifications",
+      "description": "Push + in-app notifications. subscribe/unsubscribe/me require a verified account (JwtGuardStrict); send is admin-only. deviceToken is the client's FCM token, carried in both subscribe and unsubscribe. Firebase delivery is stubbed for now — records are persisted and returned regardless of registered tokens.",
+      "item": [
+        {
+          "name": "Subscribe device token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceToken\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "subscribe"
+              ]
+            },
+            "description": "Registers the caller's device token so future notifications reach it. Idempotent — re-subscribing the same (userId, token) pair is a no-op."
+          }
+        },
+        {
+          "name": "Unsubscribe device token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deviceToken\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/unsubscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "unsubscribe"
+              ]
+            },
+            "description": "Drops the caller's device token (e.g. on logout / token refresh)."
+          }
+        },
+        {
+          "name": "My notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/me?skip=0&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "ASC | DESC (by createdAt)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "The caller's own notifications, newest first, paginated."
+          }
+        },
+        {
+          "name": "Send notification (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"\",\n  \"title\": \"\",\n  \"description\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "send"
+              ]
+            },
+            "description": "Role: admin. Persists a notification for the user and pushes it to their devices. Returns the saved record even if the user has no registered device tokens (nothing to deliver)."
+          }
+        }
+      ]
     }
   ]
 }

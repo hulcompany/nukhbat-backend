@@ -72,6 +72,21 @@ export class StudentService {
     return await repo.save(params);
   }
 
+  // the user ids of every active student enrolled in a given track at a given
+  // // school — the audience for track-scoped notifications (e.g. the daily
+  // // report). Selects only userId to stay cheap.
+  // async getEnrolledUserIds(
+  //   schoolId: UUID,
+  //   trackId: UUID,
+  //   em?: EntityManager,
+  // ): Promise<UUID[]> {
+  //   const rows = await this.getRepo(em).find({
+  //     where: { schoolId, trackId, active: true },
+  //     select: { userId: true },
+  //   });
+  //   return rows.map((r) => r.userId);
+  // }
+
   // --- lifecycle ---
 
   // first-touch enrollment: one profile per user, ever. Whatever school the

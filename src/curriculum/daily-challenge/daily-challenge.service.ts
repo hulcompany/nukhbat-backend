@@ -6,6 +6,12 @@ import { DataSource, FindOptionsWhere, In, Not, Repository } from 'typeorm';
 import { ErrorsRecord, transaction } from 'core';
 import { AppConfig } from '../../conf';
 import { LearningErrorCodes } from '../errors';
+import { StudentService } from '../../student/student.service';
+import {
+  AppEventBus,
+  AppEvent,
+  DailyReportNotificationEvent,
+} from '../../event';
 import { School } from '../../school/entity/school.entity';
 import { Course } from '../course/entity/course.entity';
 import { SchoolAccess } from '../../school-access/entity/school-access.entity';
@@ -30,6 +36,8 @@ export class DailyChallengeService {
     @InjectRepository(DailyChallengeUsedQuestions)
     private readonly usedRepo: Repository<DailyChallengeUsedQuestions>,
     private readonly ds: DataSource,
+    private readonly students: StudentService,
+    private readonly events: AppEventBus,
   ) {}
 
   // today's challenges — one per track the school has built one for
@@ -182,6 +190,12 @@ export class DailyChallengeService {
       }
     });
 
+    // dc -> getIds -> event -> notification: a brand-new challenge just landed,
+    // so notify every student enrolled in this track at this school. Only
+    // reached on fresh creation (an existing challenge returns above), so
+    // students aren't re-notified when the challenge is merely re-served.
+    await this.notifyEnrolled(schoolId, trackId);
+
     return await this.repo.findOne({
       where: {
         school: { id: schoolId },
@@ -190,6 +204,37 @@ export class DailyChallengeService {
       },
       relations: { usedQuestions: true, track: true },
     });
+  }
+
+  // resolve the track's enrolled students and raise the daily-report event;
+  // the notifications module persists + delivers. Best-effort — a failure here
+  // must not fail challenge creation.
+  private async notifyEnrolled(schoolId: UUID, trackId: UUID) {
+    try {
+      const userIds = (
+        await this.students.find(
+          {
+            school: { id: schoolId },
+            trackId: trackId,
+            track: { id: trackId },
+            active: true,
+          },
+          // { user: true },
+        )
+      ).map((s) => s.userId);
+      if (!userIds.length) return;
+      this.events.emit(
+        AppEvent.DailyReportNotification,
+        new DailyReportNotificationEvent(
+          userIds,
+          'التحدي اليومي جاهز',
+          'تحدي اليوم متاح الآن. ابدأ الآن!',
+        ),
+      );
+    } catch (e) {
+      console.log('Daily report notification failed for track ' + trackId);
+      console.log(e);
+    }
   }
 
   // one challenge per accessible track; a track whose pool is short skips
