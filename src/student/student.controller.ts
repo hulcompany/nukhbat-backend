@@ -40,6 +40,12 @@ export class StudentController {
     return this.ctxt.student;
   }
 
+  @Get('statistics')
+  @UseGuards(RoleGuard([RoleType.student]), StudentGuard())
+  async getMyStatistics() {
+    return await this.profiles.getStatistics(this.ctxt.student.id);
+  }
+
   @Get('school')
   @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async getStudents(@Query() query: StudentProfileSchoolGetDto) {
@@ -86,6 +92,20 @@ export class StudentController {
     return await this.profiles.findOneOrFail(
       { id: id },
       { user: true, track: true },
+    );
+  }
+  @Get('admin/aggregate/activity')
+  @UseGuards(RoleGuard([RoleType.admin]))
+  async aggregateAllStudentsActivity() {
+    return await this.profiles.weeklyOpenedStudents(new Date());
+  }
+
+  @Get('school/aggregate/activity')
+  @UseGuards(RoleGuard([RoleType.admin]), SchoolOwnerGuard)
+  async aggregateMineStudentsActivity() {
+    return await this.profiles.weeklyOpenedStudents(
+      new Date(),
+      this.ctxt.school.id,
     );
   }
 }

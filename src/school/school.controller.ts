@@ -57,4 +57,9 @@ export class SchoolController {
       owner: { id: this.ctxt.user.id },
     });
   }
+
+  @Get('statistics')
+  async getStatistics() {
+    return await this.schoolService.getStatistics(this.ctxt.school.id);
+  }
 }

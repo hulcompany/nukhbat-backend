@@ -22,6 +22,7 @@ import {
 import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { SubscriptionKeyGetDto } from '../dto/subscription.dto';
 import { SchoolAccessService } from '../../school-access/school-access.service';
+import { Subscription } from '../entity/subscription.entity';
 
 // no 0/O/1/I — keys get typed by hand
 const KEY_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -35,6 +36,8 @@ export class SubscriptionKeyService {
     private readonly repo: Repository<SubscriptionKey>,
     private readonly ds: DataSource,
     private readonly schoolAccess: SchoolAccessService,
+    @InjectRepository(Subscription)
+    private readonly subRepo: Repository<SubscriptionKey>,
   ) {}
 
   // every function takes an optional EntityManager so callers can join
@@ -170,5 +173,43 @@ export class SubscriptionKeyService {
       groups.push(group);
     }
     return groups.join('-');
+  }
+
+  async getMonthlySubscriptionCount(params: { year: number; schoolId?: UUID }) {
+    const { year, schoolId } = params;
+
+    const start = `${year}-01-01`;
+
+    const sql = `
+    SELECT
+      months.month::date AS date,
+      COUNT(s.id)::int AS count
+    FROM generate_series(
+      $1::date,
+      ($1::date + INTERVAL '11 month')::date,
+      INTERVAL '1 month'
+    ) AS months(month)
+
+    LEFT JOIN subscription s
+      ON s."createdAt" >= months.month
+     AND s."createdAt" < months.month + INTERVAL '1 month'
+
+    LEFT JOIN student_profile sp
+      ON sp.id = s."studentProfileId"
+     ${schoolId ? 'AND sp."schoolId" = $2' : ''}
+
+    GROUP BY months.month
+    ORDER BY months.month;
+  `;
+
+    const rows = await this.ds.query(
+      sql,
+      schoolId ? [start, schoolId] : [start],
+    );
+
+    return rows.map((row: any) => ({
+      date: row.date,
+      count: Number(row.count),
+    }));
   }
 }

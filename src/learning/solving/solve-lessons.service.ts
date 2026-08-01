@@ -221,6 +221,7 @@ export class SolveLessonsService {
       if (questionRows.length) {
         await em.getRepository(QuestionAttempt).insert(questionRows);
       }
+      await this.studentService.updateDailyStreak(snapshot.studentId, em);
       await this.ledger.insertLedge(
         {
           studentId: params.studentId,
@@ -272,6 +273,7 @@ export class SolveLessonsService {
         // freeze the graded verdict so the review read never recomputes
         verdict: verdict.verdict,
       });
+      await this.studentService.updateDailyStreak(student.id, em);
       if (verdict.passed == verdict.total) {
         xps = dailyChallenge.usedQuestions.length * 5;
         await this.ledger.insertLedge(

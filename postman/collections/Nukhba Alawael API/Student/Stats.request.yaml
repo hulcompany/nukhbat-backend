@@ -1,0 +1,5 @@
+$kind: http-request
+name: Stats
+url: "{{baseUrl}}/api/student/statistics"
+method: GET
+order: 417357199578435

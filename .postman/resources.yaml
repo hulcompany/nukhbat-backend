@@ -6,3 +6,12 @@ workspace:
 cloudResources:
   collections:
     ../postman/collections/Nukhba Alawael API: 0f7c52b0-6561-4996-b9dc-856aa8c752f0
+
+localResources:
+  specs:
+    - ../postman/specs/Apis/Apis.json
+  documents:
+    - ../README.md
+resourceNameMappings:
+  specs:
+    - ../postman/specs/Apis/Apis.json: Apis

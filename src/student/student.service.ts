@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { UUID } from 'crypto';
 import {
+  DataSource,
   DeepPartial,
   EntityManager,
   FindOptionsRelations,
@@ -16,6 +17,7 @@ import { applyPsqlFilter, BasePaginationModel, SortType } from 'core';
 import { StudentProfile } from './entity/student-profile.entity';
 import { StudentProfileGetDto } from './dto/student.dto';
 import { max } from 'lodash';
+import { StudentActivity } from './entity/student-activity.entity';
 
 // student-side profile access — owns the repo ops; the school-side
 // service composes these with a schoolId scope
@@ -24,6 +26,7 @@ export class StudentService {
   constructor(
     @InjectRepository(StudentProfile)
     private readonly repo: Repository<StudentProfile>,
+    private readonly ds: DataSource,
   ) {}
 
   // every function takes an optional EntityManager so callers can join
@@ -71,29 +74,6 @@ export class StudentService {
     let repo = this.getRepo(em);
     return await repo.save(params);
   }
-
-  // the user ids of every active student enrolled in a given track at a given
-  // // school — the audience for track-scoped notifications (e.g. the daily
-  // // report). Selects only userId to stay cheap.
-  // async getEnrolledUserIds(
-  //   schoolId: UUID,
-  //   trackId: UUID,
-  //   em?: EntityManager,
-  // ): Promise<UUID[]> {
-  //   const rows = await this.getRepo(em).find({
-  //     where: { schoolId, trackId, active: true },
-  //     select: { userId: true },
-  //   });
-  //   return rows.map((r) => r.userId);
-  // }
-
-  // --- lifecycle ---
-
-  // first-touch enrollment: one profile per user, ever. Whatever school the
-  // student lands on first (default school via free trial, or the key's
-  // school via subscribe) is permanent — the school + track set here never
-  // change. The access window is a separate Subscription, so there is no
-  // renew() here; the subscription module just adds Subscription rows.
   async enroll(
     params: { userId: UUID; schoolId: UUID; trackId: UUID },
     em?: EntityManager,
@@ -193,5 +173,295 @@ export class StudentService {
       skip: query.skip,
       limit: query.limit,
     });
+  }
+
+  async updateDailyStreak(studentId: UUID, em?: EntityManager) {
+    const repo = this.getRepo(em);
+
+    const activityRepo = em
+      ? em.getRepository(StudentActivity)
+      : this.repo.manager.getRepository(StudentActivity);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // سجل النشاط اليومي
+    // id يتم توليده تلقائياً
+    // unique(studentId, date) يمنع التكرار
+    await activityRepo
+      .createQueryBuilder()
+      .insert()
+      .into(StudentActivity)
+      .values({
+        studentId,
+        date: today,
+      })
+      .orIgnore()
+      .execute();
+
+    const profile = await repo.findOneOrFail({
+      where: { id: studentId },
+    });
+
+    let current = profile.currentStreak ?? 0;
+    let longest = profile.longestStreak ?? 0;
+
+    if (!profile.lastStreakDate) {
+      current = 1;
+    } else {
+      const last = new Date(profile.lastStreakDate);
+      last.setHours(0, 0, 0, 0);
+
+      const diff = (today.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (diff === 0) {
+        return {
+          currentStreak: current,
+          longestStreak: longest,
+        };
+      }
+
+      if (diff === 1) {
+        current++;
+      } else {
+        current = 1;
+      }
+    }
+
+    longest = Math.max(longest, current);
+
+    await repo.update(
+      { id: studentId },
+      {
+        currentStreak: current,
+        longestStreak: longest,
+        lastStreakDate: today,
+      },
+    );
+
+    return {
+      currentStreak: current,
+      longestStreak: longest,
+    };
+  }
+  async weeklyOpenedStudents(date: Date, schoolId?: UUID) {
+    // calculate week start (Sunday)
+    const weekStart = new Date(date);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const day = weekStart.getDay(); // Sunday = 0
+    weekStart.setDate(weekStart.getDate() - day);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    let query = this.repo
+      .createQueryBuilder()
+      .from(StudentActivity, 'activity')
+      .innerJoin(StudentProfile, 'student', 'student.id = activity.studentId')
+      .select('activity.date', 'date')
+      .addSelect('COUNT(DISTINCT activity.studentId)', 'openedStudents')
+      .where('activity.date >= :weekStart AND activity.date < :weekEnd', {
+        weekStart,
+        weekEnd,
+      });
+
+    if (schoolId) {
+      query = query.andWhere('student.schoolId = :schoolId', {
+        schoolId,
+      });
+    }
+
+    const rows = await query
+      .groupBy('activity.date')
+      .orderBy('activity.date', 'ASC')
+      .getRawMany();
+
+    // map database result
+    const activityMap = new Map(
+      rows.map((row) => [
+        new Date(row.date).toISOString().split('T')[0],
+        Number(row.openedStudents),
+      ]),
+    );
+
+    // always return Sunday -> Saturday
+    const week: any[] = [];
+
+    for (let i = 0; i < 7; i++) {
+      const current = new Date(weekStart);
+      current.setDate(current.getDate() + i);
+
+      const key = current.toISOString().split('T')[0];
+
+      week.push({
+        date: key,
+        openedStudents: activityMap.get(key) ?? 0,
+      });
+    }
+
+    return {
+      weekStart: weekStart.toISOString().split('T')[0],
+      weekEnd: new Date(weekEnd.getTime() - 86400000)
+        .toISOString()
+        .split('T')[0],
+      week,
+    };
+  }
+
+  async getStatistics(studentId: UUID) {
+    const rows = await this.ds.query(
+      `
+    WITH student AS (
+      SELECT
+        sp.id,
+        sp."schoolId" AS school_id,
+        sp."trackId" AS track_id,
+        sp."currentStreak" AS current_streak,
+        sp."longestStreak" AS longest_streak
+      FROM "student_profile" sp
+      WHERE sp.id = $1
+    ),
+
+    xp_data AS (
+      SELECT
+        le."studentId" AS student_id,
+        COALESCE(SUM(le.xp), 0)::int AS xp,
+        COALESCE(SUM(le.gems), 0)::int AS gems
+      FROM "ledger_entry" le
+      GROUP BY le."studentId"
+    ),
+
+    leaderboard AS (
+      SELECT
+        sp.id AS student_id,
+        sp."schoolId" AS school_id,
+        sp."trackId" AS track_id,
+        COALESCE(SUM(le.xp), 0)::int AS xp
+      FROM "student_profile" sp
+      LEFT JOIN "ledger_entry" le
+        ON le."studentId" = sp.id
+      GROUP BY
+        sp.id,
+        sp."schoolId",
+        sp."trackId"
+    ),
+
+    ranked AS (
+      SELECT
+        student_id,
+
+        RANK() OVER (
+          PARTITION BY school_id, track_id
+          ORDER BY xp DESC
+        )::int AS rank
+
+      FROM leaderboard
+    ),
+
+    accuracy_data AS (
+      SELECT
+        COALESCE(
+          ROUND(
+            100.0 * SUM(qa.score)
+            / NULLIF(SUM(qa.total), 0)
+          ),
+          0
+        )::int AS accuracy
+      FROM "question_attempt" qa
+      WHERE qa."studentId" = $1
+      AND qa."isSkipped" = false
+    ),
+
+    lesson_data AS (
+      SELECT
+        COUNT(*) FILTER (
+          WHERE la.completed = true
+        )::int AS completed_lessons
+      FROM "lesson_attempt" la
+      WHERE la."studentId" = $1
+    ),
+
+    weekly_days AS (
+      SELECT
+        generate_series(
+          CURRENT_DATE - INTERVAL '6 days',
+          CURRENT_DATE,
+          INTERVAL '1 day'
+        )::date AS day
+    ),
+
+    weekly_activity AS (
+      SELECT
+        wd.day,
+
+        COUNT(la.id) FILTER (
+          WHERE la.completed = true
+        )::int AS lessons
+
+      FROM weekly_days wd
+
+      LEFT JOIN "lesson_attempt" la
+        ON la."studentId" = $1
+        AND la."createdAt"::date = wd.day
+
+      GROUP BY wd.day
+      ORDER BY wd.day
+    )
+
+    SELECT
+      COALESCE(xp.xp, 0)::int AS xp,
+      COALESCE(xp.gems, 0)::int AS gems,
+
+      r.rank AS "rank",
+
+      a.accuracy,
+
+      l.completed_lessons AS "completedLessons",
+
+      json_build_object(
+        'current',
+        s.current_streak,
+        'longest',
+        s.longest_streak
+      ) AS streak,
+
+      (
+        SELECT json_agg(
+          json_build_object(
+            'day',
+            CASE EXTRACT(DOW FROM wa.day)
+              WHEN 0 THEN 'Sunday'
+              WHEN 1 THEN 'Monday'
+              WHEN 2 THEN 'Tuesday'
+              WHEN 3 THEN 'Wednesday'
+              WHEN 4 THEN 'Thursday'
+              WHEN 5 THEN 'Friday'
+              WHEN 6 THEN 'Saturday'
+            END,
+
+            'lessons',
+            wa.lessons
+          )
+          ORDER BY wa.day
+        )
+        FROM weekly_activity wa
+      ) AS "weeklyActivity"
+
+    FROM student s
+
+    LEFT JOIN xp_data xp
+      ON xp.student_id = s.id
+
+    LEFT JOIN ranked r
+      ON r.student_id = s.id
+
+    CROSS JOIN accuracy_data a
+    CROSS JOIN lesson_data l
+    `,
+      [studentId],
+    );
+
+    return rows[0];
   }
 }

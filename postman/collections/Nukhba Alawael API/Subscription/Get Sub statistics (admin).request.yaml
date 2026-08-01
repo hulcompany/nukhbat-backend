@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Sub statistics (admin)
+url: "{{baseUrl}}/api/subscription/admin/aggregate/subscriptions"
+method: GET
+order: 10628

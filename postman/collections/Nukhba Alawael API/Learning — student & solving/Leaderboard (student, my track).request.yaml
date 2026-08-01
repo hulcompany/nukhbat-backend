@@ -1,4 +1,14 @@
 $kind: http-request
-url: "{{baseUrl}}/api/learning/solving/student/leaderboard"
+name: Leaderboard (student, my track)
+url: "{{baseUrl}}/api/learning/solving/student/leaderboard?skip=0&limit=10"
 method: GET
+queryParams:
+  - key: skip
+    value: "0"
+    disabled: false
+    description: ""
+  - key: limit
+    value: "10"
+    disabled: false
+    description: ""
 order: 11000

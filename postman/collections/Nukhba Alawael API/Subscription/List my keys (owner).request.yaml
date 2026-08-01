@@ -1,5 +1,6 @@
 $kind: http-request
-description: "Role: contentWriter. Pinned to the owner school. Paginated with school + track relations."
+description: "Role: contentWriter. Pinned to the owner school. Paginated with
+  school + track relations."
 url: "{{baseUrl}}/api/subscription/keys/school?skip=0&limit=10"
 method: GET
 queryParams:

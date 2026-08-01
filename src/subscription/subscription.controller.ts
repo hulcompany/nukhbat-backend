@@ -106,4 +106,25 @@ export class SubscriptionController {
   async deleteKeys(@Body() body: IdsDto) {
     return await this.keys.deleteMany(body.ids);
   }
+
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
+  @Get('school/aggregate/subscriptions')
+  async aggregateUsedKeys() {
+    let date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return await this.keys.getMonthlySubscriptionCount({
+      year: date.getFullYear(),
+      schoolId: this.ctxt.school.id,
+    });
+  }
+
+  @UseGuards(RoleGuard([RoleType.admin]))
+  @Get('admin/aggregate/subscriptions')
+  async adminAggregateUsedKeys() {
+    let date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return await this.keys.getMonthlySubscriptionCount({
+      year: date.getFullYear(),
+    });
+  }
 }

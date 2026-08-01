@@ -4,6 +4,6 @@ url: "{{baseUrl}}/api/curriculum/school/lessons/:unitId"
 method: GET
 pathVariables:
   - key: unitId
-    value: 8f25148e-64c8-4f98-83af-28894f2ba7ce
+    value: 2b16cb77-5c6e-4ab6-b9ef-7098669f00c5
     description: ""
 order: 1000

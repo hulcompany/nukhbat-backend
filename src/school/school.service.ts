@@ -154,4 +154,89 @@ export class SchoolService {
       return em.getRepository(School).findOneBy({ id: school.id });
     });
   }
+
+  async getStatistics(schoolId: UUID) {
+    const result = await this.ds.query(
+      `
+    SELECT
+      (
+        SELECT COUNT(*)
+        FROM student_profile sp
+        WHERE sp."schoolId" = $1
+      ) AS total_students,
+
+      (
+        SELECT COUNT(*)
+        FROM student_profile sp
+        WHERE sp."schoolId" = $1
+        AND sp.active = false
+      ) AS blocked_students,
+
+      (
+        SELECT COUNT(*)
+        FROM student_profile sp
+        WHERE sp."schoolId" = $1
+        AND sp.active = true
+      ) AS active_students,
+
+      (
+        SELECT COUNT(*)
+        FROM subscription s
+        INNER JOIN student_profile sp
+          ON sp.id = s."studentProfileId"
+        WHERE sp."schoolId" = $1
+        AND s."expireDate" > NOW()
+      ) AS active_subscriptions,
+
+      (
+        SELECT COUNT(*)
+        FROM subscription s
+        INNER JOIN student_profile sp
+          ON sp.id = s."studentProfileId"
+        WHERE sp."schoolId" = $1
+        AND s."expireDate" <= NOW()
+      ) AS expired_subscriptions,
+
+      (
+        SELECT COUNT(*)
+        FROM subscription_key sk
+        WHERE sk."schoolId" = $1
+        AND sk."usedById" IS NULL
+      ) AS unused_keys,
+
+      (
+        SELECT COUNT(DISTINCT sa."studentId")
+        FROM student_activity sa
+        INNER JOIN student_profile sp
+          ON sp.id = sa."studentId"
+        WHERE sp."schoolId" = $1
+        AND sa.date = CURRENT_DATE
+      ) AS opened_today_students,
+
+      (
+        SELECT COUNT(*)
+        FROM student_profile sp
+        WHERE sp."schoolId" = $1
+        AND NOT EXISTS (
+          SELECT 1
+          FROM student_activity sa
+          WHERE sa."studentId" = sp.id
+          AND sa.date = CURRENT_DATE
+        )
+      ) AS not_opened_today_students
+    `,
+      [schoolId],
+    );
+
+    return {
+      totalStudents: Number(result[0].total_students),
+      blockedStudents: Number(result[0].blocked_students),
+      activeStudents: Number(result[0].active_students),
+      activeSubscriptions: Number(result[0].active_subscriptions),
+      expiredSubscriptions: Number(result[0].expired_subscriptions),
+      unusedKeys: Number(result[0].unused_keys),
+      openedTodayStudents: Number(result[0].opened_today_students),
+      notOpenedTodayStudents: Number(result[0].not_opened_today_students),
+    };
+  }
 }

@@ -1,5 +1,6 @@
 $kind: http-request
-description: "Role: admin. Paginated across every subscription; filter by userId, type, status."
+description: "Role: admin. Paginated across every subscription; filter by
+  userId, type, status."
 url: "{{baseUrl}}/api/subscription?skip=0&limit=10"
 method: GET
 queryParams:

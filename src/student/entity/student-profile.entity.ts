@@ -41,6 +41,15 @@ export class StudentProfile {
   @ManyToOne(() => Track, { eager: true })
   track: Track;
 
+  @Column('int', { default: 0 })
+  currentStreak: number;
+
+  @Column('int', { default: 0 })
+  longestStreak: number;
+
+  @Column({ type: 'date', nullable: true })
+  lastStreakDate: Date | null;
+
   // cached counters — the running totals of the reward ledger (SUM(xp) /
   // SUM(gems) over LedgerEntry). Source of truth is the ledger; these are
   // updated in the same transaction as each ledger insert, for cheap reads.
