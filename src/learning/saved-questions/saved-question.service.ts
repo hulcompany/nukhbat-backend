@@ -41,8 +41,5 @@ export class SavedQuestionService {
 
   async remove(filter: FindOptionsWhere<SavedQuestion>) {
     const res = await this.repo.delete(filter);
-    if (!res.affected) {
-      throw new NotFoundException('Saved question not found');
-    }
   }
 }

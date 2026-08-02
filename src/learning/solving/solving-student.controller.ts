@@ -76,6 +76,7 @@ export class SolvingStudentController {
       params: query,
       schoolId: student.schoolId,
       studentId: student.id,
+      
     });
   }
 

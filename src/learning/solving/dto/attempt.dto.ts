@@ -16,6 +16,10 @@ export class AttemptGetDto extends BasePaginationDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   completed?: boolean;
+
+  @IsUUID()
+  @IsOptional()
+  lessonId?: UUID;
 }
 
 // Student-facing: studentId is forced from the context — a real class (not a TS

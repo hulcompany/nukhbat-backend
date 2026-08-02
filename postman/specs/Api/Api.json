@@ -1,0 +1,2785 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Api",
+    "version": "1.0.0",
+    "description": "Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.\n\nAuth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.\n\nRoles: admin (user/manage, school/manage, curriculum/admin, public-content writes), contentWriter (curriculum/school tree, books), public (auth, files, curriculum metaData/tracks, public-content reads)."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "paths": {
+    "/api/ping": {
+      "get": {
+        "summary": "Ping",
+        "responses": {},
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/errors": {
+      "get": {
+        "summary": "Error catalog",
+        "responses": {},
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login",
+        "responses": {},
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "email": "salemzakkar.work1@gmail.com",
+                "password": "12345678"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/signUp": {
+      "post": {
+        "summary": "Sign up",
+        "responses": {},
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  }
+                }
+              },
+              "example": {
+                "email": "salemzakkar.work1@gmail.com",
+                "name": "Salem Zakkar",
+                "password": "12345678",
+                "phoneNumber": "+963949123587"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/refreshToken": {
+      "post": {
+        "summary": "Refresh token",
+        "responses": {},
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "token": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/metaData": {
+      "get": {
+        "summary": "Meta data",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ]
+      }
+    },
+    "/api/user/mine": {
+      "get": {
+        "summary": "Get mine",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ]
+      },
+      "patch": {
+        "summary": "Update mine (multipart)",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ]
+      }
+    },
+    "/api/user/mine/request-verify": {
+      "post": {
+        "summary": "Request verify",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ]
+      }
+    },
+    "/api/user/mine/verify": {
+      "post": {
+        "summary": "Verify",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "format": "color"
+                  }
+                }
+              },
+              "example": {
+                "code": "123456"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/mine/forget-password": {
+      "post": {
+        "summary": "Forget password",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              },
+              "example": {
+                "email": "user@example.com"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/mine/reset-password": {
+      "post": {
+        "summary": "Reset password",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "code": {
+                    "type": "string",
+                    "format": "color"
+                  },
+                  "newPassword": {
+                    "type": "string"
+                  },
+                  "confirmPassword": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "email": "user@example.com",
+                "code": "123456",
+                "newPassword": "newPassword123",
+                "confirmPassword": "newPassword123"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/mine/complete-profile": {
+      "post": {
+        "summary": "Complete profile",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "name": "Full Name",
+                "phoneNumber": "0912345678",
+                "password": "password123"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/mine/image": {
+      "delete": {
+        "summary": "Delete mine image",
+        "responses": {},
+        "tags": [
+          "User — profile"
+        ]
+      }
+    },
+    "/api/user": {
+      "get": {
+        "summary": "List users",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "admin | contentWriter | student",
+            "schema": {
+              "type": "string"
+            },
+            "example": "student"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "phoneNumber",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "User — admin"
+        ]
+      },
+      "post": {
+        "summary": "Create user",
+        "responses": {},
+        "tags": [
+          "User — admin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "name": "Full Name",
+                "email": "user@example.com",
+                "password": "password123"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/{id}": {
+      "get": {
+        "summary": "Get user by id",
+        "responses": {},
+        "tags": [
+          "User — admin"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "patch": {
+        "summary": "Update user (multipart)",
+        "responses": {},
+        "tags": [
+          "User — admin"
+        ]
+      }
+    },
+    "/api/user/{id}/image": {
+      "delete": {
+        "summary": "Remove user image",
+        "responses": {},
+        "tags": [
+          "User — admin"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/school/manage": {
+      "get": {
+        "summary": "List schools",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "School — admin (manage)"
+        ]
+      },
+      "post": {
+        "summary": "Create school (multipart)",
+        "responses": {},
+        "tags": [
+          "School — admin (manage)"
+        ]
+      }
+    },
+    "/api/school/manage/{id}": {
+      "get": {
+        "summary": "Get school by id",
+        "responses": {},
+        "tags": [
+          "School — admin (manage)"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "patch": {
+        "summary": "Edit school (multipart)",
+        "responses": {},
+        "tags": [
+          "School — admin (manage)"
+        ]
+      }
+    },
+    "/api/school/manage/{id}/image": {
+      "delete": {
+        "summary": "Remove school image (admin)",
+        "responses": {},
+        "tags": [
+          "School — admin (manage)"
+        ],
+        "description": "Role: admin. Clears the school logo."
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/books/school": {
+      "get": {
+        "summary": "List books",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Books"
+        ]
+      },
+      "post": {
+        "summary": "Create book (multipart, image required)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Books"
+        ]
+      }
+    },
+    "/api/books/school/{id}": {
+      "patch": {
+        "summary": "Edit book (multipart)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Books"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "delete": {
+        "summary": "Delete book",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Books"
+        ]
+      }
+    },
+    "/api/curriculum/school/courses/{trackId}": {
+      "get": {
+        "summary": "List courses of track",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Courses"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "trackId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "7d691471-fa34-473e-928e-8352142d7d1c"
+        }
+      ]
+    },
+    "/api/curriculum/school/units/{courseId}": {
+      "get": {
+        "summary": "List units of course",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Units"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "courseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "1b3caca9-dd64-4e4c-94ab-ad2f8bf1da0e"
+        }
+      ],
+      "patch": {
+        "summary": "Update unit",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Units"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "New Unit Title"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete unit",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Units"
+        ]
+      }
+    },
+    "/api/curriculum/school/units": {
+      "post": {
+        "summary": "Create unit",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Units"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "courseId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "Unit 1",
+                "courseId": "b1d87156-e281-4f68-a7ea-324f79a7643f"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/school/units/order/{courseId}": {
+      "post": {
+        "summary": "Reorder units",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Units"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "ids": [
+                  "00000000-0000-0000-0000-000000000000"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "courseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/curriculum/school/lessons/{unitId}": {
+      "get": {
+        "summary": "List lessons of unit",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Lessons"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "unitId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "patch": {
+        "summary": "Update lesson",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Lessons"
+        ],
+        "description": "status: draft | published.\n\nPublishing requires the lesson to already have at least one question, and a published lesson cannot then be emptied — set it back to draft to delete its last question.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "New Lesson Title",
+                "description": "New description",
+                "status": "published"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete lesson",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Lessons"
+        ]
+      }
+    },
+    "/api/curriculum/school/lessons": {
+      "post": {
+        "summary": "Create lesson",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Lessons"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "unitId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "Lesson 1",
+                "description": "Optional description",
+                "unitId": "00000000-0000-0000-0000-000000000000"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/school/lessons/order/{unitId}": {
+      "post": {
+        "summary": "Reorder lessons",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Lessons"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "ids": [
+                  "00000000-0000-0000-0000-000000000000"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "unitId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/curriculum/school/questions": {
+      "get": {
+        "summary": "List questions",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "lessonId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "fc101b10-975a-4c4b-b859-afa272ec16e8"
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ]
+      },
+      "post": {
+        "summary": "Create question — options (form-data)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ],
+        "description": "Single create is multipart (form-data) — that is the only way to attach `image`.\n\nNested arrays use bracket notation (`options[0][text]`); multer parses it into a real array and the DTOs coerce the strings back to booleans/numbers.\n\n`type`: options | trueFalse | match. `purpose` is REQUIRED: lesson | dailyChallenge.\n\nExactly one option must have isCorrect=true, minimum 2 options."
+      }
+    },
+    "/api/curriculum/school/questions/{id}": {
+      "get": {
+        "summary": "Get question by id",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "patch": {
+        "summary": "Update question — type: options (form-data)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ],
+        "description": "Switch to / stay on `options`. `type` is sent, so the full `options[]` array is required and replaces the whole answer key.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
+      },
+      "delete": {
+        "summary": "Delete question",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ],
+        "description": "By id.\n\nRejected when the question is the LAST one of a `published` lesson — set the lesson to `draft` first. Also rejected while today's daily challenge uses it.\n\nDeleting the whole lesson or unit tears its questions down regardless (guards are skipped there)."
+      }
+    },
+    "/api/curriculum/school/questions/bulk": {
+      "post": {
+        "summary": "Bulk create questions (raw JSON, no files)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ],
+        "description": "Bulk create is raw JSON — no image support on this route.\n\nAll-or-nothing: one invalid question drops the whole batch (single transaction, everything validated before the first write).\n\n`purpose` is required on every item, same as single create.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "type": "string"
+                        },
+                        "lessonId": {
+                          "type": "string"
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string",
+                                "format": "utc-millisec"
+                              },
+                              "isCorrect": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "questions": [
+                  {
+                    "title": "What is 2 + 2?",
+                    "type": "options",
+                    "purpose": "lesson",
+                    "lessonId": "00000000-0000-0000-0000-000000000000",
+                    "options": [
+                      {
+                        "text": "4",
+                        "isCorrect": true
+                      },
+                      {
+                        "text": "5",
+                        "isCorrect": false
+                      }
+                    ]
+                  },
+                  {
+                    "title": "The earth is round",
+                    "type": "trueFalse",
+                    "purpose": "lesson",
+                    "lessonId": "00000000-0000-0000-0000-000000000000",
+                    "correctAnswer": true
+                  },
+                  {
+                    "title": "Match each animal to its sound",
+                    "type": "match",
+                    "purpose": "lesson",
+                    "lessonId": "00000000-0000-0000-0000-000000000000",
+                    "matchingItems": [
+                      {
+                        "text": "Meow",
+                        "type": "match"
+                      },
+                      {
+                        "text": "Bark",
+                        "type": "match"
+                      },
+                      {
+                        "text": "Cat",
+                        "type": "base",
+                        "correctIndex": 0
+                      },
+                      {
+                        "text": "Dog",
+                        "type": "base",
+                        "correctIndex": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/school/questions/bulk-delete": {
+      "post": {
+        "summary": "Bulk delete questions",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Questions"
+        ],
+        "description": "By ids. POST rather than DELETE because DELETE bodies get dropped by some proxies.\n\nAll-or-nothing: one undeletable question cancels the batch. Same guards as single delete.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "ids": [
+                  "00000000-0000-0000-0000-000000000000"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/curriculum/school/daily-challenge": {
+      "get": {
+        "summary": "Get today's challenge",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Daily challenge"
+        ]
+      },
+      "post": {
+        "summary": "Create today's challenge",
+        "responses": {},
+        "tags": [
+          "School — owner (me)",
+          "Daily challenge"
+        ]
+      }
+    },
+    "/api/school/me": {
+      "get": {
+        "summary": "Get my school",
+        "responses": {},
+        "tags": [
+          "School — owner (me)"
+        ]
+      },
+      "patch": {
+        "summary": "Edit my school (multipart)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)"
+        ]
+      }
+    },
+    "/api/school/me/image": {
+      "delete": {
+        "summary": "Delete my school image (owner)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)"
+        ],
+        "description": "Role: contentWriter. Clears the owner school logo."
+      }
+    },
+    "/api/curriculum/school/tree/{trackId}": {
+      "get": {
+        "summary": "Curriculum tree (school)",
+        "responses": {},
+        "tags": [
+          "School — owner (me)"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "trackId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "a4d18807-6e10-4f4b-b539-0bb197271695"
+        }
+      ]
+    },
+    "/api/school/me/statistics": {
+      "get": {
+        "summary": "Stats",
+        "responses": {},
+        "tags": [
+          "School — owner (me)"
+        ]
+      }
+    },
+    "/api/curriculum/metaData": {
+      "get": {
+        "summary": "Meta data (enums)",
+        "responses": {},
+        "tags": [
+          "Curriculum — public"
+        ]
+      }
+    },
+    "/api/curriculum/tracks": {
+      "get": {
+        "summary": "List tracks",
+        "responses": {},
+        "tags": [
+          "Curriculum — public"
+        ]
+      }
+    },
+    "/api/curriculum/admin/courses": {
+      "get": {
+        "summary": "List courses",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "description": "contains, case-insensitive",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Curriculum — admin"
+        ],
+        "description": "Not paginated. Includes the track relation."
+      }
+    },
+    "/api/curriculum/admin/units": {
+      "get": {
+        "summary": "List units",
+        "parameters": [
+          {
+            "name": "schoolId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "description": "contains, case-insensitive",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "description": "via course.trackId",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Curriculum — admin"
+        ]
+      }
+    },
+    "/api/curriculum/admin/lessons": {
+      "get": {
+        "summary": "List lessons",
+        "parameters": [
+          {
+            "name": "unitId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "description": "via unit.courseId",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "schoolId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "description": "contains, case-insensitive",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "description": "via unit.course.trackId",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Curriculum — admin"
+        ]
+      }
+    },
+    "/api/curriculum/admin/questions": {
+      "get": {
+        "summary": "List questions",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "courseId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "lessonId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "schoolId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "description": "contains, case-insensitive",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "description": "pool course OR lesson→unit→course",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Curriculum — admin"
+        ],
+        "description": "Paginated like the school route, but without track-access scoping."
+      }
+    },
+    "/api/school-access": {
+      "post": {
+        "summary": "Grant track access to school",
+        "responses": {},
+        "tags": [
+          "Curriculum — admin"
+        ],
+        "description": "Admin only. 404 Track/School Not Found; 400 if the school is the default school (has all tracks) or already has this track.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "schoolId": {
+                    "type": "string"
+                  },
+                  "trackId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "schoolId": "",
+                "trackId": ""
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Revoke track access from school",
+        "responses": {},
+        "tags": [
+          "Curriculum — admin"
+        ],
+        "description": "Admin only. 404 School Not Found; 400 if the school is the default school or does not have this track.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "schoolId": {
+                    "type": "string"
+                  },
+                  "trackId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "schoolId": "",
+                "trackId": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public-content/info": {
+      "get": {
+        "summary": "Get info",
+        "responses": {},
+        "tags": [
+          "Public content"
+        ]
+      },
+      "post": {
+        "summary": "Set info (admin)",
+        "responses": {},
+        "tags": [
+          "Public content"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "googlePlay": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "appStore": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "format": "utc-millisec"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "position": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number"
+                      },
+                      "lng": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "about": {
+                    "type": "string"
+                  },
+                  "privacyPolicy": {
+                    "type": "string"
+                  },
+                  "termsAndConditions": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "googlePlay": "https://play.google.com/store/apps/details?id=app",
+                "appStore": "https://apps.apple.com/app/id000000",
+                "phone": "+963900000000",
+                "location": "Damascus",
+                "position": {
+                  "lat": 33.5138,
+                  "lng": 36.2765
+                },
+                "about": "About the platform...",
+                "privacyPolicy": "Privacy policy text...",
+                "termsAndConditions": "Terms and conditions text..."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public-content/faqs": {
+      "get": {
+        "summary": "List FAQs",
+        "responses": {},
+        "tags": [
+          "Public content"
+        ]
+      },
+      "post": {
+        "summary": "Create FAQ (admin)",
+        "responses": {},
+        "tags": [
+          "Public content"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "How do I sign up?",
+                "description": "Use the mobile app sign up screen."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public-content/faqs/{id}": {
+      "patch": {
+        "summary": "Edit FAQ",
+        "responses": {},
+        "tags": [
+          "Public content"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "Updated title",
+                "description": "Updated description"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "delete": {
+        "summary": "Delete FAQ",
+        "responses": {},
+        "tags": [
+          "Public content"
+        ]
+      }
+    },
+    "/api/daily-wisement/today": {
+      "get": {
+        "summary": "Get today (public)",
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ],
+        "description": "Returns the selected wisement; when none is selected yet it picks one on the spot."
+      }
+    },
+    "/api/daily-wisement": {
+      "get": {
+        "summary": "List (admin)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "by createdAt: ASC | DESC",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "description": "regexp contains",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ]
+      },
+      "post": {
+        "summary": "Create (admin)",
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "text": "A word of wisdom for the day."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/daily-wisement/bulk": {
+      "post": {
+        "summary": "Bulk create (admin)",
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ],
+        "description": "All-or-nothing: one invalid item drops the whole batch.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "items": [
+                  {
+                    "text": "First wisement"
+                  },
+                  {
+                    "text": "Second wisement"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/daily-wisement/{id}": {
+      "patch": {
+        "summary": "Update (admin)",
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ],
+        "description": "Fails with 400 when the target is the currently selected wisement.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "text": "Updated wisement text"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ],
+      "delete": {
+        "summary": "Delete (admin)",
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ],
+        "description": "Fails with 400 when the target is the currently selected wisement."
+      }
+    },
+    "/api/daily-wisement/bulk-delete": {
+      "post": {
+        "summary": "Bulk delete (admin)",
+        "responses": {},
+        "tags": [
+          "Daily wisement"
+        ],
+        "description": "All-or-nothing: a missing id or the currently selected wisement in the list fails the whole batch.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "example": {
+                "ids": [
+                  "00000000-0000-0000-0000-000000000000"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/student/profile": {
+      "get": {
+        "summary": "My profile",
+        "responses": {},
+        "tags": [
+          "Student"
+        ],
+        "description": "Role: student. The single profile with school + track. 403 (StudentGuard) until the student has redeemed a subscription key."
+      }
+    },
+    "/api/student/school": {
+      "get": {
+        "summary": "List my students (owner)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "student name contains, case-insensitive",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "by createdAt",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Student"
+        ],
+        "description": "Role: contentWriter. Pinned to the owner school. Paginated ({ list, totalRecords, skip, limit }) with user/school/track relations."
+      }
+    },
+    "/api/student/school/{id}": {
+      "get": {
+        "summary": "Get my student by id (owner)",
+        "responses": {},
+        "tags": [
+          "Student"
+        ],
+        "description": "Role: contentWriter. A foreign profile reads as 404."
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/student/school/activation/{id}": {
+      "patch": {
+        "summary": "Activate / deactivate student (owner)",
+        "responses": {},
+        "tags": [
+          "Student"
+        ],
+        "description": "Role: contentWriter. Only the owning school toggles active. active=false blocks the student (StudentGuard -> 403 Student_2). Foreign profile reads as 404.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "example": {
+                "active": false
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/student": {
+      "get": {
+        "summary": "List students (admin)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "schoolId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "student name contains, case-insensitive",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "by createdAt",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Student"
+        ],
+        "description": "Role: admin. Spans all schools; paginated."
+      }
+    },
+    "/api/student/{id}": {
+      "get": {
+        "summary": "Get student by id (admin)",
+        "responses": {},
+        "tags": [
+          "Student"
+        ],
+        "description": "Role: admin."
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/student/statistics": {
+      "get": {
+        "summary": "Stats",
+        "responses": {},
+        "tags": [
+          "Student"
+        ]
+      }
+    },
+    "/api/subscription/subscribe": {
+      "post": {
+        "summary": "Subscribe (redeem key)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: student. Enrolls the student (or reuses their profile) and adds a paid subscription (expireDate = now + KEY_AGE_YEAR), consuming the key in one transaction. 400 while a live PAID subscription is still running (a live free trial can be upgraded), or when the key's school/track differ from the existing profile.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "key": "EBDK-TE8S-RVTE-GCW9-TFTW-JTMJ"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscription/freeTrial": {
+      "post": {
+        "summary": "Free trial (student)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: student. One-shot free-trial subscription on the default school for the given track (expires after FREE_TRIAL_DAYS). 400 if the student has ever had any subscription.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "trackId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "trackId": ""
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscription/me": {
+      "get": {
+        "summary": "My subscription (student)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: student. The caller's latest subscription (live or expired) so the client can show remaining time / prompt a renewal."
+      }
+    },
+    "/api/subscription": {
+      "get": {
+        "summary": "List subscriptions (admin)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "freeTrial | paid",
+            "schema": {
+              "type": "string"
+            },
+            "example": "paid"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "active | expired",
+            "schema": {
+              "type": "string"
+            },
+            "example": "active"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: admin. Paginated across every subscription; filter by userId, type, status."
+      }
+    },
+    "/api/subscription/keys/school": {
+      "get": {
+        "summary": "List my keys (owner)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "by createdAt",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: contentWriter. Pinned to the owner school. Paginated with school + track relations."
+      }
+    },
+    "/api/subscription/keys": {
+      "get": {
+        "summary": "List keys (admin)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "trackId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "schoolId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "by createdAt",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: admin. Spans all schools; paginated."
+      },
+      "post": {
+        "summary": "Create keys (admin)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: admin. Mints `count` keys (1–500) for the school+track.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "trackId": {
+                    "type": "string"
+                  },
+                  "schoolId": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "trackId": "c5042ff8-62cf-43b4-ad4a-e6aee28df05e",
+                "schoolId": "c305bbf4-05a9-408f-ad76-d99a059b0393",
+                "count": 5
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscription/keys/{id}": {
+      "delete": {
+        "summary": "Delete key (admin)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: admin."
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/subscription/keys/bulk-delete": {
+      "post": {
+        "summary": "Bulk delete keys (admin)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ],
+        "description": "Role: admin. All-or-nothing: any missing id cancels the whole batch.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array"
+                  }
+                }
+              },
+              "example": {
+                "ids": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscription/admin/aggregate/subscriptions": {
+      "get": {
+        "summary": "Get Sub statistics (admin)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/subscription/school/aggregate/subscriptions": {
+      "get": {
+        "summary": "Get Sub statistics (school)",
+        "responses": {},
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/api/files/{id}": {
+      "get": {
+        "summary": "Get file by id",
+        "responses": {},
+        "tags": [
+          "Files"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    },
+    "/api/learning/curriculum": {
+      "get": {
+        "summary": "My curriculum (student)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      }
+    },
+    "/api/books/student": {
+      "get": {
+        "summary": "My books (student)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      }
+    },
+    "/api/learning/saved-questions": {
+      "get": {
+        "summary": "Saved questions — list",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      },
+      "post": {
+        "summary": "Saved questions — save",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "questionId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "questionId": "{{questionId}}"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Saved questions — unsave",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "questionId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "questionId": "{{questionId}}"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learning/solving/student/start": {
+      "post": {
+        "summary": "Solve — start lesson",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lessonId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "lessonId": "c30cab63-139c-434d-a9e3-949af5f3c861"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learning/solving/student/solve": {
+      "post": {
+        "summary": "Solve — submit answers",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": "{\n    \"snapshotId\": \"0c551a57-fa85-4ae2-b05f-f3aec1b6126b\",\n    \"answers\": [\n        // {\n        //     \"id\": \"7551d60e-4c50-490d-8b7a-5a38f5919334\",\n        //     \"answer\": {\n        //         \"matches\": [\n        //             {\n        //                 \"baseId\": \"2325a72d-444c-4868-baa3-b6af2f582568\",\n        //                  \"matchId\": \"a1beca10-e5d6-49b5-8412-cdf4d245e69a\"\n        //             },\n        //             {\n        //                 \"baseId\": \"8d6f24c7-6b49-47f0-80a4-9ceca612179d\",\n        //                 \"matchId\": \"d833799a-abe3-45d4-a011-1519a5b765ff\"\n                       \n        //             },\n        //             {\n        //                 \"baseId\": \"24503871-a72d-46da-ad25-e1f15e7c2fbf\",\n        //                 \"matchId\": \"26b8cfe5-3cd8-40bb-8e38-7b6bec7d9451\"\n        //             }\n        //         ]\n        //     }\n        // },\n        {\n            \"id\": \"34534b68-869f-45e1-be52-59be89d310eb\",\n            \"answer\": {\n                \"boolAnswer\": true\n            }\n        },\n        {\n            \"id\": \"9e248e8d-d2b1-40f8-90de-beaeec77e3b6\",\n            \"answer\": {\n                \"choiceId\": \"1f083c66-3145-45e7-a26f-3afac4b95f04\"\n            }\n        }\n    ]\n}"
+            }
+          }
+        }
+      }
+    },
+    "/api/learning/solving/student/daily-challenge": {
+      "get": {
+        "summary": "Daily challenge — today (student)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      }
+    },
+    "/api/learning/solving/student/daily-challenge/solve": {
+      "post": {
+        "summary": "Daily challenge — solve (student)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "answer": {
+                          "type": "object",
+                          "properties": {
+                            "choiceId": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "answers": [
+                  {
+                    "id": "20c11928-6121-468f-aa3d-4e4e20a42169",
+                    "answer": {
+                      "choiceId": "4e8134f2-8195-4190-b3e6-0e57f56ed0d4"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learning/solving/student/attempts": {
+      "get": {
+        "summary": "My attempts (student)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "completed",
+            "in": "query",
+            "description": "true|false — filter by completion state",
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "ASC|DESC by createdAt",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      }
+    },
+    "/api/learning/solving/student/leaderboard": {
+      "get": {
+        "summary": "Leaderboard (student, my track)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      }
+    },
+    "/api/learning/solving/student/attempts/{attemptId}/questions": {
+      "get": {
+        "summary": "Attempt questions (student)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "attemptId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "{{attemptId}}"
+        }
+      ]
+    },
+    "/api/learning/solving/school/attempts": {
+      "get": {
+        "summary": "Attempts (owner)",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 0
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 10
+          },
+          {
+            "name": "studentId",
+            "in": "query",
+            "description": "filter to a single student",
+            "schema": {
+              "type": "string"
+            },
+            "example": "{{studentId}}"
+          },
+          {
+            "name": "completed",
+            "in": "query",
+            "description": "true|false — filter by completion state",
+            "schema": {
+              "type": "boolean"
+            },
+            "example": true
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "ASC|DESC by createdAt",
+            "schema": {
+              "type": "string"
+            },
+            "example": "DESC"
+          }
+        ],
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      }
+    },
+    "/api/learning/solving/school/attempts/{attemptId}/questions": {
+      "get": {
+        "summary": "Attempt questions (owner)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "attemptId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": "{{attemptId}}"
+        }
+      ]
+    },
+    "/api/learning/solving/school/leaderboard/{trackId}": {
+      "get": {
+        "summary": "Leaderboard (owner, by track)",
+        "responses": {},
+        "tags": [
+          "Learning — student & solving"
+        ]
+      },
+      "parameters": [
+        {
+          "name": "trackId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "example": ""
+        }
+      ]
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ]
+}

@@ -67,6 +67,9 @@ export class SolvingService {
         completed: {
           value: (v) => ['a.completed = :completed', { completed: v }],
         },
+        lessonId: {
+          value: (v) => ['a.lessonId = :lessonId', { lessonId: v }],
+        },
       },
     });
 

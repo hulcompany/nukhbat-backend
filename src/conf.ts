@@ -1,5 +1,5 @@
 export const AppConfig = {
-  DAILY_CHALLENGE_QUESTIONS_PER_COURSE: 2,
+  DAILY_CHALLENGE_QUESTIONS_PER_COURSE: 1,
   deletedMemberExpireDurationMs: 14 * 24 * 60 * 60 * 1000,
   JWT_TOKEN_AGE: 30 * 24 * 60 * 60,
   REFRESH_TOKEN_AGE: 40 * 24 * 60 * 60,
