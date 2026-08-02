@@ -252,7 +252,7 @@ export class DailyChallengeService {
 
   // midnight pre-warm for every school; the POST route reuses the same
   // idempotent createTodayAll as the manual/test trigger
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, { timeZone: 'Asia/Damascus' })
   async createAllTodayChallenges() {
     let schools = await this.ds.getRepository(School).find({
       select: { id: true },
