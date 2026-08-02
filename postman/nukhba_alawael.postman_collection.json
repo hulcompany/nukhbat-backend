@@ -1,33 +1,11 @@
 {
   "info": {
+    "_postman_id": "a3e4ecbd-9fc0-4dde-a6c1-bdc286283aa3",
     "name": "Nukhba Alawael API",
     "description": "Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.\n\nAuth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.\n\nRoles: admin (user/manage, school/manage, curriculum/admin, public-content writes), contentWriter (curriculum/school tree, books), public (auth, files, curriculum metaData/tracks, public-content reads).",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "50047162"
   },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{accessToken}}",
-        "type": "string"
-      }
-    ]
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000"
-    },
-    {
-      "key": "accessToken",
-      "value": ""
-    },
-    {
-      "key": "refreshToken",
-      "value": ""
-    }
-  ],
   "item": [
     {
       "name": "Health",
@@ -39,6 +17,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/ping",
               "host": [
@@ -49,7 +28,8 @@
                 "ping"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Error catalog",
@@ -58,6 +38,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/errors",
               "host": [
@@ -68,7 +49,8 @@
                 "errors"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -81,12 +63,14 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const body = pm.response.json();",
                   "if (body?.data?.accessToken) pm.collectionVariables.set('accessToken', body.data.accessToken);",
                   "if (body?.data?.refreshToken) pm.collectionVariables.set('refreshToken', body.data.refreshToken);"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -103,7 +87,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@hul.com\",\n  \"password\": \"12345678\"\n}",
+              "raw": "{\n  \"email\": \"student@hul.com\",\n  \"password\": \"12345678\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -121,7 +105,8 @@
                 "login"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Sign up",
@@ -169,7 +154,8 @@
                 "signUp"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Refresh token",
@@ -217,7 +203,8 @@
                 "refreshToken"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -231,6 +218,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user/metaData",
               "host": [
@@ -242,12 +230,14 @@
                 "metaData"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get mine",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user/mine",
               "host": [
@@ -259,12 +249,14 @@
                 "mine"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Request verify",
           "request": {
             "method": "POST",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user/mine/request-verify",
               "host": [
@@ -277,7 +269,8 @@
                 "request-verify"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Verify",
@@ -310,7 +303,8 @@
                 "verify"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Forget password",
@@ -346,7 +340,8 @@
                 "forget-password"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Reset password",
@@ -382,7 +377,8 @@
                 "reset-password"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Complete profile",
@@ -415,12 +411,14 @@
                 "complete-profile"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update mine (multipart)",
           "request": {
             "method": "PATCH",
+            "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -444,7 +442,7 @@
                 {
                   "key": "image",
                   "type": "file",
-                  "src": []
+                  "value": null
                 }
               ]
             },
@@ -459,12 +457,14 @@
                 "mine"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete mine image",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user/mine/image",
               "host": [
@@ -477,18 +477,19 @@
                 "image"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "User — admin",
-      "description": "Requires role: admin.",
       "item": [
         {
           "name": "List users",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user?skip=0&limit=10",
               "host": [
@@ -535,7 +536,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create user",
@@ -566,12 +568,14 @@
                 "user"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get user by id",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user/:id",
               "host": [
@@ -589,12 +593,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Update user (multipart)",
           "request": {
             "method": "PATCH",
+            "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -618,7 +624,7 @@
                 {
                   "key": "image",
                   "type": "file",
-                  "src": []
+                  "value": null
                 }
               ]
             },
@@ -639,12 +645,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Remove user image",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/user/:id/image",
               "host": [
@@ -663,18 +671,20 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Requires role: admin."
     },
     {
       "name": "School — admin (manage)",
-      "description": "Requires role: admin.",
       "item": [
         {
           "name": "List schools",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/school/manage?skip=0&limit=10",
               "host": [
@@ -701,12 +711,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Get school by id",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/school/manage/:id",
               "host": [
@@ -725,12 +737,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create school (multipart)",
           "request": {
             "method": "POST",
+            "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -757,7 +771,7 @@
                 {
                   "key": "image",
                   "type": "file",
-                  "src": []
+                  "value": null
                 }
               ]
             },
@@ -772,12 +786,14 @@
                 "manage"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Edit school (multipart)",
           "request": {
             "method": "PATCH",
+            "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -789,7 +805,7 @@
                 {
                   "key": "image",
                   "type": "file",
-                  "src": []
+                  "value": null
                 }
               ]
             },
@@ -811,12 +827,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Remove school image (admin)",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/school/manage/:id/image",
               "host": [
@@ -837,82 +855,15 @@
               ]
             },
             "description": "Role: admin. Clears the school logo."
-          }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Requires role: admin."
     },
     {
       "name": "School — owner (me)",
-      "description": "Requires role: contentWriter (school owner). All routes under /api/school/me.",
       "item": [
-        {
-          "name": "Get my school",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/school/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "school",
-                "me"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Edit my school (multipart)",
-          "request": {
-            "method": "PATCH",
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "name",
-                  "value": "New School Name",
-                  "type": "text"
-                },
-                {
-                  "key": "image",
-                  "type": "file",
-                  "src": []
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/school/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "school",
-                "me"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Delete my school image (owner)",
-          "request": {
-            "method": "DELETE",
-            "url": {
-              "raw": "{{baseUrl}}/api/school/me/image",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "school",
-                "me",
-                "image"
-              ]
-            },
-            "description": "Role: contentWriter. Clears the owner school logo."
-          }
-        },
         {
           "name": "Books",
           "item": [
@@ -920,6 +871,7 @@
               "name": "List books",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/books/school",
                   "host": [
@@ -931,12 +883,14 @@
                     "school"
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Create book (multipart, image required)",
               "request": {
                 "method": "POST",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -948,7 +902,7 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": []
+                      "value": null
                     }
                   ]
                 },
@@ -963,12 +917,14 @@
                     "school"
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Edit book (multipart)",
               "request": {
                 "method": "PATCH",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -980,7 +936,7 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": []
+                      "value": null
                     }
                   ]
                 },
@@ -1002,12 +958,14 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Delete book",
               "request": {
                 "method": "DELETE",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/books/school/:id",
                   "host": [
@@ -1026,34 +984,10 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             }
           ]
-        },
-        {
-          "name": "Curriculum tree (school)",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/api/curriculum/school/tree/:trackId",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "curriculum",
-                "school",
-                "tree",
-                ":trackId"
-              ],
-              "variable": [
-                {
-                  "key": "trackId",
-                  "value": ""
-                }
-              ]
-            }
-          }
         },
         {
           "name": "Courses",
@@ -1062,6 +996,7 @@
               "name": "List courses of track",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/courses/:trackId",
                   "host": [
@@ -1088,7 +1023,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             }
           ]
         },
@@ -1099,6 +1035,7 @@
               "name": "List units of course",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/units/:courseId",
                   "host": [
@@ -1125,7 +1062,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Create unit",
@@ -1158,7 +1096,8 @@
                     "units"
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Update unit",
@@ -1198,12 +1137,14 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Delete unit",
               "request": {
                 "method": "DELETE",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/units/:id",
                   "host": [
@@ -1223,7 +1164,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Reorder units",
@@ -1264,7 +1206,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             }
           ]
         },
@@ -1275,6 +1218,7 @@
               "name": "List lessons of unit",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/lessons/:unitId",
                   "host": [
@@ -1294,7 +1238,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Create lesson",
@@ -1327,7 +1272,8 @@
                     "lessons"
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Update lesson",
@@ -1368,12 +1314,14 @@
                   ]
                 },
                 "description": "status: draft | published.\n\nPublishing requires the lesson to already have at least one question, and a published lesson cannot then be emptied — set it back to draft to delete its last question."
-              }
+              },
+              "response": []
             },
             {
               "name": "Delete lesson",
               "request": {
                 "method": "DELETE",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/lessons/:id",
                   "host": [
@@ -1393,7 +1341,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Reorder lessons",
@@ -1434,7 +1383,8 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             }
           ]
         },
@@ -1445,6 +1395,7 @@
               "name": "List questions",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions?skip=0&limit=10",
                   "host": [
@@ -1482,12 +1433,14 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Get question by id",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
@@ -1507,12 +1460,14 @@
                     }
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Create question — options (form-data)",
               "request": {
                 "method": "POST",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1559,9 +1514,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Enable and pick a file to attach an image."
+                      "description": "Optional. Enable and pick a file to attach an image.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -1578,12 +1533,14 @@
                   ]
                 },
                 "description": "Single create is multipart (form-data) — that is the only way to attach `image`.\n\nNested arrays use bracket notation (`options[0][text]`); multer parses it into a real array and the DTOs coerce the strings back to booleans/numbers.\n\n`type`: options | trueFalse | match. `purpose` is REQUIRED: lesson | dailyChallenge.\n\nExactly one option must have isCorrect=true, minimum 2 options."
-              }
+              },
+              "response": []
             },
             {
               "name": "Create question — trueFalse (form-data)",
               "request": {
                 "method": "POST",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1616,9 +1573,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Enable and pick a file to attach an image."
+                      "description": "Optional. Enable and pick a file to attach an image.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -1635,12 +1592,14 @@
                   ]
                 },
                 "description": "trueFalse carries its answer key in the single `correctAnswer` boolean; it is stored on the question as `trueOrFalseAnswer` and reads back there (no option rows). Send no options/matchingItems."
-              }
+              },
+              "response": []
             },
             {
               "name": "Create question — match (form-data)",
               "request": {
                 "method": "POST",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1717,9 +1676,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Enable and pick a file to attach an image."
+                      "description": "Optional. Enable and pick a file to attach an image.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -1736,12 +1695,14 @@
                   ]
                 },
                 "description": "Minimum 3 items. `type`: base | match.\n\n`correctIndex` is only on base rows and is a POSITION in this same array — it must point at a `match` row, each match can back only one base, and matches must be >= bases.\n\nHere base \"Cat\"(2) -> index 0 = \"Meow\", base \"Dog\"(3) -> index 1 = \"Bark\"."
-              }
+              },
+              "response": []
             },
             {
               "name": "Create question — dailyChallenge pool (form-data)",
               "request": {
                 "method": "POST",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1788,9 +1749,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Enable and pick a file to attach an image."
+                      "description": "Optional. Enable and pick a file to attach an image.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -1807,7 +1768,8 @@
                   ]
                 },
                 "description": "purpose=dailyChallenge takes `courseId` and NO `lessonId` — sending a lessonId is rejected. These live in the school pool rather than a lesson."
-              }
+              },
+              "response": []
             },
             {
               "name": "Bulk create questions (raw JSON, no files)",
@@ -1842,12 +1804,14 @@
                   ]
                 },
                 "description": "Bulk create is raw JSON — no image support on this route.\n\nAll-or-nothing: one invalid question drops the whole batch (single transaction, everything validated before the first write).\n\n`purpose` is required on every item, same as single create."
-              }
+              },
+              "response": []
             },
             {
               "name": "Update question — type: options (form-data)",
               "request": {
                 "method": "PATCH",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1894,9 +1858,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -1920,12 +1884,14 @@
                   ]
                 },
                 "description": "Switch to / stay on `options`. `type` is sent, so the full `options[]` array is required and replaces the whole answer key.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
-              }
+              },
+              "response": []
             },
             {
               "name": "Update question — type: trueFalse (form-data)",
               "request": {
                 "method": "PATCH",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1948,9 +1914,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -1974,12 +1940,14 @@
                   ]
                 },
                 "description": "Switch to / stay on `trueFalse`. `type` is sent, so `correctAnswer` is required. Coming from options/match, the old rows are dropped; the key lands on the question as `trueOrFalseAnswer`.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
-              }
+              },
+              "response": []
             },
             {
               "name": "Update question — type: match (form-data)",
               "request": {
                 "method": "PATCH",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -2046,9 +2014,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -2072,12 +2040,14 @@
                   ]
                 },
                 "description": "Switch to / stay on `match`. `type` is sent, so the full `matchingItems[]` array is required (min 3). `correctIndex` is a position in this same array and must point at a `match` row. Switching away resets `trueOrFalseAnswer` to null.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
-              }
+              },
+              "response": []
             },
             {
               "name": "Update question — title / image, no type (form-data)",
               "request": {
                 "method": "PATCH",
+                "header": [],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -2089,9 +2059,9 @@
                     {
                       "key": "image",
                       "type": "file",
-                      "src": [],
-                      "disabled": true,
-                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it."
+                      "description": "Optional. Leave disabled to keep the current image; enable and pick a file to swap it.",
+                      "value": null,
+                      "disabled": true
                     }
                   ]
                 },
@@ -2115,12 +2085,14 @@
                   ]
                 },
                 "description": "No `type` sent, so the answer key survives exactly as-is. Use this to rename and/or swap the image without touching options/matchingItems/correctAnswer.\n\n---\n\nMirrors QuestionEditDto — every field is optional:\n• `title` — optional, on its own or with anything else.\n• `image` — optional. Omit to keep the current one, send a file to swap it.\n• `type` — optional. **Sending it makes its components REQUIRED** (that is what @ValidateIf does): options -> `options[]` (min 2, exactly one isCorrect), trueFalse -> `correctAnswer`, match -> `matchingItems[]` (min 3).\n\nThe answer key is ATOMIC: send `type` + the full components and the old key is wiped and rebuilt. You cannot edit one option or one match row.\n\nOmit `type` and the answer key is left untouched — any components you send are ignored."
-              }
+              },
+              "response": []
             },
             {
               "name": "Delete question",
               "request": {
                 "method": "DELETE",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
@@ -2141,7 +2113,8 @@
                   ]
                 },
                 "description": "By id.\n\nRejected when the question is the LAST one of a `published` lesson — set the lesson to `draft` first. Also rejected while today's daily challenge uses it.\n\nDeleting the whole lesson or unit tears its questions down regardless (guards are skipped there)."
-              }
+              },
+              "response": []
             },
             {
               "name": "Bulk delete questions",
@@ -2176,7 +2149,8 @@
                   ]
                 },
                 "description": "By ids. POST rather than DELETE because DELETE bodies get dropped by some proxies.\n\nAll-or-nothing: one undeletable question cancels the batch. Same guards as single delete."
-              }
+              },
+              "response": []
             }
           ]
         },
@@ -2187,6 +2161,7 @@
               "name": "Get today's challenge",
               "request": {
                 "method": "GET",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/daily-challenge",
                   "host": [
@@ -2199,12 +2174,14 @@
                     "daily-challenge"
                   ]
                 }
-              }
+              },
+              "response": []
             },
             {
               "name": "Create today's challenge",
               "request": {
                 "method": "POST",
+                "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/daily-challenge",
                   "host": [
@@ -2217,11 +2194,134 @@
                     "daily-challenge"
                   ]
                 }
-              }
+              },
+              "response": []
             }
           ]
+        },
+        {
+          "name": "Get my school",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/school/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit my school (multipart)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "New School Name",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "value": null
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/school/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete my school image (owner)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/school/me/image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "me",
+                "image"
+              ]
+            },
+            "description": "Role: contentWriter. Clears the owner school logo."
+          },
+          "response": []
+        },
+        {
+          "name": "Curriculum tree (school)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/curriculum/school/tree/:trackId",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "curriculum",
+                "school",
+                "tree",
+                ":trackId"
+              ],
+              "variable": [
+                {
+                  "key": "trackId",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "school statistics (school)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/school/me/statistics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "me",
+                "statistics"
+              ]
+            }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Requires role: contentWriter (school owner). All routes under /api/school/me."
     },
     {
       "name": "Curriculum — public",
@@ -2233,6 +2333,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/curriculum/metaData",
               "host": [
@@ -2244,7 +2345,8 @@
                 "metaData"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List tracks",
@@ -2253,6 +2355,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/curriculum/tracks",
               "host": [
@@ -2264,18 +2367,19 @@
                 "tracks"
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Curriculum — admin",
-      "description": "Requires role: admin. Read routes span all schools — no track-access checks.",
       "item": [
         {
           "name": "List courses",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/curriculum/admin/courses",
               "host": [
@@ -2302,12 +2406,14 @@
               ]
             },
             "description": "Not paginated. Includes the track relation."
-          }
+          },
+          "response": []
         },
         {
           "name": "List units",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/curriculum/admin/units",
               "host": [
@@ -2344,12 +2450,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List lessons",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/curriculum/admin/lessons",
               "host": [
@@ -2392,12 +2500,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List questions",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/curriculum/admin/questions?skip=0&limit=10",
               "host": [
@@ -2448,7 +2558,8 @@
               ]
             },
             "description": "Paginated like the school route, but without track-access scoping."
-          }
+          },
+          "response": []
         },
         {
           "name": "Grant track access to school",
@@ -2480,7 +2591,8 @@
               ]
             },
             "description": "Admin only. 404 Track/School Not Found; 400 if the school is the default school (has all tracks) or already has this track."
-          }
+          },
+          "response": []
         },
         {
           "name": "Revoke track access from school",
@@ -2512,9 +2624,11 @@
               ]
             },
             "description": "Admin only. 404 School Not Found; 400 if the school is the default school or does not have this track."
-          }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Requires role: admin. Read routes span all schools — no track-access checks."
     },
     {
       "name": "Public content",
@@ -2526,6 +2640,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/public-content/info",
               "host": [
@@ -2537,7 +2652,8 @@
                 "info"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Set info (admin)",
@@ -2569,7 +2685,8 @@
                 "info"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "List FAQs",
@@ -2578,6 +2695,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/public-content/faqs",
               "host": [
@@ -2589,7 +2707,8 @@
                 "faqs"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create FAQ (admin)",
@@ -2621,7 +2740,8 @@
                 "faqs"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Edit FAQ",
@@ -2660,12 +2780,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete FAQ",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/public-content/faqs/:id",
               "host": [
@@ -2684,13 +2806,13 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Daily wisement",
-      "description": "Rotating daily wisement. Public: today. Admin: CRUD + bulk. The selected one cannot be edited or deleted; a midnight cron rotates the selection.",
       "item": [
         {
           "name": "Get today (public)",
@@ -2699,6 +2821,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/daily-wisement/today",
               "host": [
@@ -2711,12 +2834,14 @@
               ]
             },
             "description": "Returns the selected wisement; when none is selected yet it picks one on the spot."
-          }
+          },
+          "response": []
         },
         {
           "name": "List (admin)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/daily-wisement?skip=0&limit=10",
               "host": [
@@ -2749,7 +2874,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Create (admin)",
@@ -2780,7 +2906,8 @@
                 "daily-wisement"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Bulk create (admin)",
@@ -2813,7 +2940,8 @@
               ]
             },
             "description": "All-or-nothing: one invalid item drops the whole batch."
-          }
+          },
+          "response": []
         },
         {
           "name": "Update (admin)",
@@ -2852,12 +2980,14 @@
               ]
             },
             "description": "Fails with 400 when the target is the currently selected wisement."
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete (admin)",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/daily-wisement/:id",
               "host": [
@@ -2876,7 +3006,8 @@
               ]
             },
             "description": "Fails with 400 when the target is the currently selected wisement."
-          }
+          },
+          "response": []
         },
         {
           "name": "Bulk delete (admin)",
@@ -2909,18 +3040,20 @@
               ]
             },
             "description": "All-or-nothing: a missing id or the currently selected wisement in the list fails the whole batch."
-          }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Rotating daily wisement. Public: today. Admin: CRUD + bulk. The selected one cannot be edited or deleted; a midnight cron rotates the selection."
     },
     {
       "name": "Student",
-      "description": "One profile per student — a single school and track, never changed. Profiles are created by redeeming subscription keys. /student/school*: contentWriter (own school). /student*: admin.",
       "item": [
         {
           "name": "My profile",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/student/profile",
               "host": [
@@ -2933,12 +3066,14 @@
               ]
             },
             "description": "Role: student. The single profile with school + track. 403 (StudentGuard) until the student has redeemed a subscription key."
-          }
+          },
+          "response": []
         },
         {
           "name": "List my students (owner)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/student/school?skip=0&limit=10",
               "host": [
@@ -2978,12 +3113,14 @@
               ]
             },
             "description": "Role: contentWriter. Pinned to the owner school. Paginated ({ list, totalRecords, skip, limit }) with user/school/track relations."
-          }
+          },
+          "response": []
         },
         {
           "name": "Get my student by id (owner)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/student/school/:id",
               "host": [
@@ -3003,7 +3140,8 @@
               ]
             },
             "description": "Role: contentWriter. A foreign profile reads as 404."
-          }
+          },
+          "response": []
         },
         {
           "name": "Activate / deactivate student (owner)",
@@ -3044,12 +3182,14 @@
               ]
             },
             "description": "Role: contentWriter. Only the owning school toggles active. active=false blocks the student (StudentGuard -> 403 Student_2). Foreign profile reads as 404."
-          }
+          },
+          "response": []
         },
         {
           "name": "List students (admin)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/student?skip=0&limit=10",
               "host": [
@@ -3093,12 +3233,14 @@
               ]
             },
             "description": "Role: admin. Spans all schools; paginated."
-          }
+          },
+          "response": []
         },
         {
           "name": "Get student by id (admin)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/student/:id",
               "host": [
@@ -3117,13 +3259,75 @@
               ]
             },
             "description": "Role: admin."
-          }
+          },
+          "response": []
+        },
+        {
+          "name": "Student stats (student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/statistics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "statistics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "student daily activity (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/admin/aggregate/activity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "admin",
+                "aggregate",
+                "activity"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "aggregate student daily activity (school)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/student/school/aggregate/activity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "student",
+                "school",
+                "aggregate",
+                "activity"
+              ]
+            }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "One profile per student — a single school and track, never changed. Profiles are created by redeeming subscription keys. /student/school*: contentWriter (own school). /student*: admin."
     },
     {
       "name": "Subscription",
-      "description": "Subscription keys (6 groups: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX, single use). Subscribe: student. keys/school: school owner. keys CRUD: admin.",
       "item": [
         {
           "name": "Subscribe (redeem key)",
@@ -3156,7 +3360,8 @@
               ]
             },
             "description": "Role: student. Enrolls the student (or reuses their profile) and adds a paid subscription (expireDate = now + KEY_AGE_YEAR), consuming the key in one transaction. 400 while a live PAID subscription is still running (a live free trial can be upgraded), or when the key's school/track differ from the existing profile."
-          }
+          },
+          "response": []
         },
         {
           "name": "Free trial (student)",
@@ -3189,12 +3394,14 @@
               ]
             },
             "description": "Role: student. One-shot free-trial subscription on the default school for the given track (expires after FREE_TRIAL_DAYS). 400 if the student has ever had any subscription."
-          }
+          },
+          "response": []
         },
         {
           "name": "My subscription (student)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/subscription/me",
               "host": [
@@ -3207,12 +3414,14 @@
               ]
             },
             "description": "Role: student. The caller's latest subscription (live or expired) so the client can show remaining time / prompt a renewal."
-          }
+          },
+          "response": []
         },
         {
           "name": "List subscriptions (admin)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/subscription?skip=0&limit=10",
               "host": [
@@ -3256,12 +3465,14 @@
               ]
             },
             "description": "Role: admin. Paginated across every subscription; filter by userId, type, status."
-          }
+          },
+          "response": []
         },
         {
           "name": "List my keys (owner)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/subscription/keys/school?skip=0&limit=10",
               "host": [
@@ -3296,12 +3507,14 @@
               ]
             },
             "description": "Role: contentWriter. Pinned to the owner school. Paginated with school + track relations."
-          }
+          },
+          "response": []
         },
         {
           "name": "List keys (admin)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/subscription/keys?skip=0&limit=10",
               "host": [
@@ -3340,7 +3553,8 @@
               ]
             },
             "description": "Role: admin. Spans all schools; paginated."
-          }
+          },
+          "response": []
         },
         {
           "name": "Create keys (admin)",
@@ -3373,12 +3587,14 @@
               ]
             },
             "description": "Role: admin. Mints `count` keys (1–500) for the school+track."
-          }
+          },
+          "response": []
         },
         {
           "name": "Delete key (admin)",
           "request": {
             "method": "DELETE",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/subscription/keys/:id",
               "host": [
@@ -3398,7 +3614,8 @@
               ]
             },
             "description": "Role: admin."
-          }
+          },
+          "response": []
         },
         {
           "name": "Bulk delete keys (admin)",
@@ -3432,9 +3649,53 @@
               ]
             },
             "description": "Role: admin. All-or-nothing: any missing id cancels the whole batch."
-          }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sub statistics (school)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/school/aggregate/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "school",
+                "aggregate",
+                "subscriptions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sub statistics (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/admin/aggregate/subscriptions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subscription",
+                "admin",
+                "aggregate",
+                "subscriptions"
+              ]
+            }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Subscription keys (6 groups: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX, single use). Subscribe: student. keys/school: school owner. keys CRUD: admin."
     },
     {
       "name": "Files",
@@ -3446,6 +3707,7 @@
               "type": "noauth"
             },
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/files/:id",
               "host": [
@@ -3463,7 +3725,8 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
@@ -3474,6 +3737,7 @@
           "name": "My curriculum (student)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/curriculum",
               "host": [
@@ -3485,12 +3749,14 @@
                 "curriculum"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "My books (student)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/books/student",
               "host": [
@@ -3502,12 +3768,14 @@
                 "student"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Saved questions — list",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/saved-questions",
               "host": [
@@ -3519,12 +3787,23 @@
                 "saved-questions"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Saved questions — save",
           "request": {
             "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/saved-questions",
               "host": [
@@ -3535,22 +3814,24 @@
                 "learning",
                 "saved-questions"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              },
-              "raw": "{\n  \"questionId\": \"{{questionId}}\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Saved questions — unsave",
           "request": {
             "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/saved-questions",
               "host": [
@@ -3561,22 +3842,24 @@
                 "learning",
                 "saved-questions"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              },
-              "raw": "{\n  \"questionId\": \"{{questionId}}\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Solve — start lesson",
           "request": {
             "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lessonId\": \"{{lessonId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/start",
               "host": [
@@ -3589,22 +3872,24 @@
                 "student",
                 "start"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              },
-              "raw": "{\n  \"lessonId\": \"{{lessonId}}\"\n}"
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Solve — submit answers",
           "request": {
             "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"choiceId\": \"{{optionId}}\"\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"boolAnswer\": true\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"matches\": [\n          {\n            \"baseId\": \"{{baseId}}\",\n            \"matchId\": \"{{matchId}}\"\n          }\n        ]\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/solve",
               "host": [
@@ -3617,22 +3902,15 @@
                 "student",
                 "solve"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              },
-              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"choiceId\": \"{{optionId}}\"\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"boolAnswer\": true\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"matches\": [\n          {\n            \"baseId\": \"{{baseId}}\",\n            \"matchId\": \"{{matchId}}\"\n          }\n        ]\n      }\n    }\n  ]\n}"
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Daily challenge — today (student)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/daily-challenge",
               "host": [
@@ -3646,12 +3924,23 @@
                 "daily-challenge"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Daily challenge — solve (student)",
           "request": {
             "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"choiceId\": \"{{optionId}}\"\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"boolAnswer\": true\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"matches\": [\n          {\n            \"baseId\": \"{{baseId}}\",\n            \"matchId\": \"{{matchId}}\"\n          }\n        ]\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/daily-challenge/solve",
               "host": [
@@ -3665,22 +3954,15 @@
                 "daily-challenge",
                 "solve"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              },
-              "raw": "{\n  \"answers\": [\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"choiceId\": \"{{optionId}}\"\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"boolAnswer\": true\n      }\n    },\n    {\n      \"id\": \"{{questionId}}\",\n      \"answer\": {\n        \"matches\": [\n          {\n            \"baseId\": \"{{baseId}}\",\n            \"matchId\": \"{{matchId}}\"\n          }\n        ]\n      }\n    }\n  ]\n}"
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "My attempts (student)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/attempts?skip=0&limit=10",
               "host": [
@@ -3705,23 +3987,31 @@
                 {
                   "key": "completed",
                   "value": "true",
-                  "disabled": true,
-                  "description": "true|false — filter by completion state"
+                  "description": "true|false — filter by completion state",
+                  "disabled": true
                 },
                 {
                   "key": "sort",
                   "value": "DESC",
-                  "disabled": true,
-                  "description": "ASC|DESC by createdAt"
+                  "description": "ASC|DESC by createdAt",
+                  "disabled": true
+                },
+                {
+                  "key": "lessonId",
+                  "value": "17cc372e-39ba-48f9-a016-6f60e97a2fcc",
+                  "type": "text",
+                  "disabled": true
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Leaderboard (student, my track)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/leaderboard",
               "host": [
@@ -3735,12 +4025,14 @@
                 "leaderboard"
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Attempt questions (student)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/student/attempts/:attemptId/questions",
               "host": [
@@ -3762,12 +4054,14 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Attempts (owner)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/school/attempts?skip=0&limit=10",
               "host": [
@@ -3792,29 +4086,36 @@
                 {
                   "key": "studentId",
                   "value": "{{studentId}}",
-                  "disabled": true,
-                  "description": "filter to a single student"
+                  "description": "filter to a single student",
+                  "disabled": true
                 },
                 {
                   "key": "completed",
                   "value": "true",
-                  "disabled": true,
-                  "description": "true|false — filter by completion state"
+                  "description": "true|false — filter by completion state",
+                  "disabled": true
                 },
                 {
                   "key": "sort",
                   "value": "DESC",
-                  "disabled": true,
-                  "description": "ASC|DESC by createdAt"
+                  "description": "ASC|DESC by createdAt",
+                  "disabled": true
+                },
+                {
+                  "key": "lessonId",
+                  "value": "90a7b132-70c0-4e62-8996-90ac817d8b3b",
+                  "disabled": true
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Attempt questions (owner)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/school/attempts/:attemptId/questions",
               "host": [
@@ -3832,16 +4133,18 @@
               "variable": [
                 {
                   "key": "attemptId",
-                  "value": "{{attemptId}}"
+                  "value": "a79f101d-993a-4366-8cad-50da02bc5a0d"
                 }
               ]
             }
-          }
+          },
+          "response": []
         },
         {
           "name": "Leaderboard (owner, by track)",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/school/leaderboard/:trackId",
               "host": [
@@ -3862,13 +4165,13 @@
                 }
               ]
             }
-          }
+          },
+          "response": []
         }
       ]
     },
     {
       "name": "Notifications",
-      "description": "Push + in-app notifications. subscribe/unsubscribe/me require a verified account (JwtGuardStrict); send is admin-only. deviceToken is the client's FCM token, carried in both subscribe and unsubscribe. Firebase delivery is stubbed for now — records are persisted and returned regardless of registered tokens.",
       "item": [
         {
           "name": "Subscribe device token",
@@ -3901,7 +4204,8 @@
               ]
             },
             "description": "Registers the caller's device token so future notifications reach it. Idempotent — re-subscribing the same (userId, token) pair is a no-op."
-          }
+          },
+          "response": []
         },
         {
           "name": "Unsubscribe device token",
@@ -3934,12 +4238,14 @@
               ]
             },
             "description": "Drops the caller's device token (e.g. on logout / token refresh)."
-          }
+          },
+          "response": []
         },
         {
           "name": "My notifications",
           "request": {
             "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/notifications/me?skip=0&limit=10",
               "host": [
@@ -3968,7 +4274,102 @@
               ]
             },
             "description": "The caller's own notifications, newest first, paginated."
-          }
+          },
+          "response": []
+        },
+        {
+          "name": "Read Notifications",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"ids\" : [\r\n        \"41e1ee13-8f09-4a5a-b9ee-5eb6f761b45c\",\r\n        \"d3821908-a0f3-4af5-9fd4-0e24c0d04a28\"\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "ASC | DESC (by createdAt)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "The caller's own notifications, newest first, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Open Notifications",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"ids\" : [\r\n        \"41e1ee13-8f09-4a5a-b9ee-5eb6f761b45c\",\r\n        \"d3821908-a0f3-4af5-9fd4-0e24c0d04a28\"\r\n    ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/open",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "open"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "DESC",
+                  "description": "ASC | DESC (by createdAt)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "The caller's own notifications, newest first, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "My notification stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "stats"
+              ]
+            },
+            "description": "The caller's own notifications, newest first, paginated."
+          },
+          "response": []
         },
         {
           "name": "Send notification (admin)",
@@ -3982,7 +4383,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": \"\",\n  \"title\": \"\",\n  \"description\": \"\"\n}",
+              "raw": "{\n  \"userId\": \"0e3146f9-1d39-4096-9dcf-0a0d38513a64\",\n  \"title\": \"test\",\n  \"description\": \"test\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4001,9 +4402,35 @@
               ]
             },
             "description": "Role: admin. Persists a notification for the user and pushes it to their devices. Returns the saved record even if the user has no registered device tokens (nothing to deliver)."
-          }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Push + in-app notifications. subscribe/unsubscribe/me require a verified account (JwtGuardStrict); send is admin-only. deviceToken is the client's FCM token, carried in both subscribe and unsubscribe. Firebase delivery is stubbed for now — records are persisted and returned regardless of registered tokens."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
     }
   ]
 }

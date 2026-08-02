@@ -27,4 +27,10 @@ export class Notification {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ default: false })
+  isRead: boolean;
+
+  @Column({ default: false })
+  isOpen: boolean;
 }

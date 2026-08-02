@@ -7,6 +7,7 @@ import {
   DeviceTokenDto,
   NotificationGetDto,
   SendNotificationDto,
+  StatsDto,
 } from './dto/notification.dto';
 
 @Controller('notifications')
@@ -41,5 +42,20 @@ export class NotificationsController {
   @UseGuards(RoleGuard([RoleType.admin]))
   async send(@Body() body: SendNotificationDto) {
     return await this.service.send(body);
+  }
+
+  @Post('read')
+  async read(@Body() body: StatsDto) {
+    await this.service.readNotifications(this.ctxt.user.id, body.ids);
+  }
+
+  @Post('open')
+  async open(@Body() body: StatsDto) {
+    await this.service.openNotifications(this.ctxt.user.id, body.ids);
+  }
+
+  @Get('stats')
+  async getStats() {
+    return await this.service.getNotificationStats(this.ctxt.user.id);
   }
 }

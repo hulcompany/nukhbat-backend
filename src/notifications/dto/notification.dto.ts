@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { UUID } from 'crypto';
 import { BasePaginationDto } from 'core';
 
@@ -25,3 +31,11 @@ export class SendNotificationDto {
 }
 
 export class NotificationGetDto extends BasePaginationDto {}
+
+export class StatsDto {
+  @IsUUID('4', { each: true })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsNotEmpty()
+  ids: UUID[];
+}

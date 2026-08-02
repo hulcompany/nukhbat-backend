@@ -1,16 +1,15 @@
-// firebase/firebase.service.ts
-
 import { Injectable } from '@nestjs/common';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getMessaging } from 'firebase-admin/messaging';
+import { getMessaging, Messaging } from 'firebase-admin/messaging';
 
 @Injectable()
 export class FirebaseService {
-  private messaging;
+  private messaging: Messaging;
 
   constructor() {
     if (!getApps().length) {
       const sc = require('../../service-account.json');
+
       initializeApp({
         credential: cert(sc),
       });
@@ -19,7 +18,7 @@ export class FirebaseService {
     this.messaging = getMessaging();
   }
 
-  getFirestore() {
+  getMessaging(): Messaging {
     return this.messaging;
   }
 }
