@@ -55,7 +55,14 @@ export class LearningCurriculumService {
               AND la."studentId" = $3
               AND la."schoolId"  = $1
               AND la.completed   = true
-          ) AS passed
+          ) AS passed,
+          (
+            SELECT COUNT(*)::int
+            FROM "lesson_attempt" la
+            WHERE la."lessonId"  = l.id
+              AND la."studentId" = $3
+              AND la."schoolId"  = $1
+          ) AS attempts_count
         FROM "lesson" l
         WHERE l."schoolId" = $1
           AND l.status = 'published'
@@ -72,7 +79,8 @@ export class LearningCurriculumService {
                 'id',             ld.id,
                 'name',           ld.title,
                 'questionLength', ld.question_length,
-                'passed',         ld.passed
+                'passed',         ld.passed,
+                'attemptsCount',  ld.attempts_count
               ) ORDER BY ld.idx
             ) FILTER (WHERE ld.id IS NOT NULL),
             '[]'::json
