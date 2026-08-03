@@ -4,9 +4,11 @@ import { SaveQuestionDto } from './dto/saved-question.dto';
 import { Context, ReqContext } from '../../context';
 import { JwtGuardStrict } from '../../core';
 import { SubscriptionGuard } from '../../subscription/guard/subscription.guard';
+import { StrictValidation } from '../../common';
 
 @Controller('learning/saved-questions')
 @UseGuards(JwtGuardStrict, SubscriptionGuard())
+@StrictValidation()
 export class SavedQuestionController {
   constructor(
     private readonly service: SavedQuestionService,

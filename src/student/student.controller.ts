@@ -101,7 +101,7 @@ export class StudentController {
   }
 
   @Get('school/aggregate/activity')
-  @UseGuards(RoleGuard([RoleType.admin]), SchoolOwnerGuard)
+  @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async aggregateMineStudentsActivity() {
     return await this.profiles.weeklyOpenedStudents(
       new Date(),
