@@ -17,6 +17,9 @@ import { QuestionType } from '../entity/enum/question.type';
 import { QuestionPurpose } from '../entity/enum/question-purpose.type';
 import { QuestionOptionDto } from './question-option.dto';
 import { QuestionMatchDto } from './question-match.dto';
+import { QuestionClassifyDto } from './question-classify.dto';
+import { QuestionOrderDto } from './question-order.dto';
+import { QuestionFillBlankDto } from './question-blank.dto';
 
 export class QuestionCreateDto {
   @IsString()
@@ -39,7 +42,10 @@ export class QuestionCreateDto {
   @IsUUID()
   courseId?: UUID;
 
-  @ValidateIf((o) => o.type === QuestionType.OPTIONS)
+  @ValidateIf(
+    (o) =>
+      o.type === QuestionType.OPTIONS || o.type === QuestionType.multiOptions,
+  )
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => QuestionOptionDto)
@@ -52,6 +58,27 @@ export class QuestionCreateDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionMatchDto)
   matchingItems?: QuestionMatchDto[];
+
+  @ValidateIf((o) => o.type === QuestionType.classify)
+  @IsArray()
+  @ArrayMinSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => QuestionClassifyDto)
+  classify?: QuestionClassifyDto[];
+
+  @ValidateIf((o) => o.type === QuestionType.order)
+  @IsArray()
+  @ArrayMinSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => QuestionClassifyDto)
+  orders?: QuestionOrderDto[];
+
+  @ValidateIf((o) => o.type === QuestionType.fillBlanks)
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => QuestionFillBlankDto)
+  fillBlanks?: QuestionFillBlankDto[];
 
   // trueFalse questions carry their whole answer key here — the service
   // materializes the two option rows from it

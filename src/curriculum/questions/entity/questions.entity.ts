@@ -15,6 +15,9 @@ import { QuestionMatch } from './question-match.entity';
 import { QuestionType } from './enum/question.type';
 import { QuestionPurpose } from './enum/question-purpose.type';
 import { School } from '../../../school/entity/school.entity';
+import { QuestionClassify } from './question-class.entity';
+import { QuestionOrder } from './question-order.entity';
+import { QuestionFillBlank } from './question-fill-blank.entity';
 
 @Entity()
 @Check(
@@ -65,6 +68,14 @@ export class Question {
   })
   options: QuestionOption[];
 
+  @OneToMany(() => QuestionClassify, (o) => o.question, {
+    eager: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'RESTRICT',
+    cascade: ['remove', 'soft-remove', 'insert'],
+  })
+  classifyItems: QuestionClassify[];
+
   @OneToMany(() => QuestionMatch, (m) => m.question, {
     eager: true,
     onDelete: 'RESTRICT',
@@ -72,6 +83,22 @@ export class Question {
     cascade: ['remove', 'soft-remove', 'insert'],
   })
   matchingItems: QuestionMatch[];
+
+  @OneToMany(() => QuestionOrder, (m) => m.question, {
+    eager: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'RESTRICT',
+    cascade: ['remove', 'soft-remove', 'insert'],
+  })
+  orderItems: QuestionOrder[];
+
+  @OneToMany(() => QuestionFillBlank, (m) => m.question, {
+    eager: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'RESTRICT',
+    cascade: ['remove', 'soft-remove', 'insert'],
+  })
+  fillBlanks: QuestionFillBlank[];
 
   @Column('uuid', { nullable: true })
   imageId?: UUID | null;
