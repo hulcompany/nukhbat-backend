@@ -6,5 +6,7 @@ interface QuestionFillBlanksAnswer {
 
 interface QuestionFillBlanksVerdict {
   index: number;
-  answer: string[];
+  answer?: string;
+  correctAnswer: string[],
+  verdict: boolean
 }

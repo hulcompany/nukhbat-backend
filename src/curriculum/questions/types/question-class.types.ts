@@ -8,6 +8,6 @@ export interface QuestionClassAnswer {
 
 export interface QuestionClassVerdict {
   verdict: boolean;
-  answered?: { category: QuestionClassify; items: QuestionClassify[] }[];
-  correctAnswer?: { category: QuestionClassify; items: QuestionClassify[] }[];
+  answered?: { category: QuestionClassify; items: QuestionClassify[] };
+  correctAnswer?: { category: QuestionClassify; items: QuestionClassify[] };
 }

@@ -2,13 +2,11 @@ import { UUID } from 'crypto';
 import {
   Column,
   Entity,
-  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
   RelationId,
 } from 'typeorm';
-import { Question } from './questions.entity';
-import { School } from '../../../school/entity/school.entity';
+import { QuestionOptionGroup } from './question-options-group.entity';
 
 @Entity()
 export class QuestionOption {
@@ -21,15 +19,11 @@ export class QuestionOption {
   @Column()
   isCorrect: boolean;
 
-  @ManyToOne(() => Question, (q) => q.options, { onDelete: 'CASCADE' })
-  question: Question;
+  @ManyToOne(() => QuestionOptionGroup, (o) => o.options, {
+    onDelete: 'CASCADE',
+  })
+  group: QuestionOptionGroup;
 
-  @RelationId((o: QuestionOption) => o.question)
-  questionId: UUID;
-
-  @ManyToOne(() => School)
-  school: School;
-
-  @RelationId((o: QuestionOption) => o.school)
-  schoolId: UUID;
+  @RelationId((o: QuestionOption) => o.group)
+  groupId: UUID;
 }

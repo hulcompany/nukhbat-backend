@@ -3,23 +3,24 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { QuestionMatch } from './entity/question-match.entity';
+import { QuestionMatch } from '.././entity/question-match.entity';
 import {
   QuestionMatchAnswer,
   QuestionMatchVerdict,
-} from './types/question-match.types';
+} from './../types/question-match.types';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
-import { QuestionComponentService } from './question-component.service';
-import { QuestionMatchDto } from './dto/question-match.dto';
-import { QuestionMatchType } from './entity/enum/question-match.type';
+import { QuestionComponentService } from '.././components/question-component.service';
+import { QuestionMatchType } from '.././entity/enum/question-match.type';
+import { QuestionMatchDto } from '../dto/question-match.dto';
+import { Question } from '../entity/questions.entity';
 
 @Injectable()
 class QuestionMatchService extends QuestionComponentService {
   constructor(private readonly ds: DataSource) {
     super();
   }
-  validate(matches: QuestionMatch[]) {
+  validate(matches: QuestionMatchDto[]) {
     let matchCount = matches.filter(
       (e) => e.type == QuestionMatchType.match,
     ).length;
@@ -46,11 +47,8 @@ class QuestionMatchService extends QuestionComponentService {
       usedIndicies.push(matches[i].correctIndex!);
     }
   }
-  async verdict(id: UUID, answer: QuestionMatchAnswer[]) {
-    const data = await this.ds.getRepository(QuestionMatch).find({
-      where: { questionId: id },
-      order: { index: 'ASC' },
-    });
+  async verdict(question: Question, answer: QuestionMatchAnswer[]) {
+    const data = question.matchingItems;
 
     const bases = data.filter((e) => e.type === QuestionMatchType.base);
 
@@ -104,11 +102,23 @@ class QuestionMatchService extends QuestionComponentService {
 
     return verdicts;
   }
-  async create(data: QuestionMatch[], em?: EntityManager) {
+  async create(
+    data: { id: UUID; schoolId: UUID; matches: QuestionMatchDto[] },
+    em?: EntityManager,
+  ) {
     let repo =
       em?.getRepository(QuestionMatch) || this.ds.getRepository(QuestionMatch);
-    this.validate(data);
-    await repo.insert(data);
+    this.validate(data.matches);
+    await repo.insert(
+      data.matches.map((e, i) => ({
+        questionId: data.id,
+        schoolId: data.schoolId,
+        index: i,
+        correctIndex: e.correctIndex,
+        type: e.type,
+        text: e.text,
+      })),
+    );
   }
   async deleteByIds(ids: UUID[], em?: EntityManager) {
     let repo =

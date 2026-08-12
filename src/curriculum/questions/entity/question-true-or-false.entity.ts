@@ -19,7 +19,7 @@ export class QuestionTrueOrFalse {
   @Column('boolean')
   value: boolean;
 
-  @OneToOne(() => Question, (q) => q.matchingItems, { onDelete: 'CASCADE' })
+  @OneToOne(() => Question, (q) => q.trueOrFalse, { onDelete: 'CASCADE' })
   question: Question;
 
   @RelationId((m: QuestionTrueOrFalse) => m.question)

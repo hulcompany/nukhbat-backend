@@ -5,5 +5,6 @@ export enum QuestionType {
   order = 'order',
   multiOptions = 'multiOptions',
   fillBlanks = 'fillBlanks',
+  fillBlanksChoices = 'fillBlanksChoices',
   classify = 'classify',
 }

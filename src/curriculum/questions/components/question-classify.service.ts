@@ -6,13 +6,14 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { QuestionComponentService } from './question-component.service';
-import { QuestionClassifyType } from './entity/enum/question-classify.type';
+import { QuestionClassifyDto } from '../dto/question-classify.dto';
+import { QuestionClassifyType } from '../entity/enum/question-classify.type';
+import { QuestionClassify } from '../entity/question-class.entity';
 import {
   QuestionClassAnswer,
   QuestionClassVerdict,
-} from './types/question-class.types';
-import { QuestionClassify } from './entity/question-class.entity';
-import { QuestionClassifyDto } from './dto/question-classify.dto';
+} from '../types/question-class.types';
+import { Question } from '../entity/questions.entity';
 
 @Injectable()
 export class QuestionClassifyService extends QuestionComponentService {
@@ -87,18 +88,8 @@ export class QuestionClassifyService extends QuestionComponentService {
     await repo.delete(ids);
   }
 
-  async verdict(
-    id: UUID,
-    answer: QuestionClassAnswer[],
-  ): Promise<QuestionClassVerdict> {
-    const data = await this.ds.getRepository(QuestionClassify).find({
-      where: {
-        questionId: id,
-      },
-      order: {
-        index: 'ASC',
-      },
-    });
+  async verdict(question: Question, answer: QuestionClassAnswer[]) {
+    const data = question.classifyItems;
 
     const items = data.filter((e) => e.type === QuestionClassifyType.item);
 
@@ -106,72 +97,32 @@ export class QuestionClassifyService extends QuestionComponentService {
       (e) => e.type === QuestionClassifyType.category,
     );
 
-    const answered: {
-      category: QuestionClassify;
-      items: QuestionClassify[];
-    }[] = [];
+    let res: QuestionClassVerdict[] = [];
 
-    // validate student answer
-    for (const categoryAnswer of answer ?? []) {
-      const category = categories.find(
-        (e) => e.id === categoryAnswer.categoryId,
+    for (const cat of data.filter(
+      (e) => e.type == QuestionClassifyType.category,
+    )) {
+      let a = answer
+        .filter((e) => e.categoryId == cat.id)
+        .flatMap((e) => e.items);
+      let correctItems = data.filter(
+        (e) => e.correctCategoryIndex == cat.index,
       );
+      let answeredItems = data
+        .filter((e) => a.includes(e.id))
+        .filter((e) => e.type == QuestionClassifyType.item);
+      let answeredItemsIds = new Set(answeredItems.map((e) => e.id));
 
-      if (!category) {
-        throw new NotFoundException('Category not found');
-      }
+      let verdict =
+        answeredItems.length == correctItems.length &&
+        correctItems.every((e) => answeredItemsIds.has(e.id));
 
-      const categoryItems: QuestionClassify[] = [];
-
-      for (const itemId of categoryAnswer.items ?? []) {
-        const item = items.find((e) => e.id === itemId);
-
-        if (!item) {
-          throw new NotFoundException('Item not found');
-        }
-
-        categoryItems.push(item);
-      }
-
-      answered.push({
-        category,
-        items: categoryItems,
+      res.push({
+        verdict: verdict,
+        answered: { category: cat, items: answeredItems },
+        correctAnswer: { category: cat, items: correctItems },
       });
     }
-
-    const correctAnswer = categories.map((category) => ({
-      category,
-      items: items.filter(
-        (item) => item.correctCategoryIndex === category.index,
-      ),
-    }));
-
-    const answeredMap = new Map<UUID, QuestionClassify[]>();
-
-    for (const answerGroup of answered) {
-      answeredMap.set(answerGroup.category.id, answerGroup.items);
-    }
-
-    const verdict = items.every((item) => {
-      const correctCategory = categories.find(
-        (category) => category.index === item.correctCategoryIndex,
-      );
-
-      if (!correctCategory) {
-        return false;
-      }
-
-      const studentCategoryItems = answeredMap.get(correctCategory.id) ?? [];
-
-      return studentCategoryItems.some(
-        (studentItem) => studentItem.id === item.id,
-      );
-    });
-
-    return {
-      verdict,
-      answered,
-      correctAnswer,
-    };
+    return res;
   }
 }

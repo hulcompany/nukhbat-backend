@@ -5,13 +5,13 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
-import { QuestionComponentService } from './question-component.service';
-import { QuestionTrueOrFalse } from './entity/question-true-or-false.entity';
+import { QuestionComponentService } from '.././components/question-component.service';
+import { QuestionTrueOrFalse } from '.././entity/question-true-or-false.entity';
 import {
   TrueOrFalseAnswer,
   TrueOrFalseVerdict,
-} from './types/question-true-or-false.types';
-import { Question } from './entity/questions.entity';
+} from '.././types/question-true-or-false.types';
+import { Question } from '.././entity/questions.entity';
 
 @Injectable()
 export class QuestionTrueOrFalseService extends QuestionComponentService {
@@ -26,22 +26,10 @@ export class QuestionTrueOrFalseService extends QuestionComponentService {
   }
 
   async verdict(
-    id: UUID,
+    question: Question,
     answer: TrueOrFalseAnswer,
   ): Promise<TrueOrFalseVerdict> {
-    let q = await this.ds.getRepository(Question).findOne({
-      where: {
-        id,
-      },
-    });
-    if (!q) {
-      throw new NotFoundException('Question Not Found');
-    }
-    const data = await this.ds.getRepository(QuestionTrueOrFalse).findOne({
-      where: {
-        questionId: id,
-      },
-    });
+    const data = question.trueOrFalse;
     const correctAnswer = data!.value;
 
     return {

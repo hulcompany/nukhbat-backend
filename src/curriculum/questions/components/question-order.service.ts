@@ -6,13 +6,13 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 
-import { QuestionComponentService } from './question-component.service';
-import { QuestionOrder } from './entity/question-order.entity';
+import { QuestionComponentService } from '.././components/question-component.service';
+import { QuestionOrder } from '.././entity/question-order.entity';
 import {
   QuestionOrderAnswer,
   QuestionOrderVerdict,
-} from './types/question-order.types';
-import { QuestionOrderDto } from './dto/question-order.dto';
+} from '.././types/question-order.types';
+import { QuestionOrderDto } from '.././dto/question-order.dto';
 
 @Injectable()
 export class QuestionOrderService extends QuestionComponentService {

@@ -5,12 +5,12 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   RelationId,
 } from 'typeorm';
 import { Course } from '../../course/entity/course.entity';
 import { Lesson } from '../../lessons/entity/lesson.entity';
-import { QuestionOption } from './question-options.entity';
 import { QuestionMatch } from './question-match.entity';
 import { QuestionType } from './enum/question.type';
 import { QuestionPurpose } from './enum/question-purpose.type';
@@ -18,6 +18,8 @@ import { School } from '../../../school/entity/school.entity';
 import { QuestionClassify } from './question-class.entity';
 import { QuestionOrder } from './question-order.entity';
 import { QuestionFillBlank } from './question-fill-blank.entity';
+import { QuestionOptionGroup } from './question-options-group.entity';
+import { QuestionTrueOrFalse } from './question-true-or-false.entity';
 
 @Entity()
 @Check(
@@ -60,14 +62,21 @@ export class Question {
   @RelationId((q: Question) => q.course)
   courseId: UUID | null;
 
-  @OneToMany(() => QuestionOption, (o) => o.question, {
+  @OneToMany(() => QuestionOptionGroup, (o) => o.question, {
     eager: true,
     onDelete: 'RESTRICT',
     onUpdate: 'RESTRICT',
     cascade: ['remove', 'soft-remove', 'insert'],
   })
-  options: QuestionOption[];
+  optionsGroups: QuestionOptionGroup[];
 
+  @OneToOne(() => QuestionTrueOrFalse, (o) => o.question, {
+    eager: true,
+    onDelete: 'RESTRICT',
+    onUpdate: 'RESTRICT',
+    cascade: ['remove', 'soft-remove', 'insert'],
+  })
+  trueOrFalse: QuestionTrueOrFalse;
   @OneToMany(() => QuestionClassify, (o) => o.question, {
     eager: true,
     onDelete: 'RESTRICT',

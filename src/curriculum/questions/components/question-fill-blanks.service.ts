@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
-
 import { QuestionComponentService } from './question-component.service';
-import { QuestionFillBlank } from './entity/question-fill-blank.entity';
-import { QuestionFillBlankDto } from './dto/question-blank.dto';
+import { QuestionFillBlankDto } from '../dto/question-blank.dto';
+import { QuestionFillBlank } from '../entity/question-fill-blank.entity';
+
 
 @Injectable()
 export class QuestionFillBlankService extends QuestionComponentService {
@@ -83,7 +83,6 @@ export class QuestionFillBlankService extends QuestionComponentService {
     answer: QuestionFillBlanksAnswer[],
   ): Promise<QuestionFillBlanksVerdict[]> {
     const repo = this.ds.getRepository(QuestionFillBlank);
-
     const blanks = await repo.find({
       where: {
         questionId: id,
@@ -92,37 +91,16 @@ export class QuestionFillBlankService extends QuestionComponentService {
         index: 'ASC',
       },
     });
-
     const result: QuestionFillBlanksVerdict[] = [];
-
-    for (const studentAnswer of answer ?? []) {
-      const blank = blanks.find((e) => e.index === studentAnswer.index);
-
-      if (!blank) {
-        throw new NotFoundException('Blank not found');
-      }
-
+    for (const blank of blanks) {
+      let a = answer.find((e) => e.index);
       result.push({
+        answer: a?.answer,
+        correctAnswer: blank.answers,
         index: blank.index,
-        answer: blank.answers,
+        verdict: blank.answers.includes(a?.answer || ''),
       });
     }
-
     return result;
-  }
-
-  checkVerdict(
-    answer: QuestionFillBlanksAnswer[],
-    correct: QuestionFillBlank[],
-  ): boolean {
-    return correct.every((blank) => {
-      const student = answer.find((e) => e.index === blank.index);
-
-      if (!student) {
-        return false;
-      }
-
-      return blank.answers.includes(student.answer);
-    });
   }
 }
