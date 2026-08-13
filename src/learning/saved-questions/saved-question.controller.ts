@@ -1,13 +1,13 @@
 import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
 import { SavedQuestionService } from './saved-question.service';
 import { SaveQuestionDto } from './dto/saved-question.dto';
-import { Context, ReqContext } from '../../context';
-import { JwtGuardStrict } from '../../core';
+import { Context } from '../../context';
+import { JwtGuardStrict, RoleGuard, RoleType } from '../../core';
 import { SubscriptionGuard } from '../../subscription/guard/subscription.guard';
 import { StrictValidation } from '../../common';
 
 @Controller('learning/saved-questions')
-@UseGuards(JwtGuardStrict, SubscriptionGuard())
+@UseGuards(JwtGuardStrict, RoleGuard([RoleType.student]), SubscriptionGuard())
 @StrictValidation()
 export class SavedQuestionController {
   constructor(
@@ -30,6 +30,6 @@ export class SavedQuestionController {
 
   @Get()
   async getSaved() {
-    return await this.service.findAll(this.ctxt.student!.id);
+    return this.service.getSaved(this.ctxt.student.id);
   }
 }

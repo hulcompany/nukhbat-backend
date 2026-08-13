@@ -15,3 +15,13 @@ export interface QuestionVerdict {
   isSkipped: boolean;
   result: any;
 }
+
+
+export interface QuestionVerdictResult {
+  verdicts: QuestionVerdict[];
+  correct: number;
+  total: number;
+  skipped: number;
+  score: number;
+  passed: boolean;
+}

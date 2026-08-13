@@ -29,7 +29,7 @@
   "experimentalDecorators": true,
   "include": [
     "src/**/*"
-  ],
+, "website/student-website"  ],
   "exclude": [
     "node_modules",
     "**/*.spec.ts",

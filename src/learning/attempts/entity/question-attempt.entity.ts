@@ -7,8 +7,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { StudentProfile } from '../../../student/entity/student-profile.entity';
 import { LessonAttempt } from './lesson-attempt.entity';
+import { StudentProfile } from '../../../student/entity/student-profile.entity';
 import { Question, QuestionType, QuestionVerdict } from '../../../curriculum';
 
 // One row per graded question within a LessonAttempt — the granular trace.
@@ -19,7 +19,6 @@ import { Question, QuestionType, QuestionVerdict } from '../../../curriculum';
 // A question deleted mid-flight (between /start and /solve) is skipped at
 // persist — no row here — but still counted in the LessonAttempt totals + XP.
 @Entity()
-// "how has this student done on this question" — mastery over time
 @Index(['studentId', 'questionId'])
 export class QuestionAttempt {
   @PrimaryGeneratedColumn('uuid')
@@ -57,8 +56,6 @@ export class QuestionAttempt {
   @Column({ type: 'enum', enum: QuestionType })
   questionType: QuestionType;
 
-  // --- marks (frozen at solve) ---
-  // this question's raw score / max (for MATCH, partial: correct pairs / total)
   @Column('int')
   score: number;
 

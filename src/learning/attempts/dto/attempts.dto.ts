@@ -6,7 +6,7 @@ import { UUID } from 'crypto';
 
 // School-facing attempt filter: the owner may narrow to a single student and/or
 // completion state. schoolId is forced from the context, not the query.
-export class AttemptGetDto extends BasePaginationDto {
+export class AttemptsGetDto extends BasePaginationDto {
   @IsOptional()
   @IsUUID()
   studentId?: UUID;
@@ -24,6 +24,6 @@ export class AttemptGetDto extends BasePaginationDto {
 
 // Student-facing: studentId is forced from the context — a real class (not a TS
 // Omit<>) so ValidationPipe still whitelists the query.
-export class AttemptStudentGetDto extends OmitType(AttemptGetDto, [
+export class AttemptStudentGetDto extends OmitType(AttemptsGetDto, [
   'studentId',
 ] as const) {}

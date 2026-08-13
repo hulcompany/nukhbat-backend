@@ -18,4 +18,5 @@ export const AppConfig = {
   XP_FACTOR: [15, 10, 5],
   UNIT_XP: 100,
   UNIT_GEMS: 50,
+  DAILY_CHALLENGE_XPS: 30,
 };

@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { QuestionAttempt } from './question-attempt.entity';
 import { StudentProfile } from '../../../student/entity/student-profile.entity';
-import { Lesson, Track } from '../../../curriculum';
+import { Lesson, QuestionVerdictResult, Track } from '../../../curriculum';
 import { Course } from '../../../curriculum/course/entity/course.entity';
 
 // One row per /solve. The self-contained review record: its marks and title
@@ -47,15 +47,9 @@ export class LessonAttempt {
   @Column('uuid')
   lessonId: UUID;
 
-  // --- scope, denormalized as plain uuid (copied from the profile/curriculum
-  // at solve time; no FK, so rollups survive a curriculum reorg) ---
   @Column('uuid')
   schoolId: UUID;
 
-  // track/course are also exposed as FK-less relations so reads can populate
-  // them off the denormalized ids. createForeignKeyConstraints:false keeps the
-  // "no FK, survives a curriculum reorg" guarantee — the id columns below stay
-  // the source of truth, the relations are read-only join sugar.
   @ManyToOne(() => Track, { createForeignKeyConstraints: false })
   track: Track;
 
@@ -96,14 +90,14 @@ export class LessonAttempt {
   @Column('boolean')
   completed: boolean;
 
-  // XP this attempt actually granted (0 once the lesson was already completed
-  // once). The ledger stays the source of truth; this is denormalized for
-  // review display.
   @Column('int', { default: 0 })
   xpAwarded: number;
 
   @OneToMany(() => QuestionAttempt, (v) => v.lessonAttempt)
   questionAttempts: QuestionAttempt[];
+
+  @Column('jsonb')
+  result: QuestionVerdictResult;
 
   @CreateDateColumn()
   createdAt: Date;

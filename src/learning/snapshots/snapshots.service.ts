@@ -1,13 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { randomUUID, UUID } from 'crypto';
+import { Question } from '../../curriculum/questions/entity/questions.entity';
+import {
+  QuestionSnapshot,
+  QuestionSnapshotContext,
+} from './types/question-snapshot.type';
 import { AppConfig } from '../../conf';
-import { QuestionSnapshot } from './types/question-snapshot.type';
 
-// Redis-backed store for the frozen lesson snapshots that bridge /start and
-// /solve. Each snapshot is the answer-key-bearing copy of a lesson's questions;
-// /solve grades against it, then removes it. TTL-bounded so abandoned attempts
-// clean themselves up.
+// const SNAPSHOT_TTL_SECONDS = 24 * 60 * 60;
+
+// Redis-backed store for frozen question snapshots.
 @Injectable()
 export class SnapshotsService {
   constructor(
@@ -20,14 +23,20 @@ export class SnapshotsService {
     return `qsnap:${snapshotId}`;
   }
 
-  // freeze a snapshot under a fresh id and return it; the caller hands the id
-  // to the client, which passes it back on /solve. Expires after
-  // LESSON_SNAPSHOT_TTL_SEC.
-  async addQuestionSnapshot(data: QuestionSnapshot): Promise<UUID> {
+  async addQuestionSnapshot(
+    questions: Question[],
+    context: QuestionSnapshotContext,
+  ): Promise<UUID> {
     const snapshotId = randomUUID();
+    const snapshot: QuestionSnapshot = {
+      id: snapshotId,
+      questions,
+      ...context,
+      createdAt: new Date().toISOString(),
+    };
     await this.redis.set(
       this.key(snapshotId),
-      JSON.stringify(data),
+      JSON.stringify(snapshot),
       'EX',
       AppConfig.LESSON_SNAPSHOT_TTL_SEC,
     );

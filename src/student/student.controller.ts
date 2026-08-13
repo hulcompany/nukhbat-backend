@@ -20,6 +20,7 @@ import {
 import { UUID } from 'crypto';
 import { SchoolOwnerGuard } from '../school/guards/school-owner.guard';
 import { StudentService } from './student.service';
+import { StudentAggragationService } from './student-aggregation.service';
 
 @Controller('student')
 @UseGuards(JwtGuardStrict)
@@ -27,6 +28,7 @@ import { StudentService } from './student.service';
 export class StudentController {
   constructor(
     private readonly profiles: StudentService,
+    private readonly aggregate: StudentAggragationService,
     private readonly ctxt: Context,
   ) {}
 
@@ -43,7 +45,7 @@ export class StudentController {
   @Get('statistics')
   @UseGuards(RoleGuard([RoleType.student]), StudentGuard())
   async getMyStatistics() {
-    return await this.profiles.getStatistics(this.ctxt.student.id);
+    return await this.aggregate.getStatistics(this.ctxt.student.id);
   }
 
   @Get('school')
@@ -97,13 +99,13 @@ export class StudentController {
   @Get('admin/aggregate/activity')
   @UseGuards(RoleGuard([RoleType.admin]))
   async aggregateAllStudentsActivity() {
-    return await this.profiles.weeklyOpenedStudents(new Date());
+    return await this.aggregate.weeklyOpenedStudents(new Date());
   }
 
   @Get('school/aggregate/activity')
   @UseGuards(RoleGuard([RoleType.contentWriter]), SchoolOwnerGuard)
   async aggregateMineStudentsActivity() {
-    return await this.profiles.weeklyOpenedStudents(
+    return await this.aggregate.weeklyOpenedStudents(
       new Date(),
       this.ctxt.school.id,
     );

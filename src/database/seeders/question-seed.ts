@@ -2,50 +2,42 @@ import { DataSource } from 'typeorm';
 import { QuestionType } from '../../curriculum/questions/entity/enum/question.type';
 import { QuestionPurpose } from '../../curriculum/questions/entity/enum/question-purpose.type';
 import { QuestionMatchType } from '../../curriculum/questions/entity/enum/question-match.type';
+import { QuestionClassifyType } from '../../curriculum/questions/entity/enum/question-classify.type';
+import { QuestionFillBlankService } from '../../curriculum/questions/components/question-fill-blanks.service';
 
-// Questions are school-scoped and come in two flavours:
-//  - lesson questions  (lessonId set, purpose=lesson)
-//  - daily-challenge pool (courseId set, purpose=dailyChallenge)
-// Every question gets one of each of the three types so all solving paths
-// have data.
+const QUESTION_TYPES = Object.values(QuestionType);
+
+// Every lesson and daily-challenge course pool receives all question types.
 export async function seedQuestions(ds: DataSource) {
   const lessonRepo = ds.getRepository('Lesson');
   const courseRepo = ds.getRepository('Course');
 
-  // 3 questions (one per type) on the first lesson of every unit
-  const lessons = await lessonRepo.find({ where: { index: 1 } });
+  const lessons = await lessonRepo.find();
   for (const lesson of lessons) {
-    for (let i = 1; i <= 3; i++) {
+    for (const type of QUESTION_TYPES) {
       await seedQuestion(ds, {
         schoolId: lesson.schoolId,
         lessonId: lesson.id,
-        title: `سؤال ${i} - ${lesson.title}`,
-        type: pickType(i),
+        context: lesson.title,
+        type,
       });
     }
   }
 
-  // daily-challenge pool: 4 questions per course for the default school
   const school = await ds
     .getRepository('School')
     .findOne({ where: { default: true } });
   const courses = await courseRepo.find();
   for (const course of courses) {
-    for (let i = 1; i <= 4; i++) {
+    for (const type of QUESTION_TYPES) {
       await seedQuestion(ds, {
         schoolId: school!.id,
         courseId: course.id,
-        title: `سؤال التحدي اليومي ${i} - ${course.title}`,
-        type: pickType(i),
+        context: `Daily challenge - ${course.title}`,
+        type,
       });
     }
   }
-}
-
-function pickType(i: number): QuestionType {
-  if (i % 3 === 0) return QuestionType.MATCH;
-  if (i % 3 === 2) return QuestionType.TRUE_FALSE;
-  return QuestionType.OPTIONS;
 }
 
 async function seedQuestion(
@@ -54,12 +46,12 @@ async function seedQuestion(
     schoolId: string;
     lessonId?: string;
     courseId?: string;
-    title: string;
+    context: string;
     type: QuestionType;
   },
 ) {
   const question = await ds.getRepository('Question').save({
-    title: params.title,
+    title: questionText(params.type, params.context),
     type: params.type,
     purpose: params.lessonId
       ? QuestionPurpose.lesson
@@ -70,19 +62,19 @@ async function seedQuestion(
   });
 
   if (params.type === QuestionType.OPTIONS) {
-    const correct = Math.floor(Math.random() * 4);
+    const correct = 1;
     await ds.getRepository('QuestionOptionGroup').save({
       index: 0,
       question: { id: question.id },
       school: { id: params.schoolId },
       options: Array.from({ length: 4 }, (_, index) => ({
-        text: `الخيار ${index + 1}`,
+        text: `Option ${index + 1}`,
         isCorrect: index === correct,
       })),
     });
   } else if (params.type === QuestionType.TRUE_FALSE) {
     await ds.getRepository('QuestionTrueOrFalse').save({
-      value: Math.random() < 0.5,
+      value: true,
       question: { id: question.id },
       school: { id: params.schoolId },
     });
@@ -92,7 +84,7 @@ async function seedQuestion(
     // the match row sitting at index i
     for (let i = 0; i < 3; i++) {
       await matchRepo.save({
-        text: `الإجابة ${i + 1}`,
+        text: `Answer ${i + 1}`,
         type: QuestionMatchType.match,
         index: i,
         correctIndex: null,
@@ -102,7 +94,7 @@ async function seedQuestion(
     }
     for (let i = 0; i < 3; i++) {
       await matchRepo.save({
-        text: `العنصر ${i + 1}`,
+        text: `Item ${i + 1}`,
         type: QuestionMatchType.base,
         index: 3 + i,
         correctIndex: i,
@@ -110,5 +102,83 @@ async function seedQuestion(
         school: { id: params.schoolId },
       });
     }
+  } else if (params.type === QuestionType.classify) {
+    await ds.getRepository('QuestionClassify').save([
+      {
+        text: 'Fruit',
+        type: QuestionClassifyType.category,
+        index: 0,
+        correctCategoryIndex: null,
+        question: { id: question.id },
+        school: { id: params.schoolId },
+      },
+      {
+        text: 'Vehicle',
+        type: QuestionClassifyType.category,
+        index: 1,
+        correctCategoryIndex: null,
+        question: { id: question.id },
+        school: { id: params.schoolId },
+      },
+      ...['Apple', 'Banana'].map((text, position) => ({
+        text,
+        type: QuestionClassifyType.item,
+        index: position + 2,
+        correctCategoryIndex: 0,
+        question: { id: question.id },
+        school: { id: params.schoolId },
+      })),
+      ...['Car', 'Bus'].map((text, position) => ({
+        text,
+        type: QuestionClassifyType.item,
+        index: position + 4,
+        correctCategoryIndex: 1,
+        question: { id: question.id },
+        school: { id: params.schoolId },
+      })),
+    ]);
+  } else if (params.type === QuestionType.order) {
+    await ds.getRepository('QuestionOrder').save(
+      ['Wake up', 'Study', 'Sleep'].map((text, sort) => ({
+        text,
+        sort,
+        question: { id: question.id },
+        school: { id: params.schoolId },
+      })),
+    );
+  } else if (params.type === QuestionType.fillBlanks) {
+    const blanks = [
+      { index: 0, answers: ['Damascus'] },
+      { index: 1, answers: ['Syria'] },
+    ];
+    new QuestionFillBlankService(ds).validate({
+      text: question.title,
+      data: blanks,
+    });
+    await ds.getRepository('QuestionFillBlank').save(
+      blanks.map((blank) => ({
+        ...blank,
+        question: { id: question.id },
+        school: { id: params.schoolId },
+      })),
+    );
+  }
+}
+
+function questionText(type: QuestionType, context: string) {
+  const prefix = `**Testing answer is shown below**\n\n${context}\n\n`;
+  switch (type) {
+    case QuestionType.OPTIONS:
+      return `${prefix}Answer: option 2. Select option 2.`;
+    case QuestionType.TRUE_FALSE:
+      return `${prefix}Answer: true. The Earth revolves around the Sun.`;
+    case QuestionType.MATCH:
+      return `${prefix}Answers: item 1 → answer 1, item 2 → answer 2, item 3 → answer 3.`;
+    case QuestionType.classify:
+      return `${prefix}Answers: Fruit → Apple, Banana; Vehicle → Car, Bus.`;
+    case QuestionType.order:
+      return `${prefix}Answer order: Wake up → Study → Sleep.`;
+    case QuestionType.fillBlanks:
+      return `${prefix}Answers: Damascus, Syria. {{textField: {width: 140, contentLength: 8, index: 0}}} is the capital of {{textField: {width: 120, contentLength: null, index: 1}}}.`;
   }
 }

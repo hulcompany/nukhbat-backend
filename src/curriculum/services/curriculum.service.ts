@@ -190,8 +190,8 @@ export class CurriculumService {
 
   // Seam for the student attempt flow: freezes a lesson's content once a
   // student has an attempt on it. Not reachable from the school facade.
-  markLessonUsed(lessonId: UUID, em?: EntityManager) {
-    return this.lessonService.markAsUsed(lessonId, em);
+  async markLessonUsed(lessonId: UUID, em?: EntityManager) {
+    return await this.lessonService.markAsUsed(lessonId, em);
   }
 
   getQuestionsByCriteria(params: {

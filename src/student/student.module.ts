@@ -4,13 +4,14 @@ import { StudentProfile } from './entity/student-profile.entity';
 import { StudentController } from './student.controller';
 import { SchoolModule } from '../school/school.module';
 import { StudentService } from './student.service';
+import { StudentAggragationService } from './student-aggregation.service';
 
 require('./errors');
 
 @Module({
   imports: [TypeOrmModule.forFeature([StudentProfile]), SchoolModule],
   controllers: [StudentController],
-  exports: [StudentService],
-  providers: [StudentService],
+  exports: [StudentService, StudentAggragationService],
+  providers: [StudentService, StudentAggragationService],
 })
 export class StudentModule {}

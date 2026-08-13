@@ -37,7 +37,11 @@ import { QuestionMatchService } from './components/question-match.service';
 import { QuestionOrderService } from './components/question-order.service';
 import { QuestionTrueOrFalseService } from './components/question-true-or-false.service';
 import { QuestionComponentService } from './components/question-component.service';
-import { QuestionMap, QuestionVerdict } from './types/question-verdict.type';
+import {
+  QuestionMap,
+  QuestionVerdict,
+  QuestionVerdictResult,
+} from './types/question-verdict.type';
 
 type QuestionImages = {
   question?: Express.Multer.File | null;
@@ -290,7 +294,9 @@ export class QuestionService {
     return this.deleteNew(params, opts?.em, opts?.skipGuards);
   }
 
-  async checkAnswerHelper(params: QuestionMap[]) {
+  async checkAnswerHelper(
+    params: QuestionMap[],
+  ): Promise<QuestionVerdictResult> {
     const verdicts: QuestionVerdict[] = [];
     for (const { question, answer } of params) {
       const result = await this.getComponent(question.type).verdict(
@@ -306,12 +312,15 @@ export class QuestionService {
         result,
       });
     }
-
+    let passed = verdicts.filter((item) => item.verdict).length;
+    let total = verdicts.length;
     return {
-      verdict: verdicts,
-      passed: verdicts.filter((item) => item.verdict).length,
-      total: verdicts.length,
+      verdicts: verdicts,
+      correct: passed,
+      total: total,
       skipped: verdicts.filter((item) => item.isSkipped).length,
+      score: passed / total,
+      passed: passed === total,
     };
   }
 
