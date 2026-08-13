@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نخبة الأوائل — البوابات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/shared/styles.css" />
+  </head>
+  <body>
+    <div class="landing">
+      <h1>نخبة <span style="color: var(--brand)">الأوائل</span></h1>
+      <p class="muted">
+        ثلاث بوابات فوق الـ API نفسه — كل بوابة تحفظ جلستها الخاصة، فيمكنك فتح
+        الثلاث معاً في تبويبات مختلفة.
+      </p>
+
+      <div class="grid" style="margin-top: 24px">
+        <a class="portal-card card" href="/admin/">
+          <div class="icon">🛠️</div>
+          <h2>لوحة الإدارة</h2>
+          <h3>دور admin</h3>
+          <p class="muted">
+            المستخدمون، المدارس وصلاحيات المسارات، مفاتيح الاشتراك، الطلاب،
+            الحكم اليومية، الأسئلة الشائعة ومعلومات التطبيق، الإشعارات.
+          </p>
+        </a>
+
+        <a class="portal-card card" href="/school/">
+          <div class="icon">🏫</div>
+          <h2>بوابة المدرسة</h2>
+          <h3>دور contentWriter</h3>
+          <p class="muted">
+            المنهج (وحدات ودروس وترتيبها)، الأسئلة بأنواعها الستة، التحدي
+            اليومي، الكتب، الطلاب، المفاتيح، المحاولات والمتصدّرون.
+          </p>
+        </a>
+
+        <a class="portal-card card" href="/student/">
+          <div class="icon">🎓</div>
+          <h2>بوابة الطالب</h2>
+          <h3>دور student</h3>
+          <p class="muted">
+            حساب جديد، تجربة مجانية أو مفتاح، حل الدروس والتحدي اليومي،
+            المحاولات، الأسئلة المحفوظة، الكتب، المتصدّرون والإحصاءات.
+          </p>
+        </a>
+      </div>
+
+      <div class="card" style="margin-top: 24px">
+        <h2>حالة الخادم</h2>
+        <div id="ping" class="muted">جارٍ الفحص…</div>
+      </div>
+
+      <div class="card">
+        <h2>ملاحظات للاختبار</h2>
+        <ul class="muted">
+          <li>الـ API تحت <code>/api</code> — هذه الصفحات تستهلكه مباشرة.</li>
+          <li>
+            الطالب يحتاج اشتراكاً فعّالاً (تجربة مجانية أو مفتاح) قبل أن تعمل
+            شاشات المنهج والحل.
+          </li>
+          <li>
+            مفاتيح الاشتراك تُولَّد من لوحة الإدارة لمدرسة ومسار محدّدين، ثم
+            تُسلَّم للطالب.
+          </li>
+          <li>
+            المدرسة لا ترى أي مسار قبل أن تمنحها الإدارة صلاحيته من شاشة
+            «المدارس».
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      fetch('/api/ping')
+        .then((r) => r.text())
+        .then((t) => {
+          document.getElementById('ping').innerHTML =
+            t.trim() === 'pong'
+              ? '<span class="badge good">الخادم يعمل ✓</span>'
+              : '<span class="badge warn">رد غير متوقّع: ' + t + '</span>';
+        })
+        .catch(() => {
+          document.getElementById('ping').innerHTML =
+            '<span class="badge bad">تعذّر الوصول إلى /api/ping</span>';
+        });
+    </script>
+  </body>
+</html>

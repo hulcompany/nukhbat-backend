@@ -9,7 +9,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { QuestionOptionDto } from './question-option.dto';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class QuestionOptionGroupDto {
   @IsString()
@@ -17,6 +17,8 @@ export class QuestionOptionGroupDto {
   @IsNotEmpty()
   title?: string;
 
+  // multipart delivers every field as a string; JSON already sends a number
+  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
   @IsInt()
   @Min(0)
   index: number;

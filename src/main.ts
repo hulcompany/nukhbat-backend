@@ -25,12 +25,13 @@ async function bootstrap() {
   });
   // }
 
-  // student-facing web app (src/student-website) — a simple no-signup portal:
-  // login, subscribe (free trial / key), solve lessons + daily challenge,
-  // curriculum, attempts, saved questions, leaderboard, profile.
-  app.useStaticAssets(join(process.cwd(), 'src', 'student-website'), {
-    prefix: '/student',
-  });
+  // the three web portals (website/): a landing page at "/" plus
+  //   /admin    → admin role
+  //   /school   → contentWriter (school owner)
+  //   /student  → student
+  // They share website/shared (served at /shared) and talk to this same API.
+  // Registered before the router, so /api/* still falls through to Nest.
+  app.useStaticAssets(join(process.cwd(), 'website'), { prefix: '/' });
   expressApp.get('/api/errors', createErrorRequestHandler());
   expressApp.get('/api/ping', (req, res) => {
     res.send('pong');

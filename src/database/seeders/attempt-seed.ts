@@ -64,6 +64,15 @@ export async function seedAttempts(ds: DataSource) {
       completed: true,
       questionsSkipped: 0,
       xpAwarded: 0, // set below once the reward is computed
+      // the frozen QuestionVerdictResult, same shape checkAnswerHelper returns
+      result: {
+        verdicts,
+        correct: verdicts.length,
+        total: verdicts.length,
+        skipped: 0,
+        score: 1,
+        passed: true,
+      },
     });
 
     for (let q = 0; q < lesson.questions.length; q++) {
