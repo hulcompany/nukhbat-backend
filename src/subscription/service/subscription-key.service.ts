@@ -183,7 +183,7 @@ export class SubscriptionKeyService {
     const sql = `
     SELECT
       months.month::date AS date,
-      COUNT(s.id)::int AS count
+      COUNT(sp.id)::int AS count
     FROM generate_series(
       $1::date,
       ($1::date + INTERVAL '11 month')::date,
@@ -196,16 +196,13 @@ export class SubscriptionKeyService {
 
     LEFT JOIN student_profile sp
       ON sp.id = s."studentProfileId"
-     ${schoolId ? 'AND sp."schoolId" = $2' : ''}
+     AND ($2::uuid IS NULL OR sp."schoolId" = $2)
 
     GROUP BY months.month
     ORDER BY months.month;
   `;
 
-    const rows = await this.ds.query(
-      sql,
-      schoolId ? [start, schoolId] : [start],
-    );
+    const rows = await this.ds.query(sql, [start, schoolId ?? null]);
 
     return rows.map((row: any) => ({
       date: row.date,

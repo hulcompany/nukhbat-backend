@@ -4,13 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { transaction } from 'core';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { Question, QuestionMap } from '../../curriculum';
 import { CurriculumService } from '../../curriculum/services/curriculum.service';
 import { StudentProfile } from '../../student/entity/student-profile.entity';
 import { SavedQuestionService } from '../saved-questions/saved-question.service';
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto } from './dto';
+import { assertFullQuestionComponents } from './question-components';
 
 @Injectable()
 export class SolvingSavedService {
@@ -27,7 +28,18 @@ export class SolvingSavedService {
       throw new NotFoundException('No saved questions found');
     }
 
-    const questions = saved.map((item) => item.question);
+    const questionIds = saved.map((item) => item.questionId);
+    const loadedQuestions = await this.curriculum.findQuestions({
+      id: In(questionIds),
+    });
+    const questionsById = new Map(
+      loadedQuestions.map((question) => [question.id, question]),
+    );
+    const questions = questionIds.map((id) => questionsById.get(id)!);
+    if (questions.some((question) => !question)) {
+      throw new NotFoundException('Saved question not found');
+    }
+    assertFullQuestionComponents(questions);
     const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
       dailyChallengeId: null,
       lessonId: null,
@@ -58,6 +70,7 @@ export class SolvingSavedService {
     if (!snapshot.questions.length) {
       throw new BadRequestException('Snapshot has no questions');
     }
+    assertFullQuestionComponents(snapshot.questions);
 
     const verdict = await this.curriculum.checkQuestionAnswers(
       this.buildQuestionMaps(snapshot.questions, dto),

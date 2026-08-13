@@ -21,6 +21,7 @@ import { LedgerService } from '../ledger/ledger.service';
 import { SavedQuestionService } from '../saved-questions/saved-question.service';
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto, SolvingStartLessonDto } from './dto';
+import { assertFullQuestionComponents } from './question-components';
 
 @Injectable()
 export class SolvingLessonsService {
@@ -54,6 +55,7 @@ export class SolvingLessonsService {
     if (!questions.length) {
       throw new NotFoundException('Lesson has no questions');
     }
+    assertFullQuestionComponents(questions);
 
     await transaction(this.dataSource, async (manager) => {
       await this.curriculum.markLessonUsed(lesson.id, manager);
@@ -93,6 +95,7 @@ export class SolvingLessonsService {
     if (!snapshot.questions.length) {
       throw new BadRequestException('Snapshot has no questions');
     }
+    assertFullQuestionComponents(snapshot.questions);
 
     const lesson = await this.curriculum.getLesson(
       {

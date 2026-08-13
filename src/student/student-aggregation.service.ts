@@ -147,7 +147,7 @@ export class StudentAggragationService {
 
     lesson_data AS (
       SELECT
-        COUNT(*) FILTER (
+        COUNT(DISTINCT la."lessonId") FILTER (
           WHERE la.completed = true
         )::int AS completed_lessons
       FROM "lesson_attempt" la
@@ -167,7 +167,7 @@ export class StudentAggragationService {
       SELECT
         wd.day,
 
-        COUNT(la.id) FILTER (
+        COUNT(DISTINCT la."lessonId") FILTER (
           WHERE la.completed = true
         )::int AS lessons
 

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { transaction } from 'core';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { AppConfig } from '../../conf';
 import { Question, QuestionMap } from '../../curriculum';
 import { CurriculumService } from '../../curriculum/services/curriculum.service';
@@ -14,6 +14,7 @@ import { AttemptsService } from '../attempts/attempts.service';
 import { LedgerService } from '../ledger/ledger.service';
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto } from './dto';
+import { assertFullQuestionComponents } from './question-components';
 
 @Injectable()
 export class SolvingDailyChallengeService {
@@ -36,10 +37,21 @@ export class SolvingDailyChallengeService {
       throw new BadRequestException('Daily challenge already attempted');
     }
 
-    const questions = challenge.usedQuestions.map((item) => item.question);
-    if (!questions.length) {
+    const questionIds = challenge.usedQuestions.map((item) => item.question.id);
+    if (!questionIds.length) {
       throw new NotFoundException('Daily challenge has no questions');
     }
+    const loadedQuestions = await this.curriculum.findQuestions({
+      id: In(questionIds),
+    });
+    const questionsById = new Map(
+      loadedQuestions.map((question) => [question.id, question]),
+    );
+    const questions = questionIds.map((id) => questionsById.get(id)!);
+    if (questions.some((question) => !question)) {
+      throw new NotFoundException('Daily challenge question not found');
+    }
+    assertFullQuestionComponents(questions);
 
     const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
       dailyChallengeId: challenge.id,
@@ -71,10 +83,13 @@ export class SolvingDailyChallengeService {
     if (!snapshot.questions.length) {
       throw new BadRequestException('Snapshot has no questions');
     }
+    assertFullQuestionComponents(snapshot.questions);
 
     const challenge = await this.getTodayChallenge(student);
     if (challenge.id !== snapshot.dailyChallengeId) {
-      throw new NotFoundException('Daily challenge snapshot is no longer valid');
+      throw new NotFoundException(
+        'Daily challenge snapshot is no longer valid',
+      );
     }
     if (
       await this.attempts.getDailyChallengeAttempt(challenge.id, student.id)
@@ -150,8 +165,8 @@ export class SolvingDailyChallengeService {
     return questions.map((question) => ({
       question,
       answer:
-        dto.answers.find((submitted) => submitted.id === question.id)
-          ?.answer ?? {},
+        dto.answers.find((submitted) => submitted.id === question.id)?.answer ??
+        {},
     }));
   }
 }
