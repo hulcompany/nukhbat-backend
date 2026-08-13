@@ -3,8 +3,6 @@ export enum QuestionType {
   MATCH = 'match',
   TRUE_FALSE = 'trueFalse',
   order = 'order',
-  multiOptions = 'multiOptions',
   fillBlanks = 'fillBlanks',
-  fillBlanksChoices = 'fillBlanksChoices',
   classify = 'classify',
 }

@@ -1,6 +1,7 @@
 import { UUID } from 'crypto';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { School } from '../../school/entity/school.entity';
+import { Lesson } from '../../curriculum';
 
 @Entity()
 export class Book {
@@ -9,11 +10,17 @@ export class Book {
   @Column('text')
   name: string;
 
-  @Column('uuid')
-  attachment: UUID;
+  @Column('text')
+  text: string;
+
   @ManyToOne(() => School, (v) => v.id, {
     onDelete: 'CASCADE',
     onUpdate: 'RESTRICT',
   })
   school: UUID | School;
+
+  @ManyToOne(() => Lesson, { eager: true } )
+  lesson: Lesson;
+
+  lessonId: UUID;
 }

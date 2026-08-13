@@ -213,6 +213,10 @@ export class CurriculumService {
     return await this.questionService.checkAnswerHelper(data);
   }
 
+  hideQuestionAnswers(questions: Question[]) {
+    return this.questionService.hideAnswers(questions);
+  }
+
   async findQuestions(
     params: FindOptionsWhere<Question>,
     select?: FindOptionsSelect<Question>,

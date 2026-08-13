@@ -346,11 +346,7 @@ export class SolveLessonsService {
   // Strip the answer keys (options' isCorrect, matches' correctIndex) before
   // handing questions back to the student.
   private stripAnswerKeys(questions: Question[]) {
-    return questions.map((e) => ({
-      ..._.omit(e, 'trueOrFalseAnswer'),
-      options: e.options.map((o) => _.omit(o, 'isCorrect')),
-      matchingItems: e.matchingItems.map((m) => _.omit(m, 'correctIndex')),
-    }));
+    return this.curriculum.hideQuestionAnswers(questions);
   }
 
   // Today's challenge for the student's school/track, or 404 when there is none.
@@ -367,24 +363,13 @@ export class SolveLessonsService {
     return dailyChallenge;
   }
 
-  // per-question score/total/correct off its verdict, mirroring the lesson-level
-  // pass rule: a MATCH is correct only when every submitted pair is (partial is
-  // wrong, no partial credit); choice/true-false are a flat 0-or-1.
   private perQuestionScore(v: QuestionVerdict) {
-    if (v.choiceVerdict) {
-      const ok = v.choiceVerdict.verdict;
-      return { score: ok ? 1 : 0, total: 1, isCorrect: ok };
-    }
-    if (v.trueOrFalseVerdict) {
-      const ok = v.trueOrFalseVerdict.verdict;
-      return { score: ok ? 1 : 0, total: 1, isCorrect: ok };
-    }
-    const pairs = v.matchVerdicts ?? [];
-    const correct = pairs.filter((p) => p.verdict).length;
+    const itemVerdicts = v.result.verdicts ?? [v.result];
+    const correct = itemVerdicts.filter((item: any) => item.verdict).length;
     return {
       score: correct,
-      total: pairs.length,
-      isCorrect: pairs.length > 0 && correct === pairs.length,
+      total: itemVerdicts.length,
+      isCorrect: v.verdict,
       isSkipped: v.isSkipped,
     };
   }

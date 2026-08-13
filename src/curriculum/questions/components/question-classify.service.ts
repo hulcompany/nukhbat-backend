@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { QuestionComponentService } from './question-component.service';
@@ -11,6 +7,7 @@ import { QuestionClassifyType } from '../entity/enum/question-classify.type';
 import { QuestionClassify } from '../entity/question-class.entity';
 import {
   QuestionClassAnswer,
+  QuestionClassResult,
   QuestionClassVerdict,
 } from '../types/question-class.types';
 import { Question } from '../entity/questions.entity';
@@ -22,6 +19,9 @@ export class QuestionClassifyService extends QuestionComponentService {
   }
 
   validate(data: QuestionClassifyDto[]) {
+    if (!data?.length) {
+      throw new BadRequestException('Classify question should have data');
+    }
     const categories = data.filter(
       (e) => e.type === QuestionClassifyType.category,
     );
@@ -34,6 +34,12 @@ export class QuestionClassifyService extends QuestionComponentService {
 
     if (!items.length) {
       throw new BadRequestException('Classify question should have items');
+    }
+
+    if (categories.some((category) => category.correctCategoryIndex != null)) {
+      throw new BadRequestException(
+        'Categories cannot have a correct category index',
+      );
     }
 
     for (const item of items) {
@@ -68,15 +74,17 @@ export class QuestionClassifyService extends QuestionComponentService {
 
     this.validate(data.data);
 
-    await repo.insert(
-      data.data.map((e, i) => ({
-        questionId: data.id,
-        schoolId: data.schoolId,
-        index: i,
-        correctCategoryIndex: e.correctCategoryIndex ?? null,
-        text: e.text,
-        type: e.type,
-      })),
+    await repo.save(
+      data.data.map((item, index) =>
+        repo.create({
+          question: { id: data.id },
+          school: { id: data.schoolId },
+          index,
+          correctCategoryIndex: item.correctCategoryIndex ?? null,
+          text: item.text,
+          type: item.type,
+        }),
+      ),
     );
   }
 
@@ -88,41 +96,83 @@ export class QuestionClassifyService extends QuestionComponentService {
     await repo.delete(ids);
   }
 
-  async verdict(question: Question, answer: QuestionClassAnswer[]) {
-    const data = question.classifyItems;
-
-    const items = data.filter((e) => e.type === QuestionClassifyType.item);
-
+  async verdict(
+    question: Question,
+    answer?: QuestionClassAnswer[] | null,
+  ): Promise<QuestionClassResult> {
+    const data = question.classifyItems ?? [];
     const categories = data.filter(
       (e) => e.type === QuestionClassifyType.category,
     );
+    const items = data.filter((e) => e.type === QuestionClassifyType.item);
+    if (!categories.length || !items.length) {
+      throw new BadRequestException('Question has invalid classify data');
+    }
+    const categoriesById = new Map(
+      categories.map((category) => [category.id, category]),
+    );
+    const itemsById = new Map(items.map((item) => [item.id, item]));
+    const assignedItemIds = new Set<UUID>();
+    const submittedCategoryIds = new Set<UUID>();
 
-    let res: QuestionClassVerdict[] = [];
+    for (const submitted of answer ?? []) {
+      if (!categoriesById.has(submitted.categoryId)) {
+        throw new BadRequestException('Category not found');
+      }
+      if (submittedCategoryIds.has(submitted.categoryId)) {
+        throw new BadRequestException('A category can only be submitted once');
+      }
+      submittedCategoryIds.add(submitted.categoryId);
+      for (const itemId of submitted.items) {
+        if (!itemsById.has(itemId)) {
+          throw new BadRequestException('Classify item not found');
+        }
+        if (assignedItemIds.has(itemId)) {
+          throw new BadRequestException(
+            'A classify item can only be assigned once',
+          );
+        }
+        assignedItemIds.add(itemId);
+      }
+    }
 
-    for (const cat of data.filter(
-      (e) => e.type == QuestionClassifyType.category,
-    )) {
-      let a = answer
-        .filter((e) => e.categoryId == cat.id)
-        .flatMap((e) => e.items);
-      let correctItems = data.filter(
-        (e) => e.correctCategoryIndex == cat.index,
+    const result: QuestionClassVerdict[] = [];
+
+    for (const category of categories) {
+      const answeredItemIds = (answer ?? [])
+        .filter((submitted) => submitted.categoryId === category.id)
+        .flatMap((submitted) => submitted.items);
+      const correctItems = items.filter(
+        (item) => item.correctCategoryIndex === category.index,
       );
-      let answeredItems = data
-        .filter((e) => a.includes(e.id))
-        .filter((e) => e.type == QuestionClassifyType.item);
-      let answeredItemsIds = new Set(answeredItems.map((e) => e.id));
+      const answeredItems = answeredItemIds.map(
+        (itemId) => itemsById.get(itemId)!,
+      );
+      const answeredItemsIds = new Set(answeredItems.map((item) => item.id));
 
-      let verdict =
+      const verdict =
         answeredItems.length == correctItems.length &&
-        correctItems.every((e) => answeredItemsIds.has(e.id));
+        correctItems.every((item) => answeredItemsIds.has(item.id));
 
-      res.push({
-        verdict: verdict,
-        answered: { category: cat, items: answeredItems },
-        correctAnswer: { category: cat, items: correctItems },
+      result.push({
+        verdict,
+        answered: { category, items: answeredItems },
+        correctAnswer: { category, items: correctItems },
       });
     }
-    return res;
+    return {
+      verdict: result.every((item) => item.verdict),
+      skipped: !answer?.length,
+      verdicts: result,
+    };
+  }
+
+  hideAnswers(question: Question) {
+    return {
+      ...question,
+      classifyItems: question.classifyItems?.map(
+        ({ correctCategoryIndex, ...item }) => item,
+      ),
+    };
   }
 }

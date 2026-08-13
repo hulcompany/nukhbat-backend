@@ -67,21 +67,25 @@ async function seedQuestion(
     lesson: params.lessonId ? { id: params.lessonId } : null,
     course: params.courseId ? { id: params.courseId } : null,
     school: { id: params.schoolId },
-    trueOrFalseAnswer:
-      params.type === QuestionType.TRUE_FALSE ? Math.random() < 0.5 : null,
   });
 
   if (params.type === QuestionType.OPTIONS) {
-    const optionRepo = ds.getRepository('QuestionOption');
     const correct = Math.floor(Math.random() * 4);
-    for (let i = 0; i < 4; i++) {
-      await optionRepo.save({
-        text: `الخيار ${i + 1}`,
-        isCorrect: i === correct,
-        question: { id: question.id },
-        school: { id: params.schoolId },
-      });
-    }
+    await ds.getRepository('QuestionOptionGroup').save({
+      index: 0,
+      question: { id: question.id },
+      school: { id: params.schoolId },
+      options: Array.from({ length: 4 }, (_, index) => ({
+        text: `الخيار ${index + 1}`,
+        isCorrect: index === correct,
+      })),
+    });
+  } else if (params.type === QuestionType.TRUE_FALSE) {
+    await ds.getRepository('QuestionTrueOrFalse').save({
+      value: Math.random() < 0.5,
+      question: { id: question.id },
+      school: { id: params.schoolId },
+    });
   } else if (params.type === QuestionType.MATCH) {
     const matchRepo = ds.getRepository('QuestionMatch');
     // matches occupy index 0..2, bases 3..5 — base i's correctIndex points at

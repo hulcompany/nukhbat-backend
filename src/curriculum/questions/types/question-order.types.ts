@@ -7,6 +7,13 @@ export interface QuestionOrderAnswer {
 }
 
 export interface QuestionOrderVerdict {
+  answered?: QuestionOrder;
+  correctAnswer: QuestionOrder;
   verdict: boolean;
-  answer: QuestionOrder[];
+}
+
+export interface QuestionOrderResult {
+  verdict: boolean;
+  skipped: boolean;
+  verdicts: QuestionOrderVerdict[];
 }

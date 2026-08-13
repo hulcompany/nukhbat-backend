@@ -15,11 +15,11 @@ import { UUID } from 'crypto';
 import { BasePaginationDto } from 'core';
 import { QuestionType } from '../entity/enum/question.type';
 import { QuestionPurpose } from '../entity/enum/question-purpose.type';
-import { QuestionOptionDto } from './question-option.dto';
 import { QuestionMatchDto } from './question-match.dto';
 import { QuestionClassifyDto } from './question-classify.dto';
 import { QuestionOrderDto } from './question-order.dto';
 import { QuestionFillBlankDto } from './question-blank.dto';
+import { QuestionOptionGroupDto } from './question-option-group.dto';
 
 export class QuestionCreateDto {
   @IsString()
@@ -42,15 +42,12 @@ export class QuestionCreateDto {
   @IsUUID()
   courseId?: UUID;
 
-  @ValidateIf(
-    (o) =>
-      o.type === QuestionType.OPTIONS || o.type === QuestionType.multiOptions,
-  )
+  @ValidateIf((o) => o.type === QuestionType.OPTIONS)
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => QuestionOptionDto)
-  @ArrayMinSize(2)
-  options?: QuestionOptionDto[];
+  @Type(() => QuestionOptionGroupDto)
+  optionGroups?: QuestionOptionGroupDto[];
 
   @ValidateIf((o) => o.type === QuestionType.MATCH)
   @IsArray()
@@ -70,7 +67,7 @@ export class QuestionCreateDto {
   @IsArray()
   @ArrayMinSize(2)
   @ValidateNested({ each: true })
-  @Type(() => QuestionClassifyDto)
+  @Type(() => QuestionOrderDto)
   orders?: QuestionOrderDto[];
 
   @ValidateIf((o) => o.type === QuestionType.fillBlanks)
@@ -80,8 +77,8 @@ export class QuestionCreateDto {
   @Type(() => QuestionFillBlankDto)
   fillBlanks?: QuestionFillBlankDto[];
 
-  // trueFalse questions carry their whole answer key here — the service
-  // materializes the two option rows from it
+  // trueFalse questions carry their answer key here; the component service
+  // stores it in the dedicated one-to-one row.
   @ValidateIf((o) => o.type === QuestionType.TRUE_FALSE)
   @Transform(({ value }) =>
     value === 'true' ? true : value === 'false' ? false : value,

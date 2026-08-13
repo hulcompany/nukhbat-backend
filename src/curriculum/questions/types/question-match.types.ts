@@ -19,3 +19,9 @@ export interface QuestionMatchVerdict {
   // (withAnswers only)
   matchCorrectBase?: QuestionMatch;
 }
+
+export interface QuestionMatchResult {
+  verdict: boolean;
+  skipped: boolean;
+  verdicts: QuestionMatchVerdict[];
+}

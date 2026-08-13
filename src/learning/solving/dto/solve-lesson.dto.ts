@@ -2,8 +2,11 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsInt,
   IsOptional,
+  IsString,
   IsUUID,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { UUID } from 'crypto';
@@ -23,13 +26,51 @@ export class MatchAnswerDto {
   matchId: UUID;
 }
 
+export class OptionAnswerDto {
+  @IsUUID()
+  answered: UUID;
+
+  @IsInt()
+  @Min(0)
+  index: number;
+}
+
+export class ClassifyAnswerDto {
+  @IsUUID()
+  categoryId: UUID;
+
+  @IsArray()
+  @IsUUID('4', { each: true })
+  items: UUID[];
+}
+
+export class OrderAnswerDto {
+  @IsUUID()
+  id: UUID;
+
+  @IsInt()
+  @Min(0)
+  order: number;
+}
+
+export class FillBlankAnswerDto {
+  @IsInt()
+  @Min(0)
+  index: number;
+
+  @IsString()
+  answer: string;
+}
+
 // the answer for a single question — exactly one shape is filled per the
-// question's type (choice / true-false / match). Mirrors what
-// QuestionService.checkAnswers consumes.
+// question's type. The question service selects the component that consumes
+// the matching answer shape.
 export class AnswerDto {
   @IsOptional()
-  @IsUUID()
-  choiceId?: UUID;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OptionAnswerDto)
+  options?: OptionAnswerDto[];
 
   @IsOptional()
   @IsBoolean()
@@ -40,6 +81,24 @@ export class AnswerDto {
   @ValidateNested({ each: true })
   @Type(() => MatchAnswerDto)
   matches?: MatchAnswerDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ClassifyAnswerDto)
+  classify?: ClassifyAnswerDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderAnswerDto)
+  orders?: OrderAnswerDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => FillBlankAnswerDto)
+  fillBlanks?: FillBlankAnswerDto[];
 }
 
 export class SolveAnswerDto {

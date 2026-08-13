@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 
@@ -10,9 +6,11 @@ import { QuestionComponentService } from '.././components/question-component.ser
 import { QuestionOrder } from '.././entity/question-order.entity';
 import {
   QuestionOrderAnswer,
+  QuestionOrderResult,
   QuestionOrderVerdict,
 } from '.././types/question-order.types';
 import { QuestionOrderDto } from '.././dto/question-order.dto';
+import { Question } from '../entity/questions.entity';
 
 @Injectable()
 export class QuestionOrderService extends QuestionComponentService {
@@ -21,8 +19,10 @@ export class QuestionOrderService extends QuestionComponentService {
   }
 
   validate(data: QuestionOrderDto[]) {
-    if (!data?.length) {
-      throw new BadRequestException('Order question should have items');
+    if (!data || data.length < 2) {
+      throw new BadRequestException(
+        'Order question should have at least two items',
+      );
     }
   }
 
@@ -39,13 +39,15 @@ export class QuestionOrderService extends QuestionComponentService {
 
     this.validate(data.data);
 
-    await repo.insert(
-      data.data.map((e, index) => ({
-        questionId: data.id,
-        schoolId: data.schoolId,
-        text: e.text,
-        sort: index,
-      })),
+    await repo.save(
+      data.data.map((item, index) =>
+        repo.create({
+          question: { id: data.id },
+          school: { id: data.schoolId },
+          text: item.text,
+          sort: index,
+        }),
+      ),
     );
   }
 
@@ -57,39 +59,80 @@ export class QuestionOrderService extends QuestionComponentService {
   }
 
   async verdict(
-    id: UUID,
-    answer: QuestionOrderAnswer[],
-  ): Promise<QuestionOrderVerdict> {
-    const repo = this.ds.getRepository(QuestionOrder);
-
-    const data = await repo.find({
-      where: {
-        questionId: id,
-      },
-      order: {
-        sort: 'ASC',
-      },
-    });
-
-    const answered: QuestionOrder[] = [];
-
-    for (const item of answer ?? []) {
-      const entity = data.find((e) => e.id === item.id);
-
-      if (!entity) {
-        throw new NotFoundException('Order item not found');
+    question: Question,
+    answer?: QuestionOrderAnswer[] | null,
+  ): Promise<QuestionOrderResult> {
+    const items = [...(question.orderItems ?? [])].sort(
+      (left, right) => left.sort - right.sort,
+    );
+    if (!items.length) {
+      throw new BadRequestException('Question has no order items');
+    }
+    const submittedOrders = new Set<number>();
+    const submittedIds = new Set<UUID>();
+    for (const submitted of answer ?? []) {
+      if (!items.some((item) => item.id === submitted.id)) {
+        throw new BadRequestException('Order item not found');
       }
-
-      answered.push(entity);
+      if (submittedIds.has(submitted.id)) {
+        throw new BadRequestException(
+          'An order item can only be submitted once',
+        );
+      }
+      if (
+        !Number.isInteger(submitted.order) ||
+        submitted.order < 0 ||
+        submitted.order >= items.length ||
+        submittedOrders.has(submitted.order)
+      ) {
+        throw new BadRequestException(
+          'Submitted order must be unique and sequential',
+        );
+      }
+      submittedIds.add(submitted.id);
+      submittedOrders.add(submitted.order);
     }
 
-    const verdict =
-      answered.length === data.length &&
-      answered.every((item, index) => item.sort === index);
+    const submittedByOrder = new Map(
+      (answer ?? []).map((submitted) => [submitted.order, submitted]),
+    );
+    const verdicts: QuestionOrderVerdict[] = items.map((correctAnswer) => {
+      const submitted = submittedByOrder.get(correctAnswer.sort);
+      const answered = submitted
+        ? items.find((item) => item.id === submitted.id)
+        : undefined;
+      return {
+        answered,
+        correctAnswer,
+        verdict: answered?.id === correctAnswer.id,
+      };
+    });
 
     return {
-      verdict,
-      answer: answered,
+      verdict: verdicts.every((item) => item.verdict),
+      skipped: !answer?.length,
+      verdicts,
     };
+  }
+
+  hideAnswers(question: Question) {
+    return {
+      ...question,
+      orderItems: this.shuffle(question.orderItems ?? []).map(
+        ({ sort, ...item }) => item,
+      ),
+    };
+  }
+
+  shuffle(items: QuestionOrder[]): QuestionOrder[] {
+    const shuffled = [...items];
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[randomIndex]] = [
+        shuffled[randomIndex],
+        shuffled[index],
+      ];
+    }
+    return shuffled;
   }
 }

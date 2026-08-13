@@ -15,7 +15,7 @@ export class QuestionOptionGroupDto {
   @IsString()
   @IsOptional()
   @IsNotEmpty()
-  title: string | undefined;
+  title?: string;
 
   @IsInt()
   @Min(0)

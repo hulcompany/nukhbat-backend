@@ -7,6 +7,7 @@ export interface TrueOrFalseVerdict {
   answered?: boolean | undefined;
   // whether it matched
   verdict: boolean;
+  skipped: boolean;
   // the correct value (withAnswers only)
   correctAnswer?: boolean;
 }

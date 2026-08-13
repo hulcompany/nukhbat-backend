@@ -2,75 +2,47 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from './entity/book.entity';
 import { DataSource, DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
-import { BookEditDto } from './dto/book.dto';
+import { BookCreateDto, BookEditDto } from './dto/book.dto';
 import { transaction } from 'core';
 import { UUID } from 'crypto';
 import { FileService } from '../file/file.service';
+import { SchoolAccessService } from '../school-access/school-access.service';
 
 @Injectable()
 export class BookService {
   constructor(
     @InjectRepository(Book) private readonly bookRepo: Repository<Book>,
-    private readonly files: FileService,
+    private readonly schoolAccess: SchoolAccessService,
     private readonly ds: DataSource,
   ) {}
-  async createBook(params: {
-    file: Express.Multer.File;
-    params: DeepPartial<Book>;
-  }) {
-    let attach;
-    return await transaction(
-      this.ds,
-      async (em) => {
-        let entity = em.getRepository(Book).create(params.params);
-        attach = await this.files.store(params.file, 'learning/books');
-        attach = await this.files.use({ id: attach.id, dm: em });
-        entity.attachment = attach.id;
-        let book = await em.getRepository(Book).save(entity);
-        return book;
-      },
-      {
-        onError: async () => {
-          if (attach?.id) {
-            await this.files.cleanUp([attach.id]);
-          }
-        },
-      },
+  async createBook(params: { params: BookCreateDto; schoolId: UUID }) {
+    await this.schoolAccess.assertLessonAccess(
+      params.schoolId,
+      params.params.lessonId,
     );
+    await this.bookRepo.save({
+      lesson: { id: params.params.lessonId },
+      school: { id: params.schoolId },
+      name: params.params.name,
+      text: params.params.text,
+    });
   }
 
-  async editBook(params: {
-    filters: FindOptionsWhere<Book>;
-    params: BookEditDto;
-    file?: Express.Multer.File;
-  }) {
-    let attachIds: UUID[] = [];
-    return await transaction(
-      this.ds,
-      async (em) => {
-        let old = await this.findBookOrFail(params.filters);
-        let newFile = await this.files.replace({
-          em: em,
-          old: old?.attachment,
-          store: params.file,
-          folder: 'learning/books',
-        });
-        if (newFile) {
-          attachIds.push(newFile);
-          old.attachment = newFile;
-        }
-        if (params?.params.name) {
-          old.name = params.params.name;
-        }
-        let book = await em.getRepository(Book).save(old);
-        return book;
-      },
-      {
-        onError: async () => {
-          await this.files.cleanUp(attachIds);
-        },
-      },
-    );
+  async editBook(params: { schoolId: UUID; id: UUID; params: BookEditDto }) {
+    let book = await this.bookRepo.findOne({
+      where: { id: params.id, school: { id: params.schoolId } },
+    });
+    if (!book) {
+      throw new NotFoundException('Book Not Found');
+    }
+    await this.schoolAccess.assertLessonAccess(params.schoolId, book.lessonId);
+    if (params.params.name) {
+      book.name = params.params.name;
+    }
+    if (params.params.text) {
+      book.text = params.params.text;
+    }
+    return await this.bookRepo.save(book);
   }
 
   async findBook(params: FindOptionsWhere<Book>) {
@@ -88,8 +60,6 @@ export class BookService {
 
   async deleteBook(filters: FindOptionsWhere<Book>) {
     return await transaction(this.ds, async (em) => {
-      let curr = await this.findBookOrFail(filters);
-      await this.files.softRemove(curr.attachment, em);
       let res = await em.getRepository(Book).delete(filters);
       if (!res.affected) {
         throw new NotFoundException();

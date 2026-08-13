@@ -3,55 +3,64 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import {
   DataSource,
-  DeepPartial,
   EntityManager,
   FindOptionsOrder,
+  FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
   In,
   Repository,
 } from 'typeorm';
-import { Question } from './entity/questions.entity';
+import { UUID } from 'crypto';
+import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
+import { FileService } from '../../file/file.service';
 import { LessonUsed } from '../lessons/entity/lesson-used.entity';
-import { InjectRepository } from '@nestjs/typeorm';
+import { LessonStatusType } from '../lessons/entity/lesson.status.type';
+import { DailyChallengeUsedQuestions } from '../daily-challenge/entity/daily-challenge-used-questions.entity';
+import { todayDateString } from '../daily-challenge/daily-challenge.service';
 import {
   AdminQuestionGetDto,
   QuestionCreateDto,
   QuestionEditDto,
   QuestionGetDto,
 } from './dto/question.dto';
-import { UUID } from 'crypto';
-import { QuestionType } from './entity/enum/question.type';
-import { QuestionMatchDto } from './dto/question-match.dto';
-import { QuestionMatchType } from './entity/enum/question-match.type';
-import { QuestionOptionDto } from './dto/question-option.dto';
-import { FileService } from '../../file/file.service';
-import { LessonStatusType } from '../lessons/entity/lesson.status.type';
-import { applyPsqlFilter, BasePaginationModel, transaction } from 'core';
 import { QuestionPurpose } from './entity/enum/question-purpose.type';
-import { DailyChallengeUsedQuestions } from '../daily-challenge/entity/daily-challenge-used-questions.entity';
-import { todayDateString } from '../daily-challenge/daily-challenge.service';
-import {
-  MatchVerdict,
-  QuestionMap,
-  QuestionVerdict,
-} from './types/question-verdict.type';
-import { QuestionOption } from './entity/question-options.entity';
+import { QuestionType } from './entity/enum/question.type';
+import { Question } from './entity/questions.entity';
+import { QuestionOptionsService } from './components/question-options.service';
+import { QuestionClassifyService } from './components/question-classify.service';
+import { QuestionFillBlankService } from './components/question-fill-blanks.service';
+import { QuestionMatchService } from './components/question-match.service';
+import { QuestionOrderService } from './components/question-order.service';
+import { QuestionTrueOrFalseService } from './components/question-true-or-false.service';
+import { QuestionComponentService } from './components/question-component.service';
+import { QuestionMap, QuestionVerdict } from './types/question-verdict.type';
 
 type QuestionImages = {
   question?: Express.Multer.File | null;
-  // options?: (Express.Multer.File | null | undefined)[];
 };
 
-// matchingItems is positional — a base row's correctIndex names a match row's
-// `index` — so every read that hands questions back has to order by it, or the
-// client pairs them up by array position and gets whatever the heap returned.
-// Works through the eager relation and reuses its join (find* family only;
-// query builders must addOrderBy themselves).
-const matchOrder: FindOptionsOrder<Question> = {
+const questionOrder: FindOptionsOrder<Question> = {
+  optionsGroups: { index: 'ASC' },
   matchingItems: { index: 'ASC' },
+  classifyItems: { index: 'ASC' },
+  orderItems: { sort: 'ASC' },
+  fillBlanks: { index: 'ASC' },
+};
+
+const questionRelations: FindOptionsRelations<Question> = {
+  course: true,
+  lesson: true,
+  school: true,
+  optionsGroups: { options: true },
+  trueOrFalse: true,
+  classifyItems: true,
+  matchingItems: true,
+  orderItems: true,
+  fillBlanks: true,
 };
 
 @Injectable()
@@ -62,11 +71,14 @@ export class QuestionService {
     private readonly lessonUsedRepo: Repository<LessonUsed>,
     private readonly files: FileService,
     private readonly ds: DataSource,
+    private readonly options: QuestionOptionsService,
+    private readonly classify: QuestionClassifyService,
+    private readonly fillBlanks: QuestionFillBlankService,
+    private readonly match: QuestionMatchService,
+    private readonly order: QuestionOrderService,
+    private readonly trueOrFalse: QuestionTrueOrFalseService,
   ) {}
 
-  // a lesson freezes once a student attempts it — no adding/editing/removing
-  // its questions afterwards. Repo-only (no LessonService) to avoid the
-  // LessonService → QuestionService cycle.
   private async assertLessonNotUsed(lessonId: UUID, em?: EntityManager) {
     const repo = em ? em.getRepository(LessonUsed) : this.lessonUsedRepo;
     const row = await repo.findOne({ where: { lessonId, used: true } });
@@ -81,19 +93,14 @@ export class QuestionService {
     filter: FindOptionsWhere<Question>,
     select?: FindOptionsSelect<Question>,
   ) {
-    return await this.repo.find({
+    return this.repo.find({
       where: filter,
-      order: matchOrder,
-      select: select,
+      select,
+      relations: questionRelations,
+      order: questionOrder,
     });
   }
 
-  // paginated list. With an explicit lessonId/courseId the caller has
-  // already asserted access; without one, every school question is
-  // returned EXCEPT those hanging off a track the school can't use
-  // (lesson OR course must be null or lead to an allowed track).
-  // Callers pass schoolId explicitly — school scoping is then a plain
-  // filter, and the track-access clauses are skipped when it's absent.
   async getByCriteria(params: {
     params: QuestionGetDto | AdminQuestionGetDto;
     schoolId?: UUID;
@@ -101,21 +108,25 @@ export class QuestionService {
     filter?: any;
   }) {
     const query = params.params;
-    const schoolId = params.schoolId;
-
-    // eager relations don't load through a query builder — join them so
-    // list items keep the same shape as findOne, and order the matches
-    // explicitly since `matchOrder` only reaches the find* family
     const qb = this.repo
       .createQueryBuilder('q')
-      .leftJoinAndSelect('q.options', 'options')
+      .leftJoinAndSelect('q.optionsGroups', 'optionsGroups')
+      .leftJoinAndSelect('optionsGroups.options', 'options')
       .leftJoinAndSelect('q.matchingItems', 'matchingItems')
+      .leftJoinAndSelect('q.trueOrFalse', 'trueOrFalse')
+      .leftJoinAndSelect('q.classifyItems', 'classifyItems')
+      .leftJoinAndSelect('q.orderItems', 'orderItems')
+      .leftJoinAndSelect('q.fillBlanks', 'fillBlanks')
       .leftJoinAndSelect('q.school', 'school')
       .leftJoinAndSelect('q.lesson', 'lesson')
-      .addOrderBy('matchingItems.index', 'ASC');
+      .addOrderBy('optionsGroups.index', 'ASC')
+      .addOrderBy('matchingItems.index', 'ASC')
+      .addOrderBy('classifyItems.index', 'ASC')
+      .addOrderBy('orderItems.sort', 'ASC')
+      .addOrderBy('fillBlanks.index', 'ASC');
 
-    if (schoolId) {
-      qb.andWhere('q.school = :schoolId', { schoolId });
+    if (params.schoolId) {
+      qb.andWhere('q.school = :schoolId', { schoolId: params.schoolId });
     }
     if (query.lessonId) {
       qb.andWhere('q.lesson = :lessonId', { lessonId: query.lessonId });
@@ -124,9 +135,6 @@ export class QuestionService {
       qb.andWhere('q.course = :courseId', { courseId: query.courseId });
     }
     if (params.trackId) {
-      // a question's track comes from its pool course (dailyChallenge)
-      // or from lesson → unit → course (lesson questions) — `lesson` is
-      // already joined above, so walk from it
       qb.leftJoin('q.course', 'poolCourse')
         .leftJoin('lesson.unit', 'qUnit')
         .leftJoin('qUnit.course', 'lessonCourse')
@@ -135,16 +143,15 @@ export class QuestionService {
           { trackId: params.trackId },
         );
     }
+
     applyPsqlFilter({
       queryBuilder: qb,
-      query: query,
+      query,
       options: {
         title: { regExp: { regexp: 'contains' } },
         lessonId: { skip: true },
         courseId: { skip: true },
-        // virtual @RelationId — already applied as q.school above
         schoolId: { skip: true },
-        // applied via the course joins above
         trackId: { skip: true },
       },
     });
@@ -158,18 +165,11 @@ export class QuestionService {
     });
   }
 
-  // options/matchingItems come along via eager relations
   async findOne(filter: FindOptionsWhere<Question>) {
-    let question = await this.repo.findOne({
+    const question = await this.repo.findOne({
       where: filter,
-      order: matchOrder,
-      relations: {
-        course: true,
-        lesson: true,
-        school: true,
-        matchingItems: true,
-        options: true,
-      },
+      relations: questionRelations,
+      order: questionOrder,
     });
     if (!question) {
       throw new NotFoundException('Question not found');
@@ -183,100 +183,49 @@ export class QuestionService {
     schoolId: UUID;
   }) {
     this.assertDtos(params.params);
-    if (params.params.purpose == QuestionPurpose.lesson) {
+    this.validateComponent(params.params);
+    if (params.params.purpose === QuestionPurpose.lesson) {
       await this.assertLessonNotUsed(params.params.lessonId!);
     }
-    const lessonRef =
-      params.params.purpose == QuestionPurpose.lesson
-        ? { id: params.params.lessonId }
-        : null;
-    // and only they attach to a course
-    const courseRef =
-      params.params.purpose == QuestionPurpose.dailyChallenge
-        ? { id: params.params.courseId }
-        : null;
-    let options = this.getNewOptions(params.params, params.schoolId);
-    let fieldIds: UUID[] = [];
-    let questionImage = await this.files.store(
+
+    const questionImage = await this.files.store(
       params.images?.question,
       'learning/questions',
     );
-    if (questionImage) {
-      fieldIds.push(questionImage.id);
-    }
-    return await transaction(
+    const fieldIds = questionImage ? [questionImage.id] : [];
+
+    return transaction(
       this.ds,
       async (em) => {
-        let questionRepo = em.getRepository(Question);
-
         if (questionImage) {
           await this.files.use({ id: questionImage.id, dm: em });
         }
-
-        let question = await questionRepo.save(
-          questionRepo.create({
-            title: params.params.title,
-            type: params.params.type,
-            purpose: params.params.purpose,
-            lesson: lessonRef,
-            course: courseRef,
-            school: { id: params.schoolId },
-            imageId: questionImage?.id,
-            tips: params.params.tips ?? [],
-            ...options,
-          }),
+        return this.createQuestion(
+          params.params,
+          params.schoolId,
+          em,
+          questionImage?.id,
         );
-        return await questionRepo.findOne({
-          where: { id: question.id },
-          order: matchOrder,
-        });
       },
       { onError: async () => await this.files.cleanUp(fieldIds) },
     );
   }
 
-  // all-or-nothing bulk create: any invalid question drops the whole
-  // batch (single transaction, no partial inserts). No image support.
   async createMany(params: { params: QuestionCreateDto[]; schoolId: UUID }) {
-    // validate everything before the first write — getNewOptions is where
-    // the option/match checks live, so it has to run out here too
-    let prepared = params.params.map((dto) => {
+    for (const dto of params.params) {
       this.assertDtos(dto);
-      return { dto, children: this.getNewOptions(dto, params.schoolId) };
-    });
-    for (let { dto } of prepared) {
-      if (dto.purpose == QuestionPurpose.lesson) {
+      this.validateComponent(dto);
+      if (dto.purpose === QuestionPurpose.lesson) {
         await this.assertLessonNotUsed(dto.lessonId!);
       }
     }
-    return await transaction(this.ds, async (em) => {
-      let questionRepo = em.getRepository(Question);
 
-      let createdQ: any[] = [];
-      for (let { dto, children } of prepared) {
-        const lessonRef =
-          dto.purpose == QuestionPurpose.lesson ? { id: dto.lessonId } : null;
-        const courseRef =
-          dto.purpose == QuestionPurpose.dailyChallenge
-            ? { id: dto.courseId }
-            : null;
-
-        let question = await questionRepo.save(
-          questionRepo.create({
-            title: dto.title,
-            type: dto.type,
-            purpose: dto.purpose,
-            lesson: lessonRef,
-            course: courseRef,
-            school: { id: params.schoolId },
-            tips: dto.tips ?? [],
-            ...children,
-          }),
-        );
-        createdQ.push(question);
+    return transaction(this.ds, async (em) => {
+      const questions: Question[] = [];
+      for (const dto of params.params) {
+        questions.push(await this.createQuestion(dto, params.schoolId, em));
       }
-
-      return createdQ;
+      return questions;
     });
   }
 
@@ -285,197 +234,281 @@ export class QuestionService {
     params: QuestionEditDto;
     images?: QuestionImages;
   }) {
-    let question = await this.repo.findOne({
+    const question = await this.repo.findOne({
       where: params.filter,
-      relations: { lesson: true },
+      relations: { lesson: true, fillBlanks: true },
     });
     if (!question) {
-      throw new NotFoundException();
+      throw new NotFoundException('Question not found');
     }
     if (question.lessonId) {
       await this.assertLessonNotUsed(question.lessonId);
     }
+    if (params.params.title !== undefined) {
+      if (question.type === QuestionType.fillBlanks) {
+        this.fillBlanks.validate({
+          text: params.params.title,
+          data: question.fillBlanks,
+        });
+      } else if (/\{\{\s*textField\b/.test(params.params.title)) {
+        throw new BadRequestException(
+          'Text-field placeholders are only allowed for fill-blank questions',
+        );
+      }
+    }
 
-    let fileIds: UUID[] = [];
-    return await transaction(
+    const fileIds: UUID[] = [];
+    return transaction(
       this.ds,
       async (em) => {
-        let questionRepo = em.getRepository(Question);
-
-        // swap the image only when a new one was uploaded
-        // (undefined = keep current, null = removed, id = swapped)
-        let replaced = await this.files.replace({
+        const imageId = await this.files.replace({
           em,
           old: question.imageId,
           store: params.images?.question,
           folder: 'learning/questions',
         });
-        if (replaced) {
-          fileIds.push(replaced);
+        if (imageId) {
+          fileIds.push(imageId);
         }
-        let updateFields: DeepPartial<Question> = {
+
+        await em.getRepository(Question).save({
           id: question.id,
-          imageId: replaced,
+          imageId,
           title: params.params.title,
           tips: params.params.tips,
-        };
-        await questionRepo.save(updateFields);
-        return await questionRepo.findOne({
-          where: { id: question.id },
-          order: matchOrder,
         });
+        return this.findOneWithManager(question.id, em);
       },
-      { onError: async () => await this.files.cleanUp(fileIds) },
+      { onError: async () => this.files.cleanUp(fileIds) },
     );
   }
 
-  // The only delete path.
-  // `em` joins the caller's transaction — `transaction()` always opens a new
-  // one on a new connection, which would deadlock against locks the caller
-  // already holds.
-  // `skipGuards` is for cascade teardown (deleting a whole lesson or unit),
-  // where the lesson is going away so the keep-one rule is moot.
   async deleteQuestions(
     params: FindOptionsWhere<Question>,
     opts?: { em?: EntityManager; skipGuards?: boolean },
   ) {
-    return await this.deleteNew(params, opts?.em, opts?.skipGuards);
+    return this.deleteNew(params, opts?.em, opts?.skipGuards);
   }
 
   async checkAnswerHelper(params: QuestionMap[]) {
-    let res: QuestionVerdict[] = [];
-    for (const data of params) {
-      let question = data.question;
-      let answer = data.answer;
-      if (question.type == QuestionType.OPTIONS) {
-        let option: QuestionOption | undefined = undefined;
-        if (answer.choiceId) {
-          option = question.options.find((e) => e.id == answer.choiceId);
-          if (!option) {
-            throw new BadRequestException('Option not found');
-          }
-        }
-
-        res.push({
-          id: question.id,
-          title: question.title,
-          type: question.type,
-          choiceVerdict: {
-            answered: option,
-            verdict: option?.isCorrect || false,
-            correctOption: question.options.find((e) => e.isCorrect),
-          },
-          isSkipped: !answer.choiceId,
-        });
-        continue;
-      }
-      if (question.type == QuestionType.TRUE_FALSE) {
-        let verdict = question.trueOrFalseAnswer == answer.boolAnswer;
-        res.push({
-          id: question.id,
-          title: question.title,
-          type: question.type,
-          isSkipped: answer.boolAnswer == undefined,
-          trueOrFalseVerdict: {
-            answered: answer.boolAnswer,
-            verdict: verdict,
-            correctAnswer: question.trueOrFalseAnswer == true,
-          },
-        });
-        continue;
-      }
-      if (question.type == QuestionType.MATCH) {
-        let matches = question.matchingItems.filter(
-          (e) => e.type == QuestionMatchType.match,
-        );
-        let bases = question.matchingItems.filter(
-          (e) => e.type == QuestionMatchType.base,
-        );
-        let submitted = answer.matches ?? [];
-        // reject a submitted pair that points at a base/match this question
-        // doesn't own (before we ignore unmatched submissions below)
-        for (const s of submitted) {
-          if (!bases.find((e) => e.id == s.baseId)) {
-            throw new BadRequestException('Base not found');
-          }
-          if (!matches.find((e) => e.id == s.matchId)) {
-            throw new BadRequestException('Match not found');
-          }
-        }
-        // one verdict PER BASE (not per submitted pair): a base the student
-        // left unpaired comes back with answeredMatch undefined and verdict
-        // false, but still carries baseCorrectMatch so review shows the answer
-        let matchVerdicts: MatchVerdict[] = bases.map((base) => {
-          // correctIndex is the `index` value of the correct match row, not a
-          // position in the filtered `matches` array — resolve it by value
-          let correct = question.matchingItems.find(
-            (e) => e.index == base.correctIndex,
-          );
-          // the match the student paired with this base, if they answered it
-          let sub = submitted.find((s) => s.baseId == base.id);
-          let match = sub
-            ? matches.find((e) => e.id == sub!.matchId)
-            : undefined;
-          // the base this chosen match is the correct answer for (its
-          // correctIndex names this match's index) — only when answered
-          let matchCorrectBase = match
-            ? bases.find((b) => b.correctIndex == match!.index)
-            : undefined;
-          return {
-            // skipped base → no answeredMatch → verdict false
-            verdict: !!match && match.id == correct?.id,
-            answeredBase: base,
-            answeredMatch: match,
-            baseCorrectMatch: correct,
-            matchCorrectBase: matchCorrectBase,
-          };
-        });
-        res.push({
-          id: question.id,
-          title: question.title,
-          type: question.type,
-          isSkipped: answer.matches == undefined || answer.matches?.length == 0,
-          matchVerdicts: matchVerdicts,
-        });
-        continue;
-      }
+    const verdicts: QuestionVerdict[] = [];
+    for (const { question, answer } of params) {
+      const result = await this.getComponent(question.type).verdict(
+        question,
+        this.getComponentAnswer(question.type, answer),
+      );
+      verdicts.push({
+        id: question.id,
+        title: question.title,
+        type: question.type,
+        verdict: result.verdict,
+        isSkipped: result.skipped,
+        result,
+      });
     }
-    let passed = res.filter((e) => {
-      if (e.choiceVerdict) {
-        return e.choiceVerdict.verdict;
-      }
-      if (e.trueOrFalseVerdict) {
-        return e.trueOrFalseVerdict.verdict;
-      }
-      if (e.matchVerdicts?.length) {
-        return e.matchVerdicts.every((e) => e.verdict == true);
-      }
-      return false;
-    }).length;
-    let skipped = res.filter((e) => {
-      return e.isSkipped;
-    }).length;
+
     return {
-      verdict: res,
-      passed: passed,
-      total: res.length,
-      skipped: skipped,
+      verdict: verdicts,
+      passed: verdicts.filter((item) => item.verdict).length,
+      total: verdicts.length,
+      skipped: verdicts.filter((item) => item.isSkipped).length,
     };
   }
 
-  // Student-facing view of a lesson's questions: strips every answer key —
-  // the correct-option flag, the true/false answer, and each base's
-  // correctIndex — leaving text/type/order intact so the client can render
-  // and answer. Returns plain objects; the entities are left untouched.
   hideAnswers(questions: Question[]) {
-    return questions.map((q) => {
-      const { trueOrFalseAnswer, options, matchingItems, ...rest } = q;
-      return {
-        ...rest,
-        options: options?.map(({ isCorrect, ...o }) => o),
-        matchingItems: matchingItems?.map(({ correctIndex, ...m }) => m),
-      };
+    return questions.map((question) =>
+      this.getComponent(question.type).hideAnswers(question),
+    );
+  }
+
+  private async createQuestion(
+    dto: QuestionCreateDto,
+    schoolId: UUID,
+    em: EntityManager,
+    imageId?: UUID,
+  ) {
+    const question = await em.getRepository(Question).save(
+      em.getRepository(Question).create({
+        title: dto.title,
+        type: dto.type,
+        purpose: dto.purpose,
+        lesson:
+          dto.purpose === QuestionPurpose.lesson ? { id: dto.lessonId } : null,
+        course:
+          dto.purpose === QuestionPurpose.dailyChallenge
+            ? { id: dto.courseId }
+            : null,
+        school: { id: schoolId },
+        imageId,
+        tips: dto.tips ?? [],
+      }),
+    );
+    await this.createComponent({ dto, questionId: question.id, schoolId, em });
+    return this.findOneWithManager(question.id, em);
+  }
+
+  private async createComponent(params: {
+    dto: QuestionCreateDto;
+    questionId: UUID;
+    schoolId: UUID;
+    em: EntityManager;
+  }) {
+    const { dto, questionId, schoolId, em } = params;
+    switch (dto.type) {
+      case QuestionType.OPTIONS:
+        return this.options.create(
+          { id: questionId, schoolId, groups: dto.optionGroups! },
+          em,
+        );
+      case QuestionType.MATCH:
+        return this.match.create(
+          { id: questionId, schoolId, matches: dto.matchingItems! },
+          em,
+        );
+      case QuestionType.TRUE_FALSE:
+        return this.trueOrFalse.create(
+          { id: questionId, schoolId, data: dto.correctAnswer },
+          em,
+        );
+      case QuestionType.classify:
+        return this.classify.create(
+          { id: questionId, schoolId, data: dto.classify! },
+          em,
+        );
+      case QuestionType.order:
+        return this.order.create(
+          { id: questionId, schoolId, data: dto.orders! },
+          em,
+        );
+      case QuestionType.fillBlanks:
+        return this.fillBlanks.create(
+          { id: questionId, schoolId, text: dto.title, data: dto.fillBlanks! },
+          em,
+        );
+    }
+    throw new BadRequestException('Unsupported question type');
+  }
+
+  private validateComponent(dto: QuestionCreateDto) {
+    this.assertComponentPayload(dto);
+    if (
+      dto.type !== QuestionType.fillBlanks &&
+      /\{\{\s*textField\b/.test(dto.title)
+    ) {
+      throw new BadRequestException(
+        'Text-field placeholders are only allowed for fill-blank questions',
+      );
+    }
+
+    switch (dto.type) {
+      case QuestionType.OPTIONS:
+        this.options.validate(dto.optionGroups!);
+        return;
+      case QuestionType.MATCH:
+        this.match.validate(dto.matchingItems!);
+        return;
+      case QuestionType.TRUE_FALSE:
+        this.trueOrFalse.validate(dto.correctAnswer);
+        return;
+      case QuestionType.classify:
+        this.classify.validate(dto.classify!);
+        return;
+      case QuestionType.order:
+        this.order.validate(dto.orders!);
+        return;
+      case QuestionType.fillBlanks:
+        this.fillBlanks.validate({ text: dto.title, data: dto.fillBlanks! });
+        return;
+    }
+    throw new BadRequestException('Unsupported question type');
+  }
+
+  private getComponent(type: QuestionType): QuestionComponentService {
+    switch (type) {
+      case QuestionType.OPTIONS:
+        return this.options;
+      case QuestionType.MATCH:
+        return this.match;
+      case QuestionType.TRUE_FALSE:
+        return this.trueOrFalse;
+      case QuestionType.classify:
+        return this.classify;
+      case QuestionType.order:
+        return this.order;
+      case QuestionType.fillBlanks:
+        return this.fillBlanks;
+    }
+    // throw new BadRequestException('Unsupported question type');
+  }
+
+  private getComponentAnswer(type: QuestionType, answer: any) {
+    answer ??= {};
+    this.assertAnswerPayload(type, answer);
+    switch (type) {
+      case QuestionType.OPTIONS:
+        return answer.options ?? [];
+      case QuestionType.MATCH:
+        return answer.matches ?? [];
+      case QuestionType.TRUE_FALSE:
+        return { answered: answer.boolAnswer };
+      case QuestionType.classify:
+        return answer.classify ?? [];
+      case QuestionType.order:
+        return answer.orders ?? [];
+      case QuestionType.fillBlanks:
+        return answer.fillBlanks ?? [];
+    }
+    throw new BadRequestException('Unsupported question type');
+  }
+
+  private assertAnswerPayload(type: QuestionType, answer: any) {
+    const answerFields: Record<QuestionType, string> = {
+      [QuestionType.OPTIONS]: 'options',
+      [QuestionType.MATCH]: 'matches',
+      [QuestionType.TRUE_FALSE]: 'boolAnswer',
+      [QuestionType.classify]: 'classify',
+      [QuestionType.order]: 'orders',
+      [QuestionType.fillBlanks]: 'fillBlanks',
+    };
+    const expectedField = answerFields[type];
+    for (const field of Object.values(answerFields)) {
+      if (field !== expectedField && answer[field] !== undefined) {
+        throw new BadRequestException(
+          `${field} is not allowed for ${type} answers`,
+        );
+      }
+    }
+  }
+
+  private assertComponentPayload(dto: QuestionCreateDto) {
+    const componentFields: Record<QuestionType, keyof QuestionCreateDto> = {
+      [QuestionType.OPTIONS]: 'optionGroups',
+      [QuestionType.MATCH]: 'matchingItems',
+      [QuestionType.TRUE_FALSE]: 'correctAnswer',
+      [QuestionType.classify]: 'classify',
+      [QuestionType.order]: 'orders',
+      [QuestionType.fillBlanks]: 'fillBlanks',
+    };
+    const expectedField = componentFields[dto.type];
+    for (const field of Object.values(componentFields)) {
+      if (field !== expectedField && dto[field] !== undefined) {
+        throw new BadRequestException(
+          `${String(field)} is not allowed for ${dto.type} questions`,
+        );
+      }
+    }
+  }
+
+  private async findOneWithManager(id: UUID, em: EntityManager) {
+    const question = await em.getRepository(Question).findOne({
+      where: { id },
+      relations: questionRelations,
+      order: questionOrder,
     });
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+    return question;
   }
 
   private async deleteNew(
@@ -483,44 +516,40 @@ export class QuestionService {
     em?: EntityManager,
     skipGuards?: boolean,
   ) {
-    let repo = em?.getRepository(Question) || this.repo;
-    let questions = await repo.find({
+    const repo = em?.getRepository(Question) || this.repo;
+    const questions = await repo.find({
       where: params,
       relations: { lesson: { questions: true } },
     });
     if (!questions.length) return;
 
     if (!skipGuards) {
-      // a used lesson's questions are frozen — can't be removed. Skipped on
-      // cascade teardown (skipGuards), so deleting the lesson itself still works.
-      for (let lessonId of new Set(
-        questions.map((q) => q.lessonId).filter((id): id is UUID => !!id),
+      for (const lessonId of new Set(
+        questions
+          .map((question) => question.lessonId)
+          .filter(Boolean) as UUID[],
       )) {
         await this.assertLessonNotUsed(lessonId, em);
       }
-      // pool questions are frozen only while TODAY's challenge uses them, and
-      // one used question stops the whole delete. Rows in past challenges just
-      // cascade away with the question.
-      let usedTodayDC = await this.ds
+      const usedToday = await (em ?? this.ds.manager)
         .getRepository(DailyChallengeUsedQuestions)
         .find({
           where: {
-            question: { id: In(questions.map((e) => e.id)) },
+            question: { id: In(questions.map((question) => question.id)) },
             challenge: { date: todayDateString() },
           },
           relations: { question: true },
         });
-      if (usedTodayDC.length) {
+      if (usedToday.length) {
         throw new BadRequestException(
           "Cannot delete a question used by today's daily challenge: " +
-            usedTodayDC.map((u) => u.question.id).join(', '),
+            usedToday.map((used) => used.question.id).join(', '),
         );
       }
-      // a published lesson must keep a question — set it to draft first
-      for (let q of questions) {
+      for (const question of questions) {
         if (
-          q.lesson?.questions.length == 1 &&
-          q.lesson?.status == LessonStatusType.published
+          question.lesson?.questions.length === 1 &&
+          question.lesson.status === LessonStatusType.published
         ) {
           throw new BadRequestException(
             'Cannot delete the last question of a published lesson',
@@ -529,99 +558,25 @@ export class QuestionService {
       }
     }
 
-    let run = async (em: EntityManager) => {
-      // soft-remove owned images (trigger erases them from disk on commit)
+    const run = async (manager: EntityManager) => {
       await this.files.softRemove(
-        questions.map((q) => q.imageId!).filter((id) => !!id),
-        em,
+        questions.map((question) => question.imageId!).filter(Boolean),
+        manager,
       );
-      // CASCADE removes the option/match rows
-      await em.getRepository(Question).remove(questions);
+      await manager.getRepository(Question).remove(questions);
     };
-    return em ? await run(em) : await transaction(this.ds, run);
-  }
-
-  private checkMatch(matches: QuestionMatchDto[]) {
-    let matchCount = matches.filter(
-      (e) => e.type == QuestionMatchType.match,
-    ).length;
-    let baseCount = matches.filter(
-      (e) => e.type == QuestionMatchType.base,
-    ).length;
-    if (matchCount < baseCount) {
-      throw new BadRequestException('Matches should be >= Bases');
-    }
-    let usedIndicies: number[] = [];
-    for (let i = 0; i < matches.length; i++) {
-      if (matches[i].type != QuestionMatchType.base) {
-        continue;
-      }
-      if (matches[i].correctIndex >= matches.length) {
-        throw new BadRequestException('Base correct index is wrong');
-      }
-      if (usedIndicies.includes(matches[i].correctIndex)) {
-        throw new BadRequestException('Match Can Be Used For Only One Base');
-      }
-      if (matches[matches[i].correctIndex].type == QuestionMatchType.base) {
-        throw new BadRequestException('Correct Answer Should Be Match Only');
-      }
-      usedIndicies.push(matches[i].correctIndex);
-    }
-  }
-
-  private checkOptions(options: QuestionOptionDto[]) {
-    if (options.filter((e) => e.isCorrect).length != 1) {
-      throw new BadRequestException('Only One Option Is Correct');
-    }
-  }
-
-  private getNewOptions(
-    params: QuestionCreateDto,
-    schoolId: UUID,
-  ): DeepPartial<Question> {
-    if (params.type == QuestionType.TRUE_FALSE) {
-      return {
-        trueOrFalseAnswer: params.correctAnswer!,
-      };
-    }
-    if (params.type == QuestionType.OPTIONS) {
-      this.checkOptions(params.options!);
-
-      return {
-        options: params.options!.map((e) => ({
-          text: e.text,
-          isCorrect: e.isCorrect,
-          school: { id: schoolId! },
-        })),
-      };
-    }
-    if (params.type == QuestionType.MATCH) {
-      this.checkMatch(params.matchingItems!);
-
-      return {
-        // index is the position as sent — correctIndex on a base row points
-        // at one of these values, so the pairing can't drift with row order
-        matchingItems: params.matchingItems!.map((e, i) => ({
-          text: e.text,
-          type: e.type,
-          index: i,
-          correctIndex: e.correctIndex ?? null,
-          school: { id: schoolId! },
-        })),
-      };
-    }
-    return {};
+    return em ? run(em) : transaction(this.ds, run);
   }
 
   private assertDtos(params: QuestionCreateDto) {
-    if (params.purpose == QuestionPurpose.dailyChallenge && params.lessonId) {
+    if (params.purpose === QuestionPurpose.dailyChallenge && params.lessonId) {
       throw new BadRequestException(
         'Daily challenge questions cannot have a lesson',
       );
     }
-    if (params.purpose == QuestionPurpose.lesson && params.courseId) {
+    if (params.purpose === QuestionPurpose.lesson && params.courseId) {
       throw new BadRequestException(
-        'Lesson questions cannot have a course — it comes from the lesson',
+        'Lesson questions cannot have a course - it comes from the lesson',
       );
     }
   }

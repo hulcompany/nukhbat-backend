@@ -5,10 +5,16 @@ import { BookService } from './book.services';
 import { BookController } from './book.controller';
 import { SubscriptionModule } from '../subscription/subscription.module';
 import { SchoolModule } from '../school/school.module';
+import { SchoolAccessModule } from '../school-access/school-access.module';
 // import { BookController } from './book.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book]), SubscriptionModule, SchoolModule],
+  imports: [
+    TypeOrmModule.forFeature([Book]),
+    SubscriptionModule,
+    SchoolModule,
+    SchoolAccessModule,
+  ],
   exports: [BookService],
   providers: [BookService],
   controllers: [BookController],

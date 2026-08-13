@@ -2,7 +2,7 @@ import { UUID } from 'crypto';
 import {
   Column,
   Entity,
-  Index,
+  JoinColumn,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -20,6 +20,7 @@ export class QuestionTrueOrFalse {
   value: boolean;
 
   @OneToOne(() => Question, (q) => q.trueOrFalse, { onDelete: 'CASCADE' })
+  @JoinColumn()
   question: Question;
 
   @RelationId((m: QuestionTrueOrFalse) => m.question)

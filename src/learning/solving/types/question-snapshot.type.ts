@@ -5,8 +5,8 @@ import { Question } from '../../../curriculum/questions/entity/questions.entity'
 // snapshot id. /solve grades against THIS, never the live rows, so editing or
 // deleting a question mid-attempt can't change what the student is graded on.
 //
-// `questions` carry their answer keys (options' isCorrect, matches'
-// correctIndex, trueOrFalseAnswer) — this is the server-side copy, never the
+// `questions` carry their component answer keys; this is the server-side copy,
+// never the
 // one handed to the student. The lesson scope is copied in so /solve can build
 // the LessonAttempt + ledger rows without re-reading the curriculum.
 export interface QuestionSnapshot {
@@ -21,7 +21,7 @@ export interface QuestionSnapshot {
   courseId: UUID;
   unitId: UUID;
 
-  // full question rows WITH keys, eager options/matchingItems included
+  // full question rows with all eager component data and answer keys
   questions: Question[];
 
   // ISO timestamp of when the snapshot was frozen

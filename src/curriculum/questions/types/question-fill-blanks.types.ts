@@ -1,12 +1,17 @@
-interface QuestionFillBlanksAnswer {
+export interface QuestionFillBlanksAnswer {
   index: number;
   answer: string;
 }
 
-
-interface QuestionFillBlanksVerdict {
+export interface QuestionFillBlanksVerdict {
   index: number;
   answer?: string;
-  correctAnswer: string[],
-  verdict: boolean
+  correctAnswer: string[];
+  verdict: boolean;
+}
+
+export interface QuestionFillBlanksResult {
+  verdict: boolean;
+  skipped: boolean;
+  verdicts: QuestionFillBlanksVerdict[];
 }

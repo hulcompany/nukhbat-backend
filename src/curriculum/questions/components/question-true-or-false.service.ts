@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { QuestionComponentService } from '.././components/question-component.service';
@@ -19,23 +15,36 @@ export class QuestionTrueOrFalseService extends QuestionComponentService {
     super();
   }
 
-  validate(data: boolean | undefined) {
-    if (!data) {
+  validate(data: boolean | undefined | null) {
+    if (typeof data !== 'boolean') {
       throw new BadRequestException('boolean is required');
     }
   }
 
   async verdict(
     question: Question,
-    answer: TrueOrFalseAnswer,
+    answer?: TrueOrFalseAnswer | null,
   ): Promise<TrueOrFalseVerdict> {
-    const data = question.trueOrFalse;
-    const correctAnswer = data!.value;
+    if (!question.trueOrFalse) {
+      throw new BadRequestException('Question has no true-or-false answer');
+    }
+    const correctAnswer = question.trueOrFalse.value;
 
     return {
-      answered: answer.answered,
-      verdict: answer.answered === correctAnswer,
+      answered: answer?.answered,
+      verdict: answer?.answered === correctAnswer,
+      skipped: answer?.answered === undefined,
       correctAnswer,
+    };
+  }
+
+  hideAnswers(question: Question) {
+    const { trueOrFalseAnswer, ...withoutLegacyAnswer } = question;
+    return {
+      ...withoutLegacyAnswer,
+      trueOrFalse: question.trueOrFalse
+        ? (({ value, ...answer }) => answer)(question.trueOrFalse)
+        : question.trueOrFalse,
     };
   }
 
@@ -49,12 +58,13 @@ export class QuestionTrueOrFalseService extends QuestionComponentService {
 
     this.validate(data.data);
 
-    await repo.insert({
-      id: data.id,
-      value: data.data,
-      schoolId: data.schoolId,
-      school: { id: data.schoolId },
-    });
+    await repo.save(
+      repo.create({
+        value: data.data,
+        question: { id: data.id },
+        school: { id: data.schoolId },
+      }),
+    );
   }
 
   async deleteByIds(ids: UUID[], em?: EntityManager) {

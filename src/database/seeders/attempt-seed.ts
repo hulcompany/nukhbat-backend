@@ -117,15 +117,25 @@ export async function seedAttempts(ds: DataSource) {
 // SolveLessonsService freezes into QuestionAttempt.result.
 function buildVerdict(question: any) {
   if (question.type === QuestionType.OPTIONS) {
-    const correct = question.options.find((o: any) => o.isCorrect);
+    const correct = question.optionsGroups[0].options.find(
+      (option: any) => option.isCorrect,
+    );
     return {
       id: question.id,
       title: question.title,
       type: question.type,
-      choiceVerdict: {
-        answered: correct,
+      verdict: true,
+      isSkipped: false,
+      result: {
         verdict: true,
-        correctOption: correct,
+        skipped: false,
+        verdicts: [
+          {
+            answered: correct,
+            verdict: true,
+            correctOption: [correct],
+          },
+        ],
       },
     };
   }
@@ -134,10 +144,13 @@ function buildVerdict(question: any) {
       id: question.id,
       title: question.title,
       type: question.type,
-      trueOrFalseVerdict: {
-        answered: !!question.trueOrFalseAnswer,
-        correct: true,
-        correctAnswer: !!question.trueOrFalseAnswer,
+      verdict: true,
+      isSkipped: false,
+      result: {
+        answered: question.trueOrFalse.value,
+        verdict: true,
+        skipped: false,
+        correctAnswer: question.trueOrFalse.value,
       },
     };
   }
@@ -152,14 +165,20 @@ function buildVerdict(question: any) {
     id: question.id,
     title: question.title,
     type: question.type,
-    matchVerdicts: bases.map((base: any) => {
-      const pair = matches.find((m: any) => m.index === base.correctIndex);
-      return {
-        answeredBase: base,
-        answeredMatch: pair,
-        verdict: true,
-        baseCorrectMatch: pair,
-      };
-    }),
+    verdict: true,
+    isSkipped: false,
+    result: {
+      verdict: true,
+      skipped: false,
+      verdicts: bases.map((base: any) => {
+        const pair = matches.find((m: any) => m.index === base.correctIndex);
+        return {
+          answeredBase: base,
+          answeredMatch: pair,
+          verdict: true,
+          baseCorrectMatch: pair,
+        };
+      }),
+    },
   };
 }

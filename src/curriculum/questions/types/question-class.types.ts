@@ -11,3 +11,9 @@ export interface QuestionClassVerdict {
   answered?: { category: QuestionClassify; items: QuestionClassify[] };
   correctAnswer?: { category: QuestionClassify; items: QuestionClassify[] };
 }
+
+export interface QuestionClassResult {
+  verdict: boolean;
+  skipped: boolean;
+  verdicts: QuestionClassVerdict[];
+}

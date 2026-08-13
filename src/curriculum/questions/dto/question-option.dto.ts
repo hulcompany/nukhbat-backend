@@ -8,11 +8,9 @@ export class QuestionOptionDto {
 
   @IsBoolean()
   @Transform(({ value }) => {
-    if (value === null || value === undefined) {
-      return false;
-    }
-
-    return value === true || value === 'true';
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
   })
-  isCorrect: boolean = false;
+  isCorrect: boolean;
 }
