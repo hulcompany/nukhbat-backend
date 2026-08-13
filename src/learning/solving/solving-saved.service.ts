@@ -1,0 +1,101 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { transaction } from 'core';
+import { DataSource } from 'typeorm';
+import { Question, QuestionMap } from '../../curriculum';
+import { CurriculumService } from '../../curriculum/services/curriculum.service';
+import { StudentProfile } from '../../student/entity/student-profile.entity';
+import { SavedQuestionService } from '../saved-questions/saved-question.service';
+import { SnapshotsService } from '../snapshots/snapshots.service';
+import { SolvingSnapshotDto } from './dto';
+
+@Injectable()
+export class SolvingSavedService {
+  constructor(
+    private readonly savedQuestions: SavedQuestionService,
+    private readonly snapshots: SnapshotsService,
+    private readonly curriculum: CurriculumService,
+    private readonly dataSource: DataSource,
+  ) {}
+
+  async start(student: StudentProfile) {
+    const saved = await this.savedQuestions.findAll(student.id);
+    if (!saved.length) {
+      throw new NotFoundException('No saved questions found');
+    }
+
+    const questions = saved.map((item) => item.question);
+    const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
+      dailyChallengeId: null,
+      lessonId: null,
+      unitId: null,
+      courseId: null,
+      studentId: student.id,
+    });
+
+    return {
+      snapshotId,
+      questions: this.curriculum.hideQuestionAnswers(questions),
+    };
+  }
+
+  async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
+    const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
+    if (!snapshot || snapshot.studentId !== student.id) {
+      throw new NotFoundException('Snapshot not found or expired');
+    }
+    if (
+      snapshot.dailyChallengeId ||
+      snapshot.lessonId ||
+      snapshot.unitId ||
+      snapshot.courseId
+    ) {
+      throw new BadRequestException('Snapshot is not for saved questions');
+    }
+    if (!snapshot.questions.length) {
+      throw new BadRequestException('Snapshot has no questions');
+    }
+
+    const verdict = await this.curriculum.checkQuestionAnswers(
+      this.buildQuestionMaps(snapshot.questions, dto),
+    );
+    const correctQuestionIds = verdict.verdicts
+      .filter((questionVerdict) => questionVerdict.verdict)
+      .map((questionVerdict) => questionVerdict.id);
+
+    await transaction(this.dataSource, async (manager) => {
+      await this.savedQuestions.removeByQuestionIds(
+        student.id,
+        correctQuestionIds,
+        manager,
+      );
+    });
+    await this.snapshots.removeQuestionSnapshot(snapshot.id);
+
+    return verdict;
+  }
+
+  private buildQuestionMaps(
+    questions: Question[],
+    dto: SolvingSnapshotDto,
+  ): QuestionMap[] {
+    const questionIds = new Set(questions.map((question) => question.id));
+    for (const submitted of dto.answers) {
+      if (!questionIds.has(submitted.id)) {
+        throw new BadRequestException(
+          `Answer ${submitted.id} is not part of the saved questions snapshot`,
+        );
+      }
+    }
+
+    return questions.map((question) => ({
+      question,
+      answer:
+        dto.answers.find((submitted) => submitted.id === question.id)
+          ?.answer ?? {},
+    }));
+  }
+}
