@@ -13,7 +13,7 @@ type CurriculumResponse = {
     lessons?: {
       id?: UUID;
       name?: string;
-      questionLength?: number;
+      questionCount?: number;
       passed?: boolean;
     }[];
   }[];
@@ -48,7 +48,7 @@ export class LearningCurriculumService {
           l."unitId" AS unit_id,
           l."index"  AS idx,
           (SELECT COUNT(*)::int FROM "question" q WHERE q."lessonId" = l.id)
-            AS question_length,
+            AS question_count,
           EXISTS (
             SELECT 1 FROM "lesson_attempt" la
             WHERE la."lessonId"  = l.id
@@ -78,7 +78,7 @@ export class LearningCurriculumService {
               json_build_object(
                 'id',             ld.id,
                 'name',           ld.title,
-                'questionLength', ld.question_length,
+                'questionCount', ld.question_count,
                 'passed',         ld.passed,
                 'attemptsCount',  ld.attempts_count
               ) ORDER BY ld.idx
