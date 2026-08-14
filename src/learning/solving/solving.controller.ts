@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { StrictValidation } from '../../common';
 import { JwtGuardStrict, RoleGuard, RoleType } from '../../core';
 import { Context } from '../../context';
@@ -18,22 +18,27 @@ export class SolvingController {
   ) {}
 
   @Post('lesson/start')
-  startLesson(@Body() dto: SolvingStartLessonDto) {
+  async startLesson(@Body() dto: SolvingStartLessonDto) {
     return this.lessons.start(this.context.student, dto);
   }
 
   @Post('lesson/solve')
-  solveLesson(@Body() dto: SolvingSnapshotDto) {
+  async solveLesson(@Body() dto: SolvingSnapshotDto) {
     return this.lessons.solve(this.context.student, dto);
   }
 
   @Post('daily-challenge/start')
-  startDailyChallenge() {
+  async startDailyChallenge() {
     return this.dailyChallenges.start(this.context.student);
   }
 
   @Post('daily-challenge/solve')
-  solveDailyChallenge(@Body() dto: SolvingSnapshotDto) {
+  async solveDailyChallenge(@Body() dto: SolvingSnapshotDto) {
     return this.dailyChallenges.solve(this.context.student, dto);
+  }
+
+  @Get('daily-challenge')
+  async getDailyChallenge() {
+    return this.dailyChallenges.getTodayChallenge(this.context.student);
   }
 }

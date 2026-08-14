@@ -152,7 +152,7 @@ export class SolvingDailyChallengeService {
     }
   }
 
-  private async getTodayChallenge(student: StudentProfile) {
+  async getTodayChallenge(student: StudentProfile) {
     const challenge = (
       await this.curriculum.getDailyChallenge({
         schoolId: student.schoolId,

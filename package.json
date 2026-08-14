@@ -15,6 +15,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "test:questions-hard": "node scripts/question-api-hardening.js",
     "seed": "npx ts-node --require tsconfig-paths/register ./src/database/seed.ts",
     "test-ui:sync": "node ./test-ui/sync-collection.js",
     "typeorm": "npx ts-node --require tsconfig-paths/register ./node_modules/typeorm/cli",
