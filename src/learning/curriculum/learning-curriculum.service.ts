@@ -12,7 +12,7 @@ type CurriculumResponse = {
     progress?: number;
     lessons?: {
       id?: UUID;
-      name?: string;
+      title?: string;
       questionCount?: number;
       passed?: boolean;
     }[];
@@ -77,7 +77,7 @@ export class LearningCurriculumService {
             json_agg(
               json_build_object(
                 'id',             ld.id,
-                'name',           ld.title,
+                'title',           ld.title,
                 'questionCount', ld.question_count,
                 'passed',         ld.passed,
                 'attemptsCount',  ld.attempts_count
