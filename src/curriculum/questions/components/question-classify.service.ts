@@ -36,7 +36,9 @@ export class QuestionClassifyService extends QuestionComponentService {
       throw new BadRequestException('Classify question should have items');
     }
 
-    if (categories.some((category) => category.correctCategoryIndex != null)) {
+    if (
+      categories.some((category) => category.correctCategoryIndex !== undefined)
+    ) {
       throw new BadRequestException(
         'Categories cannot have a correct category index',
       );

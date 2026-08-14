@@ -35,7 +35,7 @@ export class UnitService {
       take: 1,
     });
     let index = (last[0]?.index ?? 0) + 1;
-    console.log(params);
+    // console.log(params);
 
     return await this.repo.save({
       course: { id: params.courseId },

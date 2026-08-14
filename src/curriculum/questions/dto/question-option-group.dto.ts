@@ -19,7 +19,9 @@ export class QuestionOptionGroupDto {
   title?: string;
 
   // multipart delivers every field as a string; JSON already sends a number
-  @Transform(({ value }) => (value === undefined ? undefined : Number(value)))
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
+  )
   @IsInt()
   @Min(0)
   index: number;

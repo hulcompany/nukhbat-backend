@@ -20,11 +20,9 @@ export class QuestionMatchDto {
 
   // only required on base rows; match rows don't reference anything
   @ValidateIf((o) => o.type === QuestionMatchType.base)
-  @Transform(({ value }) => {
-    return value === undefined || value === null || value === ''
-      ? undefined
-      : Number(value);
-  })
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
+  )
   @IsInt()
   @Min(0)
   correctIndex?: number;

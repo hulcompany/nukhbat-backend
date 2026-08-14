@@ -118,9 +118,6 @@ export class Question {
   @RelationId((q: Question) => q.school)
   schoolId?: UUID;
 
-  @Column({ type: 'boolean', nullable: true })
-  trueOrFalseAnswer?: boolean | null;
-
   // free-form hints shown to the student; not an answer key. Orderless, no
   // ids — an edit replaces the whole list wholesale (empty array clears it).
   @Column('text', { array: true, default: () => "'{}'" })

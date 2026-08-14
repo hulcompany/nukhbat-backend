@@ -39,9 +39,8 @@ export class QuestionTrueOrFalseService extends QuestionComponentService {
   }
 
   hideAnswers(question: Question) {
-    const { trueOrFalseAnswer, ...withoutLegacyAnswer } = question;
     return {
-      ...withoutLegacyAnswer,
+      ...question,
       trueOrFalse: question.trueOrFalse
         ? (({ value, ...answer }) => answer)(question.trueOrFalse)
         : question.trueOrFalse,

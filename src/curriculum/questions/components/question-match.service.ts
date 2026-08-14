@@ -33,6 +33,11 @@ export class QuestionMatchService extends QuestionComponentService {
     const usedIndexes = new Set<number>();
     for (let i = 0; i < matches.length; i++) {
       if (matches[i].type != QuestionMatchType.base) {
+        if (matches[i].correctIndex !== undefined) {
+          throw new BadRequestException(
+            'Match rows cannot have a correct index',
+          );
+        }
         continue;
       }
       const correctIndex = matches[i].correctIndex;

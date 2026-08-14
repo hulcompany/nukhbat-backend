@@ -19,7 +19,9 @@ export class QuestionClassifyDto {
   type: QuestionClassifyType;
 
   @ValidateIf((o) => o.type === QuestionClassifyType.item)
-  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
+  )
   @IsInt()
   @Min(0)
   correctCategoryIndex?: number;
