@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "a3e4ecbd-9fc0-4dde-a6c1-bdc286283aa3",
+    "_postman_id": "0f4662ed-5ac4-4171-b15d-61438557f022",
     "name": "Nukhba Alawael API",
     "description": "Generated from the NestJS controllers. Global prefix is /api. Success responses are wrapped as { message, data }.\n\nAuth: run Auth > Login first — a test script stores data.accessToken / data.refreshToken into collection variables, and every guarded request inherits Bearer {{accessToken}}.\n\nRoles: admin (user/manage, school/manage, curriculum/admin, public-content writes), contentWriter (curriculum/school tree, books), public (auth, files, curriculum metaData/tracks, public-content reads).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -59,9 +59,36 @@
       "item": [
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || body;",
+                  "if (data.accessToken) {",
+                  "  pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@hul.com\",\n  \"password\": \"12345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": [
@@ -73,40 +100,24 @@
                 "login"
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@hul.com\",\n  \"password\": \"12345678\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "description": "LoginDto: `email`, `password`.\n\nThe test script stores `accessToken` / `refreshToken` into the collection variables."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const body = pm.response.json();",
-                  "const data = body.data || body;",
-                  "if (data.accessToken) {",
-                  "  pm.collectionVariables.set('accessToken', data.accessToken);",
-                  "  pm.collectionVariables.set('refreshToken', data.refreshToken);",
-                  "}"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Sign up",
           "request": {
             "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@example.com\",\n  \"name\": \"Student Name\",\n  \"phoneNumber\": \"+963912345678\",\n  \"password\": \"12345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/auth/signUp",
               "host": [
@@ -117,15 +128,6 @@
                 "auth",
                 "signUp"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"student@example.com\",\n  \"name\": \"Student Name\",\n  \"phoneNumber\": \"+963912345678\",\n  \"password\": \"12345678\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             },
             "description": "SignUpDto: `email`, `name`, `phoneNumber` (valid SY number), `password` (8–32).\n\nAlways creates a **student** account."
           },
@@ -359,17 +361,6 @@
           "request": {
             "method": "PATCH",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/user/mine",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "user",
-                "mine"
-              ]
-            },
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -396,6 +387,17 @@
                   "description": "Optional. Enable and pick a file to attach an image.",
                   "disabled": true
                 }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "mine"
               ]
             },
             "description": "UserUpdateDto = PartialType(Omit(UserMainDto, \"email\")) — only `name`, `phoneNumber`, `password` (+ `image` file). Sending `email` is rejected (forbidNonWhitelisted)."
@@ -655,17 +657,6 @@
           "request": {
             "method": "POST",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/school/manage",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "school",
-                "manage"
-              ]
-            },
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -702,6 +693,17 @@
                   "description": "Optional school logo.",
                   "disabled": true
                 }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/school/manage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "school",
+                "manage"
               ]
             },
             "description": "SchoolCreateDto extends UserMainDto: `schoolName` + the owner’s `name`, `email`, `password`, `phoneNumber` (all REQUIRED). Creates the owner user with the contentWriter role."
@@ -810,6 +812,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Book name\",\n  \"text\": \"Book content…\",\n  \"lessonId\": \"31bef6d4-86c7-4225-8535-95b92268791e\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/books/school",
                   "host": [
@@ -821,15 +832,6 @@
                     "school"
                   ]
                 },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"Book name\",\n  \"text\": \"Book content…\",\n  \"lessonId\": \"{{lessonId}}\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
                 "description": "BookCreateDto: `name`, `text`, `lessonId` — plain JSON. Books carry no image."
               },
               "response": []
@@ -839,6 +841,15 @@
               "request": {
                 "method": "PATCH",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"New name\",\n  \"text\": \"New content\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/books/school/:id",
                   "host": [
@@ -856,15 +867,6 @@
                       "value": ""
                     }
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"name\": \"New name\",\n  \"text\": \"New content\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "BookEditDto: `name?`, `text?` only — the lesson cannot be moved."
               },
@@ -1218,7 +1220,7 @@
                   "variable": [
                     {
                       "key": "id",
-                      "value": ""
+                      "value": "31bef6d4-86c7-4225-8535-95b92268791e"
                     }
                   ]
                 },
@@ -1385,6 +1387,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"ما ناتج ٢ + ٢؟\",\n  \"type\": \"options\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"tips\": [\n    \"راجع درس الجمع\"\n  ],\n  \"optionGroups\": [\n    {\n      \"title\": \"المجموعة الأولى\",\n      \"index\": 0,\n      \"options\": [\n        {\n          \"text\": \"4\",\n          \"isCorrect\": true\n        },\n        {\n          \"text\": \"5\",\n          \"isCorrect\": false\n        }\n      ]\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1396,15 +1407,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"ما ناتج ٢ + ٢؟\",\n  \"type\": \"options\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"tips\": [\n    \"راجع درس الجمع\"\n  ],\n  \"optionGroups\": [\n    {\n      \"title\": \"المجموعة الأولى\",\n      \"index\": 0,\n      \"options\": [\n        {\n          \"text\": \"4\",\n          \"isCorrect\": true\n        },\n        {\n          \"text\": \"5\",\n          \"isCorrect\": false\n        }\n      ]\n    }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "QuestionCreateDto + QuestionOptionGroupDto.\n\n`optionGroups[].index` must start at 0 and be sequential; each group needs ≥2 options and ≥1 `isCorrect`. `title` on a group is optional.\n\nNeed an image on create? Use the form-data variant below — it accepts the same nested shape."
               },
@@ -1508,6 +1510,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"الأرض كروية\",\n  \"type\": \"trueFalse\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"correctAnswer\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1519,15 +1530,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"الأرض كروية\",\n  \"type\": \"trueFalse\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"correctAnswer\": true\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "`correctAnswer` (boolean) is the answer key; it is stored in the dedicated QuestionTrueOrFalse row."
               },
@@ -1538,6 +1540,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"صل العاصمة بالدولة\",\n  \"type\": \"match\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"matchingItems\": [\n    {\n      \"text\": \"باريس\",\n      \"type\": \"base\",\n      \"correctIndex\": 2\n    },\n    {\n      \"text\": \"برلين\",\n      \"type\": \"base\",\n      \"correctIndex\": 3\n    },\n    {\n      \"text\": \"فرنسا\",\n      \"type\": \"match\"\n    },\n    {\n      \"text\": \"ألمانيا\",\n      \"type\": \"match\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1549,15 +1560,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"صل العاصمة بالدولة\",\n  \"type\": \"match\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"matchingItems\": [\n    {\n      \"text\": \"باريس\",\n      \"type\": \"base\",\n      \"correctIndex\": 2\n    },\n    {\n      \"text\": \"برلين\",\n      \"type\": \"base\",\n      \"correctIndex\": 3\n    },\n    {\n      \"text\": \"فرنسا\",\n      \"type\": \"match\"\n    },\n    {\n      \"text\": \"ألمانيا\",\n      \"type\": \"match\"\n    }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "Minimum 3 items. `correctIndex` on a **base** row is the position of its match **inside this array** (0-based).\n\nRules: matches ≥ bases, every base needs a correctIndex, a match may serve only one base, and a base may not point at another base."
               },
@@ -1568,6 +1570,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"صنّف العناصر التالية\",\n  \"type\": \"classify\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"classify\": [\n    {\n      \"text\": \"فواكه\",\n      \"type\": \"category\"\n    },\n    {\n      \"text\": \"خضار\",\n      \"type\": \"category\"\n    },\n    {\n      \"text\": \"تفاح\",\n      \"type\": \"item\",\n      \"correctCategoryIndex\": 0\n    },\n    {\n      \"text\": \"جزر\",\n      \"type\": \"item\",\n      \"correctCategoryIndex\": 1\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1579,15 +1590,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"صنّف العناصر التالية\",\n  \"type\": \"classify\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"classify\": [\n    {\n      \"text\": \"فواكه\",\n      \"type\": \"category\"\n    },\n    {\n      \"text\": \"خضار\",\n      \"type\": \"category\"\n    },\n    {\n      \"text\": \"تفاح\",\n      \"type\": \"item\",\n      \"correctCategoryIndex\": 0\n    },\n    {\n      \"text\": \"جزر\",\n      \"type\": \"item\",\n      \"correctCategoryIndex\": 1\n    }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "Minimum 2 rows, at least one `category` and one `item`.\n\n`correctCategoryIndex` on an **item** is the position of its category **inside this array**; categories must not carry one."
               },
@@ -1598,6 +1600,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"رتّب خطوات الوضوء\",\n  \"type\": \"order\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"orders\": [\n    {\n      \"text\": \"النية\"\n    },\n    {\n      \"text\": \"غسل الوجه\"\n    },\n    {\n      \"text\": \"غسل اليدين\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1609,15 +1620,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"رتّب خطوات الوضوء\",\n  \"type\": \"order\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"orders\": [\n    {\n      \"text\": \"النية\"\n    },\n    {\n      \"text\": \"غسل الوجه\"\n    },\n    {\n      \"text\": \"غسل اليدين\"\n    }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "Minimum 2 items, sent **in their correct order** — the array position becomes `sort`. The student receives them shuffled."
               },
@@ -1628,6 +1630,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"عاصمة فرنسا هي {{textField:{width:120,contentLength:null,index:0}}} وعاصمة ألمانيا هي {{textField:{width:120,contentLength:null,index:1}}}\",\n  \"type\": \"fillBlanks\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"fillBlanks\": [\n    { \"index\": 0, \"answers\": [\"باريس\", \"Paris\"] },\n    { \"index\": 1, \"answers\": [\"برلين\", \"Berlin\"] }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1639,15 +1650,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"عاصمة فرنسا هي {{textField:{width:120,contentLength:null,index:0}}} وعاصمة ألمانيا هي {{textField:{width:120,contentLength:null,index:1}}}\",\n  \"type\": \"fillBlanks\",\n  \"purpose\": \"lesson\",\n  \"lessonId\": \"{{lessonId}}\",\n  \"fillBlanks\": [\n    { \"index\": 0, \"answers\": [\"باريس\", \"Paris\"] },\n    { \"index\": 1, \"answers\": [\"برلين\", \"Berlin\"] }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "The `title` MUST carry one placeholder per blank, in exactly this syntax:\n\n`{{textField:{width:<int>,contentLength:<int|null>,index:<int>}}}`\n\nPlaceholder count and indexes must match `fillBlanks[].index`, which starts at 0 and is sequential. Each blank accepts a list of answers (any match counts).\n\nNote: Postman leaves the unresolved `{{textField…}}` token untouched — that is intended, it is part of the question text."
               },
@@ -1658,6 +1660,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"سؤال مخزون التحدي اليومي\",\n  \"type\": \"trueFalse\",\n  \"purpose\": \"dailyChallenge\",\n  \"courseId\": \"{{courseId}}\",\n  \"correctAnswer\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions",
                   "host": [
@@ -1669,15 +1680,6 @@
                     "school",
                     "questions"
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"سؤال مخزون التحدي اليومي\",\n  \"type\": \"trueFalse\",\n  \"purpose\": \"dailyChallenge\",\n  \"courseId\": \"{{courseId}}\",\n  \"correctAnswer\": false\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "`purpose: dailyChallenge` swaps `lessonId` for `courseId` — the question joins that course’s pool and is never shown inside a lesson. Sending `lessonId` here is rejected, and vice-versa."
               },
@@ -1688,18 +1690,6 @@
               "request": {
                 "method": "POST",
                 "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/curriculum/school/questions",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "curriculum",
-                    "school",
-                    "questions"
-                  ]
-                },
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1734,9 +1724,20 @@
                       "key": "image",
                       "type": "file",
                       "value": null,
-                      "description": "Enable and pick a file.",
-                      "disabled": false
+                      "description": "Enable and pick a file."
                     }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "curriculum",
+                    "school",
+                    "questions"
                   ]
                 },
                 "description": "Multipart is the only way to attach `image` on create.\n\nIt works for `options`, `trueFalse`, `match`, `classify` and `order`. **fillBlanks** stays JSON-only: `fillBlanks[].index` has no `@Transform`, so multipart delivers it as a string and `@IsInt()` rejects it."
@@ -1748,6 +1749,15 @@
               "request": {
                 "method": "POST",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"questions\": [\n    {\n      \"title\": \"ما ناتج ٢ + ٢؟\",\n      \"type\": \"options\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"{{lessonId}}\",\n      \"optionGroups\": [\n        {\n          \"index\": 0,\n          \"options\": [\n            {\n              \"text\": \"4\",\n              \"isCorrect\": true\n            },\n            {\n              \"text\": \"5\",\n              \"isCorrect\": false\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"title\": \"الأرض كروية\",\n      \"type\": \"trueFalse\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"{{lessonId}}\",\n      \"correctAnswer\": true,\n      \"tips\": [\n        \"فكّر في صور الأقمار الصناعية\"\n      ]\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions/bulk",
                   "host": [
@@ -1761,15 +1771,6 @@
                     "bulk"
                   ]
                 },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"questions\": [\n    {\n      \"title\": \"ما ناتج ٢ + ٢؟\",\n      \"type\": \"options\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"{{lessonId}}\",\n      \"optionGroups\": [\n        {\n          \"index\": 0,\n          \"options\": [\n            {\n              \"text\": \"4\",\n              \"isCorrect\": true\n            },\n            {\n              \"text\": \"5\",\n              \"isCorrect\": false\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"title\": \"الأرض كروية\",\n      \"type\": \"trueFalse\",\n      \"purpose\": \"lesson\",\n      \"lessonId\": \"{{lessonId}}\",\n      \"correctAnswer\": true,\n      \"tips\": [\n        \"فكّر في صور الأقمار الصناعية\"\n      ]\n    }\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
                 "description": "QuestionBulkCreateDto: `{ questions: QuestionCreateDto[] }` — same shapes as the single-create requests, no image support. All rows are created in one transaction."
               },
               "response": []
@@ -1779,6 +1780,15 @@
               "request": {
                 "method": "PATCH",
                 "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"نص السؤال بعد التعديل\",\n  \"tips\": [\n    \"تلميح ١\",\n    \"تلميح ٢\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
                   "host": [
@@ -1797,15 +1807,6 @@
                       "value": "{{questionId}}"
                     }
                   ]
-                },
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"نص السؤال بعد التعديل\",\n  \"tips\": [\n    \"تلميح ١\",\n    \"تلميح ٢\"\n  ]\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 },
                 "description": "QuestionEditDto whitelists **only** `title` and `tips`. Sending `type`, `purpose`, `lessonId`, `optionGroups`, … is rejected (forbidNonWhitelisted) — the answer key is immutable; delete and recreate instead.\n\n`tips` replaces the whole list (`[]` clears it). Editing a fillBlanks `title` re-validates its placeholders. A lesson already used by a student rejects every question edit."
               },
@@ -1816,25 +1817,6 @@
               "request": {
                 "method": "PATCH",
                 "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "curriculum",
-                    "school",
-                    "questions",
-                    ":id"
-                  ],
-                  "variable": [
-                    {
-                      "key": "id",
-                      "value": "{{questionId}}"
-                    }
-                  ]
-                },
                 "body": {
                   "mode": "formdata",
                   "formdata": [
@@ -1853,8 +1835,26 @@
                       "key": "image",
                       "type": "file",
                       "value": null,
-                      "description": "Replaces the current image.",
-                      "disabled": false
+                      "description": "Replaces the current image."
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/curriculum/school/questions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "curriculum",
+                    "school",
+                    "questions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "{{questionId}}"
                     }
                   ]
                 },
@@ -2069,7 +2069,7 @@
               "variable": [
                 {
                   "key": "trackId",
-                  "value": ""
+                  "value": "f3518279-9baa-4101-818c-ecd3cd4ad94c"
                 }
               ]
             }
@@ -3624,9 +3624,31 @@
         },
         {
           "name": "Solve — start lesson",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || body;",
+                  "if (data.snapshotId) pm.collectionVariables.set('snapshotId', data.snapshotId);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lessonId\": \"{{lessonId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/lesson/start",
               "host": [
@@ -3640,37 +3662,24 @@
                 "start"
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"lessonId\": \"{{lessonId}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "description": "SolvingStartLessonDto. Returns `{ snapshotId, lesson, questions }` with the answer keys stripped; the snapshot freezes the questions for this attempt and marks the lesson as used.\n\nThe test script stores `snapshotId`."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const body = pm.response.json();",
-                  "const data = body.data || body;",
-                  "if (data.snapshotId) pm.collectionVariables.set('snapshotId', data.snapshotId);"
-                ]
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Solve — submit answers",
           "request": {
             "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    { \"id\": \"{{questionId}}\", \"answer\": { \"options\": [ { \"answered\": \"{{optionId}}\", \"index\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"boolAnswer\": true } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"matches\": [ { \"baseId\": \"{{baseId}}\", \"matchId\": \"{{matchId}}\" } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"classify\": [ { \"categoryId\": \"{{categoryId}}\", \"items\": [ \"{{classifyItemId}}\" ] } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"orders\": [ { \"id\": \"{{orderItemId}}\", \"order\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"fillBlanks\": [ { \"index\": 0, \"answer\": \"باريس\" } ] } }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/lesson/solve",
               "host": [
@@ -3684,21 +3693,25 @@
                 "solve"
               ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    { \"id\": \"{{questionId}}\", \"answer\": { \"options\": [ { \"answered\": \"{{optionId}}\", \"index\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"boolAnswer\": true } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"matches\": [ { \"baseId\": \"{{baseId}}\", \"matchId\": \"{{matchId}}\" } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"classify\": [ { \"categoryId\": \"{{categoryId}}\", \"items\": [ \"{{classifyItemId}}\" ] } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"orders\": [ { \"id\": \"{{orderItemId}}\", \"order\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"fillBlanks\": [ { \"index\": 0, \"answer\": \"باريس\" } ] } }\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "description": "SolvingSnapshotDto: `{ snapshotId, answers }`.\n\nOne field per question type — mixing them is rejected (`options is not allowed for trueFalse answers`):\n\n- `options`    → `{ options: [{ answered: <optionId>, index: <groupIndex> }] }` (one entry per group)\n- `trueFalse`  → `{ boolAnswer: true }`\n- `match`      → `{ matches: [{ baseId, matchId }] }`\n- `classify`   → `{ classify: [{ categoryId, items: [itemId] }] }`\n- `order`      → `{ orders: [{ id, order }] }` (order 0-based, unique, sequential)\n- `fillBlanks` → `{ fillBlanks: [{ index, answer }] }`\n\nQuestion ids must be unique in `answers`; an omitted question counts as skipped.\n\nReturns the verdict result (`verdicts`, `correct`, `total`, `skipped`, `score`, `passed`) plus the awarded `xps` / `gems`. The snapshot is consumed; wrong questions are auto-saved."
           },
           "response": []
         },
         {
           "name": "Daily challenge — start",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || body;",
+                  "if (data.snapshotId) pm.collectionVariables.set('snapshotId', data.snapshotId);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
@@ -3717,26 +3730,58 @@
             },
             "description": "Starts today's challenge for the student's own (school, track). No body. Returns `{ snapshotId, questions }`.\n\nRejects with 400 if the student already attempted today, 404 if no challenge exists yet."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Daily challenge",
           "event": [
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "const body = pm.response.json();",
                   "const data = body.data || body;",
                   "if (data.snapshotId) pm.collectionVariables.set('snapshotId', data.snapshotId);"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/daily-challenge",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "daily-challenge"
+              ]
+            },
+            "description": "Starts today's challenge for the student's own (school, track). No body. Returns `{ snapshotId, questions }`.\n\nRejects with 400 if the student already attempted today, 404 if no challenge exists yet."
+          },
+          "response": []
         },
         {
           "name": "Daily challenge — solve",
           "request": {
             "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    { \"id\": \"{{questionId}}\", \"answer\": { \"options\": [ { \"answered\": \"{{optionId}}\", \"index\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"boolAnswer\": true } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"matches\": [ { \"baseId\": \"{{baseId}}\", \"matchId\": \"{{matchId}}\" } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"classify\": [ { \"categoryId\": \"{{categoryId}}\", \"items\": [ \"{{classifyItemId}}\" ] } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"orders\": [ { \"id\": \"{{orderItemId}}\", \"order\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"fillBlanks\": [ { \"index\": 0, \"answer\": \"باريس\" } ] } }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{baseUrl}}/api/learning/solving/daily-challenge/solve",
               "host": [
@@ -3749,15 +3794,6 @@
                 "daily-challenge",
                 "solve"
               ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    { \"id\": \"{{questionId}}\", \"answer\": { \"options\": [ { \"answered\": \"{{optionId}}\", \"index\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"boolAnswer\": true } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"matches\": [ { \"baseId\": \"{{baseId}}\", \"matchId\": \"{{matchId}}\" } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"classify\": [ { \"categoryId\": \"{{categoryId}}\", \"items\": [ \"{{classifyItemId}}\" ] } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"orders\": [ { \"id\": \"{{orderItemId}}\", \"order\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"fillBlanks\": [ { \"index\": 0, \"answer\": \"باريس\" } ] } }\n  ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             },
             "description": "Same SolvingSnapshotDto as the lesson solve — the daily challenge now goes through a snapshot too, so `snapshotId` is REQUIRED.\n\nOne attempt per day; a perfect score awards `AppConfig.DAILY_CHALLENGE_XPS`."
           },
