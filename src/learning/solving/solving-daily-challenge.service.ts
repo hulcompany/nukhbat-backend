@@ -68,72 +68,88 @@ export class SolvingDailyChallengeService {
   }
 
   async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
-    const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
-    if (!snapshot || snapshot.studentId !== student.id) {
+    const initialSnapshot = await this.snapshots.getQuestionSnapshot(
+      dto.snapshotId,
+    );
+    if (!initialSnapshot || initialSnapshot.studentId !== student.id) {
       throw new NotFoundException('Snapshot not found or expired');
     }
-    if (
-      !snapshot.dailyChallengeId ||
-      snapshot.lessonId ||
-      snapshot.unitId ||
-      snapshot.courseId
-    ) {
-      throw new BadRequestException('Snapshot is not for a daily challenge');
-    }
-    if (!snapshot.questions.length) {
-      throw new BadRequestException('Snapshot has no questions');
-    }
-    assertFullQuestionComponents(snapshot.questions);
 
-    const challenge = await this.getTodayChallenge(student);
-    if (challenge.id !== snapshot.dailyChallengeId) {
-      throw new NotFoundException(
-        'Daily challenge snapshot is no longer valid',
+    const lockToken = await this.snapshots.lockQuestionSnapshot(dto.snapshotId);
+    if (!lockToken) {
+      throw new BadRequestException('Snapshot is already being solved');
+    }
+
+    try {
+      const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
+      if (!snapshot || snapshot.studentId !== student.id) {
+        throw new NotFoundException('Snapshot not found or expired');
+      }
+      if (
+        !snapshot.dailyChallengeId ||
+        snapshot.lessonId ||
+        snapshot.unitId ||
+        snapshot.courseId
+      ) {
+        throw new BadRequestException('Snapshot is not for a daily challenge');
+      }
+      if (!snapshot.questions.length) {
+        throw new BadRequestException('Snapshot has no questions');
+      }
+      assertFullQuestionComponents(snapshot.questions);
+
+      const challenge = await this.getTodayChallenge(student);
+      if (challenge.id !== snapshot.dailyChallengeId) {
+        throw new NotFoundException(
+          'Daily challenge snapshot is no longer valid',
+        );
+      }
+      if (
+        await this.attempts.getDailyChallengeAttempt(challenge.id, student.id)
+      ) {
+        throw new BadRequestException('Daily challenge already attempted');
+      }
+
+      const verdict = await this.curriculum.checkQuestionAnswers(
+        this.buildQuestionMaps(snapshot.questions, dto),
       );
-    }
-    if (
-      await this.attempts.getDailyChallengeAttempt(challenge.id, student.id)
-    ) {
-      throw new BadRequestException('Daily challenge already attempted');
-    }
+      const xps = verdict.passed ? AppConfig.DAILY_CHALLENGE_XPS : 0;
 
-    const verdict = await this.curriculum.checkQuestionAnswers(
-      this.buildQuestionMaps(snapshot.questions, dto),
-    );
-    const xps = verdict.passed ? AppConfig.DAILY_CHALLENGE_XPS : 0;
-
-    await transaction(this.dataSource, async (manager) => {
-      await this.attempts.saveDailyChallengeAttempt(
-        {
-          dailyChallengeId: challenge.id,
-          studentId: student.id,
-          score: verdict.correct,
-          total: verdict.total,
-          skipped: verdict.skipped,
-          verdict,
-        },
-        manager,
-      );
-      await this.students.updateDailyStreak(student.id, manager);
-
-      if (verdict.passed) {
-        await this.ledger.insertLedge(
+      await transaction(this.dataSource, async (manager) => {
+        await this.attempts.saveDailyChallengeAttempt(
           {
+            dailyChallengeId: challenge.id,
             studentId: student.id,
-            schoolId: student.schoolId,
-            trackId: student.trackId,
-          },
-          {
-            sourceName: `Daily challenge ${challenge.date}`,
-            xp: xps,
+            score: verdict.correct,
+            total: verdict.total,
+            skipped: verdict.skipped,
+            verdict,
           },
           manager,
         );
-      }
-    });
+        await this.students.updateDailyStreak(student.id, manager);
 
-    await this.snapshots.removeQuestionSnapshot(snapshot.id);
-    return { ...verdict, xps, gems: 0 };
+        if (verdict.passed) {
+          await this.ledger.insertLedge(
+            {
+              studentId: student.id,
+              schoolId: student.schoolId,
+              trackId: student.trackId,
+            },
+            {
+              sourceName: `Daily challenge ${challenge.date}`,
+              xp: xps,
+            },
+            manager,
+          );
+        }
+      });
+
+      await this.snapshots.removeQuestionSnapshot(snapshot.id);
+      return { ...verdict, xps, gems: 0 };
+    } finally {
+      await this.snapshots.unlockQuestionSnapshot(dto.snapshotId, lockToken);
+    }
   }
 
   private async getTodayChallenge(student: StudentProfile) {

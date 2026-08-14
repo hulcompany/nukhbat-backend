@@ -127,11 +127,11 @@ export class QuestionOptionsService extends QuestionComponentService {
       data.groups.map((group) =>
         repo.create({
           index: group.index,
-          text: group.title,
+          text: group.title?.trim(),
           question: { id: data.id },
           school: { id: data.schoolId },
           options: group.options.map((option) => ({
-            text: option.text,
+            text: option.text.trim(),
             isCorrect: option.isCorrect,
           })),
         }),

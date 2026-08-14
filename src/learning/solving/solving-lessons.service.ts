@@ -80,114 +80,132 @@ export class SolvingLessonsService {
   }
 
   async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
-    const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
-    if (!snapshot || snapshot.studentId !== student.id) {
+    const initialSnapshot = await this.snapshots.getQuestionSnapshot(
+      dto.snapshotId,
+    );
+    if (!initialSnapshot || initialSnapshot.studentId !== student.id) {
       throw new NotFoundException('Snapshot not found or expired');
     }
-    if (
-      snapshot.dailyChallengeId ||
-      !snapshot.lessonId ||
-      !snapshot.unitId ||
-      !snapshot.courseId
-    ) {
-      throw new BadRequestException('Snapshot is not for a lesson');
-    }
-    if (!snapshot.questions.length) {
-      throw new BadRequestException('Snapshot has no questions');
-    }
-    assertFullQuestionComponents(snapshot.questions);
 
-    const lesson = await this.curriculum.getLesson(
-      {
-        id: snapshot.lessonId,
-        schoolId: student.schoolId,
-        trackId: student.trackId,
-        status: LessonStatusType.published,
-      },
-      { unit: true },
-    );
-    if (
-      !lesson ||
-      lesson.unitId !== snapshot.unitId ||
-      lesson.unit.courseId !== snapshot.courseId
-    ) {
-      throw new NotFoundException('Lesson snapshot is no longer valid');
+    const lockToken = await this.snapshots.lockQuestionSnapshot(dto.snapshotId);
+    if (!lockToken) {
+      throw new BadRequestException('Snapshot is already being solved');
     }
 
-    const verdict = await this.curriculum.checkQuestionAnswers(
-      this.buildQuestionMaps(snapshot.questions, dto),
-    );
-    const stats = await this.attempts.getLessonAttemptStats(
-      lesson.id,
-      student.id,
-    );
-    const rewards = await this.calculateRewards({
-      student,
-      lessonId: lesson.id,
-      unitId: lesson.unitId,
-      questionCount: snapshot.questions.length,
-      attemptCount: stats.attemptCount,
-      alreadyCompleted: stats.alreadyCompleted,
-      fullMark: verdict.passed,
-    });
+    try {
+      // Re-read after locking: another request may have consumed the snapshot
+      // between the ownership check and this request acquiring the lock.
+      const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
+      if (!snapshot || snapshot.studentId !== student.id) {
+        throw new NotFoundException('Snapshot not found or expired');
+      }
+      if (
+        snapshot.dailyChallengeId ||
+        !snapshot.lessonId ||
+        !snapshot.unitId ||
+        !snapshot.courseId
+      ) {
+        throw new BadRequestException('Snapshot is not for a lesson');
+      }
+      if (!snapshot.questions.length) {
+        throw new BadRequestException('Snapshot has no questions');
+      }
+      assertFullQuestionComponents(snapshot.questions);
 
-    await transaction(this.dataSource, async (manager) => {
-      const attempt = await this.attempts.saveLessonAttempt(
+      const lesson = await this.curriculum.getLesson(
         {
-          studentId: student.id,
+          id: snapshot.lessonId,
           schoolId: student.schoolId,
           trackId: student.trackId,
-          courseId: snapshot.courseId!,
-          unitId: lesson.unitId,
-          lessonId: lesson.id,
-          lessonTitle: lesson.title,
-          xpAwarded: rewards.xps,
+          status: LessonStatusType.published,
         },
-        verdict,
-        manager,
+        { unit: true },
       );
+      if (
+        !lesson ||
+        lesson.unitId !== snapshot.unitId ||
+        lesson.unit.courseId !== snapshot.courseId
+      ) {
+        throw new NotFoundException('Lesson snapshot is no longer valid');
+      }
 
-      await this.attempts.saveQuestionAttempts(
-        verdict.verdicts.map((questionVerdict) => ({
-          lessonAttemptId: attempt.id,
-          studentId: student.id,
-          questionId: questionVerdict.id,
-          questionType: questionVerdict.type,
-          result: questionVerdict,
-          isSkipped: questionVerdict.isSkipped,
-          ...this.getQuestionScore(questionVerdict),
-        })),
-        manager,
+      const verdict = await this.curriculum.checkQuestionAnswers(
+        this.buildQuestionMaps(snapshot.questions, dto),
       );
-
-      await this.savedQuestions.saveMany(
+      const stats = await this.attempts.getLessonAttemptStats(
+        lesson.id,
         student.id,
-        verdict.verdicts
-          .filter((questionVerdict) => !questionVerdict.verdict)
-          .map((questionVerdict) => questionVerdict.id),
-        manager,
       );
-      await this.students.updateDailyStreak(student.id, manager);
+      const rewards = await this.calculateRewards({
+        student,
+        lessonId: lesson.id,
+        unitId: lesson.unitId,
+        questionCount: snapshot.questions.length,
+        attemptCount: stats.attemptCount,
+        alreadyCompleted: stats.alreadyCompleted,
+        fullMark: verdict.passed,
+      });
 
-      if (rewards.xps || rewards.gems) {
-        await this.ledger.insertLedge(
+      await transaction(this.dataSource, async (manager) => {
+        const attempt = await this.attempts.saveLessonAttempt(
           {
             studentId: student.id,
             schoolId: student.schoolId,
             trackId: student.trackId,
+            courseId: snapshot.courseId!,
+            unitId: lesson.unitId,
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            xpAwarded: rewards.xps,
           },
-          {
-            sourceName: lesson.title,
-            xp: rewards.xps,
-            gem: rewards.gems,
-          },
+          verdict,
           manager,
         );
-      }
-    });
 
-    await this.snapshots.removeQuestionSnapshot(snapshot.id);
-    return { ...verdict, ...rewards };
+        await this.attempts.saveQuestionAttempts(
+          verdict.verdicts.map((questionVerdict) => ({
+            lessonAttemptId: attempt.id,
+            studentId: student.id,
+            questionId: questionVerdict.id,
+            questionType: questionVerdict.type,
+            result: questionVerdict,
+            isSkipped: questionVerdict.isSkipped,
+            ...this.getQuestionScore(questionVerdict),
+          })),
+          manager,
+        );
+
+        await this.savedQuestions.saveMany(
+          student.id,
+          verdict.verdicts
+            .filter((questionVerdict) => !questionVerdict.verdict)
+            .map((questionVerdict) => questionVerdict.id),
+          manager,
+        );
+        await this.students.updateDailyStreak(student.id, manager);
+
+        if (rewards.xps || rewards.gems) {
+          await this.ledger.insertLedge(
+            {
+              studentId: student.id,
+              schoolId: student.schoolId,
+              trackId: student.trackId,
+            },
+            {
+              sourceName: lesson.title,
+              xp: rewards.xps,
+              gem: rewards.gems,
+            },
+            manager,
+          );
+        }
+      });
+
+      await this.snapshots.removeQuestionSnapshot(snapshot.id);
+      return { ...verdict, ...rewards };
+    } finally {
+      await this.snapshots.unlockQuestionSnapshot(dto.snapshotId, lockToken);
+    }
   }
 
   private async calculateRewards(params: {

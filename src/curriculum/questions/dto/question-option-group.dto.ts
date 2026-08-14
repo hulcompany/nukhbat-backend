@@ -12,6 +12,7 @@ import { QuestionOptionDto } from './question-option.dto';
 import { Transform, Type } from 'class-transformer';
 
 export class QuestionOptionGroupDto {
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsOptional()
   @IsNotEmpty()

@@ -10,6 +10,7 @@ import { QuestionClassifyType } from '../entity/enum/question-classify.type';
 import { Transform } from 'class-transformer';
 
 export class QuestionClassifyDto {
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
   text: string;

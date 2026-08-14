@@ -112,7 +112,7 @@ export class QuestionFillBlankService extends QuestionComponentService {
           question: { id: data.id },
           school: { id: data.schoolId },
           index: blank.index,
-          answers: blank.answers,
+          answers: blank.answers.map((answer) => answer.trim()),
         }),
       ),
     );
@@ -150,11 +150,16 @@ export class QuestionFillBlankService extends QuestionComponentService {
     const result: QuestionFillBlanksVerdict[] = [];
     for (const blank of blanks) {
       const submitted = answersByIndex.get(blank.index);
+      const normalizedAnswer = submitted?.answer.trim().toLowerCase();
       result.push({
-        answer: submitted?.answer,
+        answer: submitted?.answer.trim(),
         correctAnswer: blank.answers,
         index: blank.index,
-        verdict: blank.answers.includes(submitted?.answer || ''),
+        verdict:
+          normalizedAnswer !== undefined &&
+          blank.answers.some(
+            (answer) => answer.trim().toLowerCase() === normalizedAnswer,
+          ),
       });
     }
     return {

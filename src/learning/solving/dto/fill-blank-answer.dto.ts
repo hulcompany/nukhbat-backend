@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsInt, IsString, Min } from 'class-validator';
 
 export class FillBlankAnswerDto {
@@ -5,6 +6,7 @@ export class FillBlankAnswerDto {
   @Min(0)
   index: number;
 
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   answer: string;
 }

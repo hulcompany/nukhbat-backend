@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UUID } from 'crypto';
 import {
+  DataSource,
   EntityManager,
   FindOptionsOrder,
   FindOptionsRelations,
@@ -38,6 +39,7 @@ export class CurriculumService {
     private readonly questionService: QuestionService,
     private readonly trackService: TrackService,
     private readonly dailyChallengeService: DailyChallengeService,
+    private readonly ds: DataSource,
   ) {}
 
   getTracks() {
@@ -130,62 +132,108 @@ export class CurriculumService {
   }
 
   // Full course → unit → lesson tree for ONE school within ONE track (both
-  // required). Pure content — only PUBLISHED (active) lessons, no questions and
-  // no progress/attempt data. Courses come from the track (shared across
-  // schools); units and lessons are the school's own, so nothing leaks between
-  // schools. A unit with no active lessons is dropped, and a course left with
-  // no units is dropped too.
+  // required). Includes every lesson status and keeps units with no lessons.
+  // Courses come from the track (shared across schools); units, lessons and
+  // attempt counts are scoped to the school. Courses with no school units are
+  // still omitted, preserving the existing top-level response behavior.
   async getCurriculumTree(params: { trackId: UUID; schoolId: UUID }) {
-    const [courses, units, lessons] = await Promise.all([
-      this.getCourses({ trackId: params.trackId }),
-      this.getUnits({ trackId: params.trackId, schoolId: params.schoolId }),
-      this.getLessons({
-        trackId: params.trackId,
-        schoolId: params.schoolId,
-        status: LessonStatusType.published,
-      }),
-    ]);
-
-    const lessonsByUnit = new Map<UUID, Lesson[]>();
-    for (const lesson of lessons) {
-      const list = lessonsByUnit.get(lesson.unitId) ?? [];
-      list.push(lesson);
-      lessonsByUnit.set(lesson.unitId, list);
-    }
-
-    const unitsByCourse = new Map<UUID, Unit[]>();
-    for (const unit of units) {
-      const list = unitsByCourse.get(unit.courseId) ?? [];
-      list.push(unit);
-      unitsByCourse.set(unit.courseId, list);
-    }
-
-    return (
-      courses
-        .map((course) => ({
-          id: course.id,
-          title: course.title,
-          units: (unitsByCourse.get(course.id) ?? [])
-            .sort((a, b) => a.index - b.index)
-            .map((unit) => ({
-              id: unit.id,
-              title: unit.title,
-              index: unit.index,
-              lessons: (lessonsByUnit.get(unit.id) ?? [])
-                .sort((a, b) => a.index - b.index)
-                .map((lesson) => ({
-                  id: lesson.id,
-                  title: lesson.title,
-                  index: lesson.index,
-                  used: lesson.used ?? false,
-                })),
-            }))
-            // a unit with no active lessons is dropped from the tree
-            .filter((unit) => unit.lessons.length > 0),
-        }))
-        // a course left with no units is dropped too
-        .filter((course) => course.units.length > 0)
+    // $1 = schoolId, $2 = trackId
+    const rows = await this.ds.query(
+      `
+      WITH lesson_attempt_counts AS (
+        SELECT
+          la."lessonId" AS lesson_id,
+          COUNT(*)::int AS attempt_counts
+        FROM "lesson_attempt" la
+        WHERE la."schoolId" = $1
+        GROUP BY la."lessonId"
+      ),
+      lesson_question_counts AS (
+        SELECT
+          q."lessonId" AS lesson_id,
+          COUNT(*)::int AS question_counts
+        FROM "question" q
+        WHERE q."schoolId" = $1
+          AND q."lessonId" IS NOT NULL
+        GROUP BY q."lessonId"
+      ),
+      lesson_data AS (
+        SELECT
+          l.id,
+          l.title,
+          l."unitId" AS unit_id,
+          l."index" AS idx,
+          COALESCE(lu.used, false) AS used,
+          COALESCE(lac.attempt_counts, 0) AS attempt_counts,
+          COALESCE(lqc.question_counts, 0) AS question_counts
+        FROM "lesson" l
+        LEFT JOIN "lesson_used" lu ON lu."lessonId" = l.id
+        LEFT JOIN lesson_attempt_counts lac ON lac.lesson_id = l.id
+        LEFT JOIN lesson_question_counts lqc ON lqc.lesson_id = l.id
+        WHERE l."schoolId" = $1
+      ),
+      unit_data AS (
+        SELECT
+          u.id,
+          u.title,
+          u."courseId" AS course_id,
+          u."index" AS idx,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id',            ld.id,
+                'title',         ld.title,
+                'index',         ld.idx,
+                'used',          ld.used,
+                'attemptCounts', ld.attempt_counts,
+                'questionsCount', ld.question_counts
+              ) ORDER BY ld.idx
+            ) FILTER (WHERE ld.id IS NOT NULL),
+            '[]'::json
+          ) AS lessons
+        FROM "unit" u
+        LEFT JOIN lesson_data ld ON ld.unit_id = u.id
+        WHERE u."schoolId" = $1
+        GROUP BY u.id, u.title, u."courseId", u."index"
+      ),
+      course_data AS (
+        SELECT
+          c.id,
+          c.title,
+          c."createdAt" AS created_at,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id',      ud.id,
+                'title',   ud.title,
+                'index',   ud.idx,
+                'lessons', ud.lessons
+              ) ORDER BY ud.idx
+            ) FILTER (WHERE ud.id IS NOT NULL),
+            '[]'::json
+          ) AS units
+        FROM "course" c
+        LEFT JOIN unit_data ud ON ud.course_id = c.id
+        WHERE c."trackId" = $2
+        GROUP BY c.id, c.title, c."createdAt"
+        HAVING COUNT(ud.id) > 0
+      )
+      SELECT COALESCE(
+        json_agg(
+          json_build_object(
+            'id',    cd.id,
+            'title', cd.title,
+            'units', cd.units
+          ) ORDER BY cd.created_at
+        ),
+        '[]'::json
+      ) AS tree
+      FROM course_data cd
+      `,
+      [params.schoolId, params.trackId],
     );
+
+    return rows[0]?.tree ?? [];
   }
 
   // Seam for the student attempt flow: freezes a lesson's content once a

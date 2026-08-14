@@ -20,7 +20,7 @@ export class BookService {
       params.schoolId,
       params.params.lessonId,
     );
-    await this.bookRepo.save({
+    return await this.bookRepo.save({
       lesson: { id: params.params.lessonId },
       school: { id: params.schoolId },
       name: params.params.name,

@@ -44,7 +44,7 @@ export class QuestionOrderService extends QuestionComponentService {
         repo.create({
           question: { id: data.id },
           school: { id: data.schoolId },
-          text: item.text,
+          text: item.text.trim(),
           sort: index,
         }),
       ),

@@ -10,6 +10,7 @@ import { QuestionMatchType } from '../entity/enum/question-match.type';
 import { Transform } from 'class-transformer';
 
 export class QuestionMatchDto {
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
   text: string;

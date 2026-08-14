@@ -55,40 +55,56 @@ export class SolvingSavedService {
   }
 
   async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
-    const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
-    if (!snapshot || snapshot.studentId !== student.id) {
+    const initialSnapshot = await this.snapshots.getQuestionSnapshot(
+      dto.snapshotId,
+    );
+    if (!initialSnapshot || initialSnapshot.studentId !== student.id) {
       throw new NotFoundException('Snapshot not found or expired');
     }
-    if (
-      snapshot.dailyChallengeId ||
-      snapshot.lessonId ||
-      snapshot.unitId ||
-      snapshot.courseId
-    ) {
-      throw new BadRequestException('Snapshot is not for saved questions');
-    }
-    if (!snapshot.questions.length) {
-      throw new BadRequestException('Snapshot has no questions');
-    }
-    assertFullQuestionComponents(snapshot.questions);
 
-    const verdict = await this.curriculum.checkQuestionAnswers(
-      this.buildQuestionMaps(snapshot.questions, dto),
-    );
-    const correctQuestionIds = verdict.verdicts
-      .filter((questionVerdict) => questionVerdict.verdict)
-      .map((questionVerdict) => questionVerdict.id);
+    const lockToken = await this.snapshots.lockQuestionSnapshot(dto.snapshotId);
+    if (!lockToken) {
+      throw new BadRequestException('Snapshot is already being solved');
+    }
 
-    await transaction(this.dataSource, async (manager) => {
-      await this.savedQuestions.removeByQuestionIds(
-        student.id,
-        correctQuestionIds,
-        manager,
+    try {
+      const snapshot = await this.snapshots.getQuestionSnapshot(dto.snapshotId);
+      if (!snapshot || snapshot.studentId !== student.id) {
+        throw new NotFoundException('Snapshot not found or expired');
+      }
+      if (
+        snapshot.dailyChallengeId ||
+        snapshot.lessonId ||
+        snapshot.unitId ||
+        snapshot.courseId
+      ) {
+        throw new BadRequestException('Snapshot is not for saved questions');
+      }
+      if (!snapshot.questions.length) {
+        throw new BadRequestException('Snapshot has no questions');
+      }
+      assertFullQuestionComponents(snapshot.questions);
+
+      const verdict = await this.curriculum.checkQuestionAnswers(
+        this.buildQuestionMaps(snapshot.questions, dto),
       );
-    });
-    await this.snapshots.removeQuestionSnapshot(snapshot.id);
+      const correctQuestionIds = verdict.verdicts
+        .filter((questionVerdict) => questionVerdict.verdict)
+        .map((questionVerdict) => questionVerdict.id);
 
-    return verdict;
+      await transaction(this.dataSource, async (manager) => {
+        await this.savedQuestions.removeByQuestionIds(
+          student.id,
+          correctQuestionIds,
+          manager,
+        );
+      });
+      await this.snapshots.removeQuestionSnapshot(snapshot.id);
+
+      return verdict;
+    } finally {
+      await this.snapshots.unlockQuestionSnapshot(dto.snapshotId, lockToken);
+    }
   }
 
   private buildQuestionMaps(
@@ -107,8 +123,8 @@ export class SolvingSavedService {
     return questions.map((question) => ({
       question,
       answer:
-        dto.answers.find((submitted) => submitted.id === question.id)
-          ?.answer ?? {},
+        dto.answers.find((submitted) => submitted.id === question.id)?.answer ??
+        {},
     }));
   }
 }

@@ -81,7 +81,7 @@ export class QuestionClassifyService extends QuestionComponentService {
           school: { id: data.schoolId },
           index,
           correctCategoryIndex: item.correctCategoryIndex ?? null,
-          text: item.text,
+          text: item.text.trim(),
           type: item.type,
         }),
       ),

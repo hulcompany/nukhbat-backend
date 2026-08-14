@@ -152,7 +152,7 @@ export class QuestionMatchService extends QuestionComponentService {
           index,
           correctIndex: item.correctIndex ?? null,
           type: item.type,
-          text: item.text,
+          text: item.text.trim(),
         }),
       ),
     );
