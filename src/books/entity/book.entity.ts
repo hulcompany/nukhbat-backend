@@ -1,5 +1,5 @@
 import { UUID } from 'crypto';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, RelationId } from 'typeorm';
 import { School } from '../../school/entity/school.entity';
 import { Lesson } from '../../curriculum';
 
@@ -22,5 +22,6 @@ export class Book {
   @ManyToOne(() => Lesson, { eager: true } )
   lesson: Lesson;
 
+  @RelationId((o: Book) => o.lesson)
   lessonId: UUID;
 }

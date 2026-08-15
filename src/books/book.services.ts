@@ -35,6 +35,7 @@ export class BookService {
     if (!book) {
       throw new NotFoundException('Book Not Found');
     }
+    console.log(book);
     await this.schoolAccess.assertLessonAccess(params.schoolId, book.lessonId);
     if (params.params.name) {
       book.name = params.params.name;
