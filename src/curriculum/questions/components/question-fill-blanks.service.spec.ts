@@ -4,6 +4,24 @@ import { QuestionFillBlankService } from './question-fill-blanks.service';
 describe('QuestionFillBlankService', () => {
   const service = new QuestionFillBlankService({} as any);
 
+  it('accepts the current text-field placeholder format', () => {
+    expect(() =>
+      service.validate({
+        text: '{{textField: {index: 0, width: 100, textDirection: ltr, hint: "Enter x", contentLength: 3}}}',
+        data: [{ index: 0, answers: ['x'] }],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts nullable text-field properties', () => {
+    expect(() =>
+      service.validate({
+        text: '{{textField: {index: 0, width: null, textDirection: rtl, hint: null, contentLength: null}}}',
+        data: [{ index: 0, answers: ['x'] }],
+      }),
+    ).not.toThrow();
+  });
+
   it('grades submitted answers without surrounding-space or case sensitivity', async () => {
     const question = {
       fillBlanks: [{ index: 0, answers: ['  Correct Answer  '] }],

@@ -48,7 +48,7 @@ export class QuestionFillBlankService extends QuestionComponentService {
     }
 
     const textFieldPattern =
-      /\{\{\s*textField\s*:\s*\{\s*width\s*:\s*(\d+)\s*,\s*contentLength\s*:\s*(null|\d+)\s*,\s*index\s*:\s*(\d+)\s*\}\s*\}\}/g;
+      /\{\{\s*textField\s*:\s*\{\s*index\s*:\s*(\d+)\s*,\s*width\s*:\s*(null|\d+)\s*,\s*textDirection\s*:\s*(ltr|rtl)\s*,\s*hint\s*:\s*(null|"(?:\\.|[^"\\])*")\s*,\s*contentLength\s*:\s*(null|\d+)\s*\}\s*\}\}/g;
     const textFieldCandidates = [...text.matchAll(/\{\{\s*textField\b/g)];
     const textFields = [...text.matchAll(textFieldPattern)];
 
@@ -61,7 +61,7 @@ export class QuestionFillBlankService extends QuestionComponentService {
       );
     }
 
-    const placeholderIndexes = textFields.map((match) => Number(match[3]));
+    const placeholderIndexes = textFields.map((match) => Number(match[1]));
     const uniquePlaceholderIndexes = new Set(placeholderIndexes);
     if (uniquePlaceholderIndexes.size !== placeholderIndexes.length) {
       throw new BadRequestException('Text-field indexes must be unique');
@@ -78,11 +78,10 @@ export class QuestionFillBlankService extends QuestionComponentService {
     }
 
     for (const match of textFields) {
-      const width = Number(match[1]);
-      const contentLength = match[2] === 'null' ? null : Number(match[2]);
+      const width = match[2] === 'null' ? null : Number(match[2]);
+      const contentLength = match[5] === 'null' ? null : Number(match[5]);
       if (
-        !Number.isInteger(width) ||
-        width <= 0 ||
+        (width !== null && (!Number.isInteger(width) || width <= 0)) ||
         (contentLength !== null &&
           (!Number.isInteger(contentLength) || contentLength < 0))
       ) {
