@@ -35,13 +35,28 @@ export class SavedQuestionService {
 
   async getSaved(studentProfileId: UUID) {
     const savedQuestions = await this.findAll(studentProfileId);
-    const hiddenQuestions = this.curriculum.hideQuestionAnswers(
-      savedQuestions.map((saved) => saved.question),
+    if (!savedQuestions.length) {
+      return [];
+    }
+
+    // Reload through findQuestions so the nested question carries the same
+    // relations as the solving flows — the entity's eager relation is shallower
+    // (no course/lesson/school) and would hand clients a different shape.
+    const loadedQuestions = await this.curriculum.findQuestions({
+      id: In(savedQuestions.map((saved) => saved.questionId)),
+    });
+    const hiddenById = new Map<UUID, any>(
+      this.curriculum
+        .hideQuestionAnswers(loadedQuestions)
+        .map((question): [UUID, any] => [question.id, question]),
     );
-    return savedQuestions.map((saved, index) => ({
-      ...saved,
-      question: hiddenQuestions[index],
-    }));
+
+    return savedQuestions
+      .filter((saved) => hiddenById.has(saved.questionId))
+      .map((saved) => ({
+        ...saved,
+        question: hiddenById.get(saved.questionId),
+      }));
   }
 
   async findOneOrFail(filter: FindOptionsWhere<SavedQuestion>) {

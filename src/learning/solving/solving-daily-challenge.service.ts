@@ -6,7 +6,7 @@ import {
 import { transaction } from 'core';
 import { DataSource, In } from 'typeorm';
 import { AppConfig } from '../../conf';
-import { Question, QuestionMap } from '../../curriculum';
+import { DailyChallenge, Question, QuestionMap } from '../../curriculum';
 import { CurriculumService } from '../../curriculum/services/curriculum.service';
 import { StudentProfile } from '../../student/entity/student-profile.entity';
 import { StudentService } from '../../student/student.service';
@@ -15,6 +15,7 @@ import { LedgerService } from '../ledger/ledger.service';
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto } from './dto';
 import { assertFullQuestionComponents } from './question-components';
+import { SolvingSolveResult, SolvingStartResult } from './types';
 
 @Injectable()
 export class SolvingDailyChallengeService {
@@ -27,7 +28,7 @@ export class SolvingDailyChallengeService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async start(student: StudentProfile) {
+  async start(student: StudentProfile): Promise<SolvingStartResult> {
     const challenge = await this.getTodayChallenge(student);
     const previousAttempt = await this.attempts.getDailyChallengeAttempt(
       challenge.id,
@@ -37,21 +38,7 @@ export class SolvingDailyChallengeService {
       throw new BadRequestException('Daily challenge already attempted');
     }
 
-    const questionIds = challenge.usedQuestions.map((item) => item.question.id);
-    if (!questionIds.length) {
-      throw new NotFoundException('Daily challenge has no questions');
-    }
-    const loadedQuestions = await this.curriculum.findQuestions({
-      id: In(questionIds),
-    });
-    const questionsById = new Map(
-      loadedQuestions.map((question) => [question.id, question]),
-    );
-    const questions = questionIds.map((id) => questionsById.get(id)!);
-    if (questions.some((question) => !question)) {
-      throw new NotFoundException('Daily challenge question not found');
-    }
-    assertFullQuestionComponents(questions);
+    const questions = await this.loadChallengeQuestions(challenge);
 
     const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
       dailyChallengeId: challenge.id,
@@ -63,11 +50,17 @@ export class SolvingDailyChallengeService {
 
     return {
       snapshotId,
+      // A daily challenge is not bound to a lesson, but the key stays present
+      // so clients can reuse the lesson-solving response handler verbatim.
+      lesson: null,
       questions: this.curriculum.hideQuestionAnswers(questions),
     };
   }
 
-  async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
+  async solve(
+    student: StudentProfile,
+    dto: SolvingSnapshotDto,
+  ): Promise<SolvingSolveResult> {
     const initialSnapshot = await this.snapshots.getQuestionSnapshot(
       dto.snapshotId,
     );
@@ -152,6 +145,21 @@ export class SolvingDailyChallengeService {
     }
   }
 
+  /**
+   * Today's challenge in the same envelope as `start`, minus a snapshot: the
+   * student is only previewing the questions, so nothing is being graded yet.
+   */
+  async getToday(student: StudentProfile): Promise<SolvingStartResult> {
+    const challenge = await this.getTodayChallenge(student);
+    const questions = await this.loadChallengeQuestions(challenge);
+
+    return {
+      snapshotId: null,
+      lesson: null,
+      questions: this.curriculum.hideQuestionAnswers(questions),
+    };
+  }
+
   async getTodayChallenge(student: StudentProfile) {
     const challenge = (
       await this.curriculum.getDailyChallenge({
@@ -163,6 +171,34 @@ export class SolvingDailyChallengeService {
       throw new NotFoundException('No daily challenge available today');
     }
     return challenge;
+  }
+
+  /**
+   * Reloads the challenge questions through `findQuestions` so they carry the
+   * exact same relations as the lesson-solving flow — the eager relations on
+   * `usedQuestions[].question` are shallower and would produce a different shape.
+   */
+  private async loadChallengeQuestions(
+    challenge: DailyChallenge,
+  ): Promise<Question[]> {
+    const questionIds = challenge.usedQuestions.map((item) => item.question.id);
+    if (!questionIds.length) {
+      throw new NotFoundException('Daily challenge has no questions');
+    }
+
+    const loadedQuestions = await this.curriculum.findQuestions({
+      id: In(questionIds),
+    });
+    const questionsById = new Map(
+      loadedQuestions.map((question) => [question.id, question]),
+    );
+    const questions = questionIds.map((id) => questionsById.get(id)!);
+    if (questions.some((question) => !question)) {
+      throw new NotFoundException('Daily challenge question not found');
+    }
+    assertFullQuestionComponents(questions);
+
+    return questions;
   }
 
   private buildQuestionMaps(

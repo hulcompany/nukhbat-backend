@@ -9,6 +9,7 @@ import { SnapshotsModule } from '../snapshots/snapshots.module';
 import { SolvingController } from './solving.controller';
 import { SolvingDailyChallengeService } from './solving-daily-challenge.service';
 import { SolvingLessonsService } from './solving-lessons.service';
+import { SolvingSavedService } from './solving-saved.service';
 
 @Module({
   imports: [
@@ -21,6 +22,10 @@ import { SolvingLessonsService } from './solving-lessons.service';
     SnapshotsModule,
   ],
   controllers: [SolvingController],
-  providers: [SolvingLessonsService, SolvingDailyChallengeService],
+  providers: [
+    SolvingLessonsService,
+    SolvingDailyChallengeService,
+    SolvingSavedService,
+  ],
 })
 export class SolvingModule {}

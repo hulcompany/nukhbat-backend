@@ -12,6 +12,7 @@ import { SavedQuestionService } from '../saved-questions/saved-question.service'
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto } from './dto';
 import { assertFullQuestionComponents } from './question-components';
+import { SolvingSolveResult, SolvingStartResult } from './types';
 
 @Injectable()
 export class SolvingSavedService {
@@ -22,7 +23,7 @@ export class SolvingSavedService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async start(student: StudentProfile) {
+  async start(student: StudentProfile): Promise<SolvingStartResult> {
     const saved = await this.savedQuestions.findAll(student.id);
     if (!saved.length) {
       throw new NotFoundException('No saved questions found');
@@ -50,11 +51,17 @@ export class SolvingSavedService {
 
     return {
       snapshotId,
+      // Saved questions span many lessons, so there is no single lesson to
+      // report; the key stays present to match the lesson-solving response.
+      lesson: null,
       questions: this.curriculum.hideQuestionAnswers(questions),
     };
   }
 
-  async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
+  async solve(
+    student: StudentProfile,
+    dto: SolvingSnapshotDto,
+  ): Promise<SolvingSolveResult> {
     const initialSnapshot = await this.snapshots.getQuestionSnapshot(
       dto.snapshotId,
     );
@@ -101,7 +108,9 @@ export class SolvingSavedService {
       });
       await this.snapshots.removeQuestionSnapshot(snapshot.id);
 
-      return verdict;
+      // Re-solving saved questions earns nothing, but the keys stay present so
+      // the payload matches the other solve endpoints.
+      return { ...verdict, xps: 0, gems: 0 };
     } finally {
       await this.snapshots.unlockQuestionSnapshot(dto.snapshotId, lockToken);
     }

@@ -22,6 +22,7 @@ import { SavedQuestionService } from '../saved-questions/saved-question.service'
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto, SolvingStartLessonDto } from './dto';
 import { assertFullQuestionComponents } from './question-components';
+import { SolvingSolveResult, SolvingStartResult } from './types';
 
 @Injectable()
 export class SolvingLessonsService {
@@ -35,7 +36,10 @@ export class SolvingLessonsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async start(student: StudentProfile, dto: SolvingStartLessonDto) {
+  async start(
+    student: StudentProfile,
+    dto: SolvingStartLessonDto,
+  ): Promise<SolvingStartResult> {
     const lesson = await this.curriculum.getLesson(
       {
         id: dto.lessonId,
@@ -79,7 +83,10 @@ export class SolvingLessonsService {
     };
   }
 
-  async solve(student: StudentProfile, dto: SolvingSnapshotDto) {
+  async solve(
+    student: StudentProfile,
+    dto: SolvingSnapshotDto,
+  ): Promise<SolvingSolveResult> {
     const initialSnapshot = await this.snapshots.getQuestionSnapshot(
       dto.snapshotId,
     );
