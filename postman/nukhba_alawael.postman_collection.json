@@ -3728,7 +3728,7 @@
                 "start"
               ]
             },
-            "description": "Starts today's challenge for the student's own (school, track). No body. Returns `{ snapshotId, questions }`.\n\nRejects with 400 if the student already attempted today, 404 if no challenge exists yet."
+            "description": "Starts today's challenge for the student's own (school, track). No body. Returns the uniform start envelope `{ snapshotId, lesson, questions }` — identical across lesson / daily-challenge / saved so the client can reuse one handler. `lesson` is `{ id, title, description }` only for the lesson flow and `null` here. Answers are stripped from `questions`.\n\n400 if the student already attempted today, 404 if no challenge exists yet."
           },
           "response": []
         },
@@ -3764,7 +3764,7 @@
                 "daily-challenge"
               ]
             },
-            "description": "Starts today's challenge for the student's own (school, track). No body. Returns `{ snapshotId, questions }`.\n\nRejects with 400 if the student already attempted today, 404 if no challenge exists yet."
+            "description": "Previews today's challenge questions with answers stripped. No body, nothing is graded yet — same envelope as the start endpoints but with `snapshotId: null` and `lesson: null`.\n\n404 if no challenge exists for today."
           },
           "response": []
         },
@@ -3795,7 +3795,73 @@
                 "solve"
               ]
             },
-            "description": "Same SolvingSnapshotDto as the lesson solve — the daily challenge now goes through a snapshot too, so `snapshotId` is REQUIRED.\n\nOne attempt per day; a perfect score awards `AppConfig.DAILY_CHALLENGE_XPS`."
+            "description": "Same `SolvingSnapshotDto` body as the lesson solve. Returns the uniform solve envelope `{ verdicts, correct, total, skipped, score, passed, xps, gems }`.\n\nOne attempt per day; a perfect score awards `AppConfig.DAILY_CHALLENGE_XPS`. `gems` is always `0` for the daily challenge."
+          },
+          "response": []
+        },
+        {
+          "name": "Saved questions — start",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || body;",
+                  "if (data.snapshotId) pm.collectionVariables.set('snapshotId', data.snapshotId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/saved/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "saved",
+                "start"
+              ]
+            },
+            "description": "Starts a solve session over everything the student has bookmarked. No body. Returns the uniform start envelope `{ snapshotId, lesson, questions }` — identical across lesson / daily-challenge / saved so the client can reuse one handler. `lesson` is `{ id, title, description }` only for the lesson flow and `null` here. Answers are stripped from `questions`.\n\n404 if the student has no saved questions."
+          },
+          "response": []
+        },
+        {
+          "name": "Saved questions — solve",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snapshotId\": \"{{snapshotId}}\",\n  \"answers\": [\n    { \"id\": \"{{questionId}}\", \"answer\": { \"options\": [ { \"answered\": \"{{optionId}}\", \"index\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"boolAnswer\": true } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"matches\": [ { \"baseId\": \"{{baseId}}\", \"matchId\": \"{{matchId}}\" } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"classify\": [ { \"categoryId\": \"{{categoryId}}\", \"items\": [ \"{{classifyItemId}}\" ] } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"orders\": [ { \"id\": \"{{orderItemId}}\", \"order\": 0 } ] } },\n    { \"id\": \"{{questionId}}\", \"answer\": { \"fillBlanks\": [ { \"index\": 0, \"answer\": \"باريس\" } ] } }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/learning/solving/saved/solve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "learning",
+                "solving",
+                "saved",
+                "solve"
+              ]
+            },
+            "description": "Same `SolvingSnapshotDto` body as the lesson solve. Returns the uniform solve envelope `{ verdicts, correct, total, skipped, score, passed, xps, gems }`.\n\nCorrectly answered questions are removed from the saved list. No rewards are granted here, so `xps` and `gems` are always `0`."
           },
           "response": []
         },
