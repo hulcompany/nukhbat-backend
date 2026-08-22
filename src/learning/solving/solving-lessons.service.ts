@@ -77,7 +77,7 @@ export class SolvingLessonsService {
       lesson: {
         id: lesson.id,
         title: lesson.title,
-        description: lesson.description,
+        description: lesson.description || '',
       },
       questions: this.curriculum.hideQuestionAnswers(questions),
     };

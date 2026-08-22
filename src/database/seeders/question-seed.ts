@@ -179,6 +179,6 @@ function questionText(type: QuestionType, context: string) {
     case QuestionType.order:
       return `${prefix}Answer order: Wake up → Study → Sleep.`;
     case QuestionType.fillBlanks:
-      return `${prefix}Answers: Damascus, Syria. {{textField: {width: 140, contentLength: 8, index: 0}}} is the capital of {{textField: {width: 120, contentLength: null, index: 1}}}.`;
+      return `${prefix}Answers: Damascus, Syria. {{textField: {index: 0, width: 80, textDirection: ltr, hint: null, contentLength: 2}}} is the capital of {{textField: {index: 1, width: 80, textDirection: ltr, hint: null, contentLength: 2}}}.`;
   }
 }

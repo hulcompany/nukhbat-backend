@@ -10,7 +10,7 @@ import { UUID } from 'crypto';
 import { applyPsqlFilter, BasePaginationModel, SortType } from 'core';
 import { LessonAttempt } from './entity/lesson-attempt.entity';
 import { QuestionVerdictResult } from '../../curriculum';
-import { DailyChallengeAttempt } from './entity/daily-challenge.attempt';
+import { DailyChallengeAttempt } from './entity/daily-challenge.attempt.entity';
 import { AttemptsGetDto } from './dto/attempts.dto';
 import { QuestionAttempt } from './entity/question-attempt.entity';
 
