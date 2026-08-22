@@ -7,7 +7,11 @@ import { SolvingSnapshotDto, SolvingStartLessonDto } from './dto';
 import { SolvingDailyChallengeService } from './solving-daily-challenge.service';
 import { SolvingLessonsService } from './solving-lessons.service';
 import { SolvingSavedService } from './solving-saved.service';
-import { SolvingSolveResult, SolvingStartResult } from './types';
+import {
+  DailyChallengePreview,
+  SolvingSolveResult,
+  SolvingStartResult,
+} from './types';
 
 @Controller('learning/solving')
 @UseGuards(JwtGuardStrict, RoleGuard([RoleType.student]), SubscriptionGuard())
@@ -47,7 +51,7 @@ export class SolvingController {
   }
 
   @Get('daily-challenge')
-  async getDailyChallenge(): Promise<SolvingStartResult> {
+  async getDailyChallenge(): Promise<DailyChallengePreview> {
     return this.dailyChallenges.getToday(this.context.student);
   }
 

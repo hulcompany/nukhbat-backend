@@ -24,6 +24,18 @@ export interface SolvingStartResult {
 }
 
 /**
+ * `GET solving/daily-challenge`: today's challenge as a preview.
+ *
+ * A student gets exactly one attempt per challenge, so `verdict` doubles as the
+ * solved flag: null means untouched and still solvable, non-null means the
+ * attempt is used up and the client should render that frozen result read-only
+ * instead of offering to start.
+ */
+export interface DailyChallengePreview extends SolvingStartResult {
+  verdict: QuestionVerdictResult | null;
+}
+
+/**
  * Uniform payload for `POST .../solve`. Flows that award nothing still report
  * `xps: 0, gems: 0` rather than omitting the keys.
  */

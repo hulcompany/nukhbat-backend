@@ -15,7 +15,11 @@ import { LedgerService } from '../ledger/ledger.service';
 import { SnapshotsService } from '../snapshots/snapshots.service';
 import { SolvingSnapshotDto } from './dto';
 import { assertFullQuestionComponents } from './question-components';
-import { SolvingSolveResult, SolvingStartResult } from './types';
+import {
+  DailyChallengePreview,
+  SolvingSolveResult,
+  SolvingStartResult,
+} from './types';
 
 @Injectable()
 export class SolvingDailyChallengeService {
@@ -148,15 +152,25 @@ export class SolvingDailyChallengeService {
   /**
    * Today's challenge in the same envelope as `start`, minus a snapshot: the
    * student is only previewing the questions, so nothing is being graded yet.
+   *
+   * Carries `verdict` so the client can tell a solvable challenge from a spent
+   * one - and render the outcome - without a second request.
    */
-  async getToday(student: StudentProfile): Promise<SolvingStartResult> {
+  async getToday(student: StudentProfile): Promise<DailyChallengePreview> {
     const challenge = await this.getTodayChallenge(student);
     const questions = await this.loadChallengeQuestions(challenge);
+    // One attempt per (student, challenge), so the attempt row - if there is
+    // one - holds the frozen verdict, and its absence means "not solved yet".
+    const attempt = await this.attempts.getDailyChallengeAttempt(
+      challenge.id,
+      student.id,
+    );
 
     return {
       snapshotId: null,
       lesson: null,
       questions: this.curriculum.hideQuestionAnswers(questions),
+      verdict: attempt?.verdict ?? null,
     };
   }
 
