@@ -11,6 +11,34 @@ import {
   QuestionFillBlanksVerdict,
 } from '../types/question-fill-blanks.types';
 
+/**
+ * خصائص الـ text-field المطلوبة (بحروف صغيرة للمقارنة غير الحساسة لحالة الأحرف)
+ */
+const TEXT_FIELD_PROPS = [
+  'index',
+  'width',
+  'textdirection',
+  'hint',
+  'contentlength',
+] as const;
+
+/** القيم المسموحة لأي خاصية: null أو رقم أو ltr/rtl أو نص بين علامتي اقتباس */
+const TEXT_FIELD_VALUE = String.raw`(?:null|\d+|ltr|rtl|"(?:\\.|[^"\\])*")`;
+const TEXT_FIELD_PROP = String.raw`\s*[A-Za-z]+\s*:\s*${TEXT_FIELD_VALUE}\s*`;
+
+const TEXT_FIELD_CANDIDATE_PATTERN = /\{\{\s*textField\b/gi;
+
+/** الترتيب غير مهم: أي خاصية يمكن أن تأتي في أي موضع، وحالة الأحرف غير مهمة */
+const TEXT_FIELD_PATTERN = new RegExp(
+  String.raw`\{\{\s*textField\s*:\s*\{(${TEXT_FIELD_PROP}(?:,${TEXT_FIELD_PROP})*)\}\s*\}\}`,
+  'gi',
+);
+
+const TEXT_FIELD_PROP_PATTERN = new RegExp(
+  String.raw`([A-Za-z]+)\s*:\s*(${TEXT_FIELD_VALUE})`,
+  'gi',
+);
+
 @Injectable()
 export class QuestionFillBlankService extends QuestionComponentService {
   constructor(private readonly ds: DataSource) {
@@ -47,10 +75,8 @@ export class QuestionFillBlankService extends QuestionComponentService {
       }
     }
 
-    const textFieldPattern =
-      /\{\{\s*textField\s*:\s*\{\s*index\s*:\s*(\d+)\s*,\s*width\s*:\s*(null|\d+)\s*,\s*textDirection\s*:\s*(ltr|rtl)\s*,\s*hint\s*:\s*(null|"(?:\\.|[^"\\])*")\s*,\s*contentLength\s*:\s*(null|\d+)\s*\}\s*\}\}/g;
-    const textFieldCandidates = [...text.matchAll(/\{\{\s*textField\b/g)];
-    const textFields = [...text.matchAll(textFieldPattern)];
+    const textFieldCandidates = [...text.matchAll(TEXT_FIELD_CANDIDATE_PATTERN)];
+    const textFields = [...text.matchAll(TEXT_FIELD_PATTERN)];
 
     if (textFieldCandidates.length !== textFields.length) {
       throw new BadRequestException('Text-field placeholder syntax is invalid');
@@ -61,7 +87,13 @@ export class QuestionFillBlankService extends QuestionComponentService {
       );
     }
 
-    const placeholderIndexes = textFields.map((match) => Number(match[1]));
+    const placeholders = textFields.map((match) =>
+      this.parseTextFieldProps(match[1]),
+    );
+
+    const placeholderIndexes = placeholders.map(
+      (placeholder) => placeholder.index,
+    );
     const uniquePlaceholderIndexes = new Set(placeholderIndexes);
     if (uniquePlaceholderIndexes.size !== placeholderIndexes.length) {
       throw new BadRequestException('Text-field indexes must be unique');
@@ -77,9 +109,8 @@ export class QuestionFillBlankService extends QuestionComponentService {
       );
     }
 
-    for (const match of textFields) {
-      const width = match[2] === 'null' ? null : Number(match[2]);
-      const contentLength = match[5] === 'null' ? null : Number(match[5]);
+    for (const placeholder of placeholders) {
+      const { width, contentLength } = placeholder;
       if (
         (width !== null && (!Number.isInteger(width) || width <= 0)) ||
         (contentLength !== null &&
@@ -88,6 +119,56 @@ export class QuestionFillBlankService extends QuestionComponentService {
         throw new BadRequestException('Text-field dimensions are invalid');
       }
     }
+  }
+
+  /**
+   * يقرأ خصائص الـ text-field بغض النظر عن ترتيبها أو حالة أحرفها
+   */
+  private parseTextFieldProps(body: string) {
+    const props = new Map<string, string>();
+
+    for (const [, key, value] of body.matchAll(TEXT_FIELD_PROP_PATTERN)) {
+      const normalizedKey = key.toLowerCase();
+      if (props.has(normalizedKey)) {
+        throw new BadRequestException(
+          'Text-field properties must not be duplicated',
+        );
+      }
+      props.set(normalizedKey, value);
+    }
+
+    if (
+      props.size !== TEXT_FIELD_PROPS.length ||
+      TEXT_FIELD_PROPS.some((prop) => !props.has(prop))
+    ) {
+      throw new BadRequestException('Text-field placeholder syntax is invalid');
+    }
+
+    const index = props.get('index') as string;
+    const width = props.get('width') as string;
+    const textDirection = (props.get('textdirection') as string).toLowerCase();
+    const hint = props.get('hint') as string;
+    const contentLength = props.get('contentlength') as string;
+
+    if (
+      !/^\d+$/.test(index) ||
+      !/^(null|\d+)$/i.test(width) ||
+      !/^(ltr|rtl)$/.test(textDirection) ||
+      !/^(null|")/i.test(hint) ||
+      !/^(null|\d+)$/i.test(contentLength)
+    ) {
+      throw new BadRequestException('Text-field placeholder syntax is invalid');
+    }
+
+    return {
+      index: Number(index),
+      width: /^null$/i.test(width) ? null : Number(width),
+      textDirection,
+      hint: /^null$/i.test(hint) ? null : hint,
+      contentLength: /^null$/i.test(contentLength)
+        ? null
+        : Number(contentLength),
+    };
   }
 
   async create(

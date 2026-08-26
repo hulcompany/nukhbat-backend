@@ -112,34 +112,30 @@ export class QuestionService {
     filter?: any;
   }) {
     const query = params.params;
-    const qb = this.repo
+
+    /**
+     * المرحلة الأولى: جلب معرفات صفحة النتائج فقط.
+     * لا نضم هنا أي علاقة متعددة (options/blanks/...) ولا نرتب بأعمدتها،
+     * لأن TypeORM يضيف أعمدة الترتيب إلى الـ DISTINCT الخاص بالترقيم
+     * فيستهلك السؤال الواحد عدة أسطر من الـ limit ونحصل على أسئلة أقل من المطلوب.
+     */
+    const idsQb = this.repo
       .createQueryBuilder('q')
-      .leftJoinAndSelect('q.optionsGroups', 'optionsGroups')
-      .leftJoinAndSelect('optionsGroups.options', 'options')
-      .leftJoinAndSelect('q.matchingItems', 'matchingItems')
-      .leftJoinAndSelect('q.trueOrFalse', 'trueOrFalse')
-      .leftJoinAndSelect('q.classifyItems', 'classifyItems')
-      .leftJoinAndSelect('q.orderItems', 'orderItems')
-      .leftJoinAndSelect('q.fillBlanks', 'fillBlanks')
-      .leftJoinAndSelect('q.school', 'school')
-      .leftJoinAndSelect('q.lesson', 'lesson')
-      .addOrderBy('optionsGroups.index', 'ASC')
-      .addOrderBy('matchingItems.index', 'ASC')
-      .addOrderBy('classifyItems.index', 'ASC')
-      .addOrderBy('orderItems.sort', 'ASC')
-      .addOrderBy('fillBlanks.index', 'ASC');
+      .leftJoin('q.lesson', 'lesson')
+      .orderBy('q.id', 'ASC');
 
     if (params.schoolId) {
-      qb.andWhere('q.school = :schoolId', { schoolId: params.schoolId });
+      idsQb.andWhere('q.school = :schoolId', { schoolId: params.schoolId });
     }
     if (query.lessonId) {
-      qb.andWhere('q.lesson = :lessonId', { lessonId: query.lessonId });
+      idsQb.andWhere('q.lesson = :lessonId', { lessonId: query.lessonId });
     }
     if (query.courseId) {
-      qb.andWhere('q.course = :courseId', { courseId: query.courseId });
+      idsQb.andWhere('q.course = :courseId', { courseId: query.courseId });
     }
     if (params.trackId) {
-      qb.leftJoin('q.course', 'poolCourse')
+      idsQb
+        .leftJoin('q.course', 'poolCourse')
         .leftJoin('lesson.unit', 'qUnit')
         .leftJoin('qUnit.course', 'lessonCourse')
         .andWhere(
@@ -149,7 +145,7 @@ export class QuestionService {
     }
 
     applyPsqlFilter({
-      queryBuilder: qb,
+      queryBuilder: idsQb,
       query,
       options: {
         title: { regExp: { regexp: 'contains' } },
@@ -160,7 +156,26 @@ export class QuestionService {
       },
     });
 
-    const [data, count] = await qb.getManyAndCount();
+    const [page, count] = await idsQb.getManyAndCount();
+    const ids = page.map((question) => question.id);
+
+    /**
+     * المرحلة الثانية: تحميل أسئلة الصفحة كاملة بمكوناتها بدون أي ترقيم
+     */
+    const loaded = ids.length
+      ? await this.repo.find({
+          where: { id: In(ids) },
+          relations: questionRelations,
+          order: questionOrder,
+        })
+      : [];
+    const loadedById = new Map(
+      loaded.map((question) => [question.id, question]),
+    );
+    const data = ids
+      .map((id) => loadedById.get(id))
+      .filter(Boolean) as Question[];
+
     return new BasePaginationModel({
       list: data,
       totalRecords: count,
