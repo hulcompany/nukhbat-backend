@@ -107,16 +107,20 @@ export class SolvingSavedService {
         this.buildQuestionMaps(snapshot.questions, dto),
       );
 
-      // Practising a saved question retires it: everything served in this
-      // snapshot leaves the saved list, right or wrong. It comes back only by
-      // being answered wrong in the lesson again.
-      await transaction(this.dataSource, async (manager) => {
-        await this.savedQuestions.removeByQuestionIds(
-          student.id,
-          snapshot.questions.map((question) => question.id),
-          manager,
-        );
-      });
+      // Only a correct answer retires a saved question. Anything answered
+      // wrong (or skipped) stays in the saved list to be practised again.
+      const solvedIds = verdict.verdicts
+        .filter((questionVerdict) => questionVerdict.verdict)
+        .map((questionVerdict) => questionVerdict.id);
+      if (solvedIds.length) {
+        await transaction(this.dataSource, async (manager) => {
+          await this.savedQuestions.removeByQuestionIds(
+            student.id,
+            solvedIds,
+            manager,
+          );
+        });
+      }
       await this.snapshots.removeQuestionSnapshot(snapshot.id);
 
       // Re-solving saved questions earns nothing, but the keys stay present so
