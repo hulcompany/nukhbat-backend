@@ -3217,7 +3217,7 @@ function questionComposer({
   editMode,
   onDone,
 }) {
-  // PATCH whitelists only title/type/answer-key — purpose & parent ids are create-only
+  // PATCH whitelists only title/verdictText/type/answer-key — purpose & parent ids are create-only
   const fields = [
     {
       name: 'title',
@@ -3266,6 +3266,14 @@ function questionComposer({
         : undefined,
     },
     {
+      name: 'verdictText',
+      label: 'Verdict text (optional)',
+      type: 'textarea',
+      wide: true,
+      def: initial?.verdictText || '',
+      hint: 'Explanation of the answer. Hidden from the student while solving; returned on each question verdict after grading.',
+    },
+    {
       name: 'image',
       label: 'Image (optional)',
       type: 'file',
@@ -3304,6 +3312,11 @@ function questionComposer({
       return;
     }
     const body = { ...values, ...key };
+    // an emptied textarea is dropped by form.get(); send an explicit null so
+    // editing can actually clear the verdict text
+    if (editMode && initial?.verdictText && body.verdictText === undefined) {
+      body.verdictText = null;
+    }
     if (!editMode) {
       if (body.purpose === 'lesson') delete body.courseId;
       if (body.purpose === 'dailyChallenge') delete body.lessonId;
@@ -3894,38 +3907,27 @@ function renderStuSolving(m) {
       method: 'GET',
       title: 'My saved questions',
       path: '/learning/saved-questions',
+      note: 'Read-only: questions save themselves when answered wrong in a lesson. Returns the track’s courses as [{ id, title, savedQuestionsCount }].',
     }),
   );
   m.append(
     formBlock({
       method: 'POST',
-      title: 'Save a question',
-      path: '/learning/saved-questions',
+      title: 'Start saved questions (by course)',
+      path: '/learning/solving/saved/start',
+      note: 'Freezes the course’s saved questions into a snapshot; solving them removes them from the saved list.',
       fields: [
         {
-          name: 'questionId',
-          label: 'Question id',
+          name: 'courseId',
+          label: 'Course id',
           type: 'uuid',
-          ctx: 'questionId',
+          ctx: 'courseId',
           req: true,
         },
       ],
-    }),
-  );
-  m.append(
-    formBlock({
-      method: 'DELETE',
-      title: 'Unsave a question',
-      path: '/learning/saved-questions',
-      fields: [
-        {
-          name: 'questionId',
-          label: 'Question id',
-          type: 'uuid',
-          ctx: 'questionId',
-          req: true,
-        },
-      ],
+      onDone: (r) => {
+        if (r.data?.snapshotId) setCtx('snapshotId', r.data.snapshotId, 'snapshot');
+      },
     }),
   );
 

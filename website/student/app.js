@@ -77,6 +77,26 @@ async function screenCurriculum(view) {
 }
 
 /* ─── 2. solving a lesson ────────────────────────────────────────── */
+// every solve run (lesson, daily challenge, saved practice) shares one screen;
+// the kind picks the solve endpoint and where «تم» goes back to
+const SOLVE_KINDS = {
+  lesson: {
+    solvePath: '/learning/solving/lesson/solve',
+    resultTitle: 'نتيجة الدرس',
+    backScreen: 'curriculum',
+  },
+  daily: {
+    solvePath: '/learning/solving/daily-challenge/solve',
+    resultTitle: 'نتيجة التحدي اليومي',
+    backScreen: 'daily',
+  },
+  saved: {
+    solvePath: '/learning/solving/saved/solve',
+    resultTitle: 'نتيجة الأسئلة المحفوظة',
+    backScreen: 'saved',
+  },
+};
+
 async function startLesson(lessonId) {
   toast('جارٍ تحضير الدرس…');
   try {
@@ -129,17 +149,13 @@ function screenSolve(view) {
     submit.textContent = 'جارٍ التصحيح…';
     try {
       const answers = collectAnswers(s.questions, s.answers);
-      const path =
-        s.kind === 'lesson'
-          ? '/learning/solving/lesson/solve'
-          : '/learning/solving/daily-challenge/solve';
+      const path = SOLVE_KINDS[s.kind].solvePath;
       const result = await api.post(path, { snapshotId: s.snapshotId, answers });
       St.solve = null;
       const holder = $('#view');
       renderResult(holder, result, {
-        title: s.kind === 'lesson' ? 'نتيجة الدرس' : 'نتيجة التحدي اليومي',
-        canSave: true,
-        onDone: () => Portal.go(s.kind === 'lesson' ? 'curriculum' : 'daily'),
+        title: SOLVE_KINDS[s.kind].resultTitle,
+        onDone: () => Portal.go(SOLVE_KINDS[s.kind].backScreen),
       });
       header($('#hdr-extra'));
     } catch (e) {
@@ -263,7 +279,7 @@ async function showStudentAttempt(a) {
       ]),
     );
     const review = el('<div></div>');
-    renderReview(review, rows.map((r) => r.result).filter(Boolean), { canSave: true });
+    renderReview(review, rows.map((r) => r.result).filter(Boolean));
     body.appendChild(review);
   } catch (e) {
     body.innerHTML = '';
@@ -272,31 +288,51 @@ async function showStudentAttempt(a) {
 }
 
 /* ─── 5. saved questions ─────────────────────────────────────────── */
+// Questions save themselves when answered wrong in a lesson; the student
+// practises them one course at a time, and each solved question leaves the list.
 async function screenSaved(view) {
-  let list;
+  let courses;
   try {
-    list = (await api.get('/learning/saved-questions')) || [];
+    courses = (await api.get('/learning/saved-questions')) || [];
   } catch (e) {
     return guarded(view, e);
   }
+  const withSaved = courses.filter((c) => (c.savedQuestionsCount || 0) > 0);
+  const total = withSaved.reduce((sum, c) => sum + c.savedQuestionsCount, 0);
   view.appendChild(
-    card(`<h2>الأسئلة المحفوظة</h2><h3>${list.length} سؤال — تُحفظ تلقائياً عند الخطأ</h3>`),
+    card(
+      `<h2>الأسئلة المحفوظة</h2><h3>${total} سؤال — تُحفظ تلقائياً عند الخطأ وتُحذف بعد حلّها</h3>`,
+    ),
   );
-  if (!list.length) return view.appendChild(emptyCard('لا توجد أسئلة محفوظة.'));
+  if (!withSaved.length) return view.appendChild(emptyCard('لا توجد أسئلة محفوظة.'));
 
-  list.forEach((item) => {
-    const q = item.question || item;
-    const qid = q.id || item.questionId;
-    const box = questionPreview(q);
-    const rm = el('<button class="btn ghost sm">إزالة</button>');
-    rm.onclick = async () => {
-      await api.del('/learning/saved-questions', { questionId: qid });
-      toast('تمت الإزالة', 'good');
-      Portal.reload();
-    };
-    $('.q-head', box).appendChild(rm);
+  withSaved.forEach((c) => {
+    const box = card(
+      `<h2>${esc(c.title || '')}</h2><h3>${c.savedQuestionsCount} سؤال محفوظ</h3>`,
+    );
+    const b = el('<button class="btn">ابدأ الحل</button>');
+    b.onclick = () => startSaved(c, b);
+    box.appendChild(el('<div class="row"></div>')).appendChild(b);
     view.appendChild(box);
   });
+}
+
+async function startSaved(course, btn) {
+  btn.disabled = true;
+  try {
+    const d = await api.post('/learning/solving/saved/start', { courseId: course.id });
+    St.solve = {
+      kind: 'saved',
+      snapshotId: d.snapshotId,
+      title: `أسئلة محفوظة — ${course.title || ''}`,
+      questions: d.questions || [],
+      answers: {},
+    };
+    Portal.go('solve');
+  } catch (e) {
+    toast(e.message, 'bad');
+    btn.disabled = false;
+  }
 }
 
 /* ─── 6. books ───────────────────────────────────────────────────── */

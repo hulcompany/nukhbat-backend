@@ -13,6 +13,8 @@ export interface QuestionVerdict {
   type: QuestionType;
   verdict: boolean;
   isSkipped: boolean;
+  // the school's explanation for this question, null when it has none
+  verdictText: string | null;
   result: any;
 }
 

@@ -295,6 +295,8 @@ export class QuestionService {
           imageId,
           title: params.params.title,
           tips: params.params.tips,
+          // undefined leaves it as is, null clears it
+          verdictText: params.params.verdictText,
         });
         return this.findOneWithManager(question.id, em);
       },
@@ -324,6 +326,8 @@ export class QuestionService {
         type: question.type,
         verdict: result.verdict,
         isSkipped: result.skipped,
+        // hidden while solving, handed back with the verdict
+        verdictText: question.verdictText ?? null,
         result,
       });
     }
@@ -339,10 +343,16 @@ export class QuestionService {
     };
   }
 
+  // Strips the answer key of the question's own type, and — for every type —
+  // the verdictText: it explains the answer, so the student may only see it
+  // once the answer is graded.
   hideAnswers(questions: Question[]) {
-    return questions.map((question) =>
-      this.getComponent(question.type).hideAnswers(question),
-    );
+    return questions.map((question) => {
+      const { verdictText, ...hidden } = this.getComponent(
+        question.type,
+      ).hideAnswers(question);
+      return hidden;
+    });
   }
 
   private async createQuestion(
@@ -365,6 +375,7 @@ export class QuestionService {
         school: { id: schoolId },
         imageId,
         tips: dto.tips ?? [],
+        verdictText: dto.verdictText ?? null,
       }),
     );
     await this.createComponent({ dto, questionId: question.id, schoolId, em });

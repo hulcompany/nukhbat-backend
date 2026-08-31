@@ -91,6 +91,12 @@ export class QuestionCreateDto {
   @IsArray()
   @IsString({ each: true })
   tips?: string[];
+
+  // explanation revealed with the verdict; optional, stored as null when absent
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  verdictText?: string;
 }
 
 export class QuestionBulkCreateDto {
@@ -127,6 +133,12 @@ export class QuestionEditDto {
   @IsArray()
   @IsString({ each: true })
   tips?: string[];
+
+  // send null to clear the explanation; omit it to leave it untouched
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  verdictText?: string | null;
 }
 
 export class AdminQuestionGetDto extends QuestionGetDto {

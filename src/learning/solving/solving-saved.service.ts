@@ -10,7 +10,7 @@ import { CurriculumService } from '../../curriculum/services/curriculum.service'
 import { StudentProfile } from '../../student/entity/student-profile.entity';
 import { SavedQuestionService } from '../saved-questions/saved-question.service';
 import { SnapshotsService } from '../snapshots/snapshots.service';
-import { SolvingSnapshotDto } from './dto';
+import { SolvingSnapshotDto, SolvingStartSavedDto } from './dto';
 import { assertFullQuestionComponents } from './question-components';
 import { SolvingSolveResult, SolvingStartResult } from './types';
 
@@ -23,13 +23,22 @@ export class SolvingSavedService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async start(student: StudentProfile): Promise<SolvingStartResult> {
-    const saved = await this.savedQuestions.findAll(student.id);
-    if (!saved.length) {
-      throw new NotFoundException('No saved questions found');
+  async start(
+    student: StudentProfile,
+    dto: SolvingStartSavedDto,
+  ): Promise<SolvingStartResult> {
+    // the query scopes by the student's school/track, so an id from another
+    // track simply yields nothing
+    const questionIds = await this.savedQuestions.findQuestionIdsByCourse({
+      studentProfileId: student.id,
+      schoolId: student.schoolId,
+      trackId: student.trackId,
+      courseId: dto.courseId,
+    });
+    if (!questionIds.length) {
+      throw new NotFoundException('No saved questions found for this course');
     }
 
-    const questionIds = saved.map((item) => item.questionId);
     const loadedQuestions = await this.curriculum.findQuestions({
       id: In(questionIds),
     });
@@ -43,9 +52,11 @@ export class SolvingSavedService {
     assertFullQuestionComponents(questions);
     const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
       dailyChallengeId: null,
+      // courseId alone (no lesson/unit) marks this as a saved-questions run:
+      // the questions come from many lessons of that one course.
       lessonId: null,
       unitId: null,
-      courseId: null,
+      courseId: dto.courseId,
       studentId: student.id,
     });
 
@@ -83,7 +94,7 @@ export class SolvingSavedService {
         snapshot.dailyChallengeId ||
         snapshot.lessonId ||
         snapshot.unitId ||
-        snapshot.courseId
+        !snapshot.courseId
       ) {
         throw new BadRequestException('Snapshot is not for saved questions');
       }
@@ -95,14 +106,14 @@ export class SolvingSavedService {
       const verdict = await this.curriculum.checkQuestionAnswers(
         this.buildQuestionMaps(snapshot.questions, dto),
       );
-      const correctQuestionIds = verdict.verdicts
-        .filter((questionVerdict) => questionVerdict.verdict)
-        .map((questionVerdict) => questionVerdict.id);
 
+      // Practising a saved question retires it: everything served in this
+      // snapshot leaves the saved list, right or wrong. It comes back only by
+      // being answered wrong in the lesson again.
       await transaction(this.dataSource, async (manager) => {
         await this.savedQuestions.removeByQuestionIds(
           student.id,
-          correctQuestionIds,
+          snapshot.questions.map((question) => question.id),
           manager,
         );
       });

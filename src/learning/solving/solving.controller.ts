@@ -3,7 +3,11 @@ import { StrictValidation } from '../../common';
 import { JwtGuardStrict, RoleGuard, RoleType } from '../../core';
 import { Context } from '../../context';
 import { SubscriptionGuard } from '../../subscription/guard/subscription.guard';
-import { SolvingSnapshotDto, SolvingStartLessonDto } from './dto';
+import {
+  SolvingSnapshotDto,
+  SolvingStartLessonDto,
+  SolvingStartSavedDto,
+} from './dto';
 import { SolvingDailyChallengeService } from './solving-daily-challenge.service';
 import { SolvingLessonsService } from './solving-lessons.service';
 import { SolvingSavedService } from './solving-saved.service';
@@ -56,8 +60,10 @@ export class SolvingController {
   }
 
   @Post('saved/start')
-  async startSaved(): Promise<SolvingStartResult> {
-    return this.savedQuestions.start(this.context.student);
+  async startSaved(
+    @Body() dto: SolvingStartSavedDto,
+  ): Promise<SolvingStartResult> {
+    return this.savedQuestions.start(this.context.student, dto);
   }
 
   @Post('saved/solve')

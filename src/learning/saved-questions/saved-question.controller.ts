@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
-import { SavedQuestionService } from './saved-question.service';
-import { SaveQuestionDto } from './dto/saved-question.dto';
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { StrictValidation } from '../../common';
 import { Context } from '../../context';
 import { JwtGuardStrict, RoleGuard, RoleType } from '../../core';
 import { SubscriptionGuard } from '../../subscription/guard/subscription.guard';
-import { StrictValidation } from '../../common';
+import { SavedQuestionService } from './saved-question.service';
+import { SavedQuestionCourse } from './types';
 
 @Controller('learning/saved-questions')
 @UseGuards(JwtGuardStrict, RoleGuard([RoleType.student]), SubscriptionGuard())
@@ -15,21 +15,15 @@ export class SavedQuestionController {
     private readonly ctxt: Context,
   ) {}
 
-  @Post()
-  async save(@Body() dto: SaveQuestionDto) {
-    await this.service.save(this.ctxt.student!.id, dto.questionId);
-  }
-
-  @Delete()
-  async unSave(@Body() dto: SaveQuestionDto) {
-    await this.service.remove({
-      questionId: dto.questionId,
-      studentProfile: { id: this.ctxt.student!.id },
-    });
-  }
-
+  // Questions save themselves when answered wrong in a lesson, so the student
+  // only ever reads this list — it is grouped by course, not by question.
   @Get()
-  async getSaved() {
-    return this.service.getSaved(this.ctxt.student.id);
+  async getSavedQuestions(): Promise<SavedQuestionCourse[]> {
+    const student = this.ctxt.student;
+    return this.service.getSavedQuestions({
+      studentProfileId: student.id,
+      schoolId: student.schoolId,
+      trackId: student.trackId,
+    });
   }
 }

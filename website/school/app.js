@@ -566,6 +566,7 @@ async function screenQuestions(view) {
           { label: 'النوع', render: (q) => qTypeLabel(q.type) },
           { label: 'الغرض', render: (q) => esc(q.purpose) },
           { label: 'تلميحات', render: (q) => (q.tips || []).length },
+          { label: 'شرح', render: (q) => (q.verdictText ? '✓' : '—') },
           {
             label: '',
             render: (q) =>
@@ -600,7 +601,7 @@ async function screenQuestions(view) {
   await load();
 }
 
-/* PATCH question — the DTO whitelists title + tips only (image via multipart) */
+/* PATCH question — the DTO whitelists title + tips + verdictText (image via multipart) */
 function editQuestion(q, done) {
   const f = form(
     [
@@ -612,11 +613,22 @@ function editQuestion(q, done) {
         value: (q.tips || []).join(', '),
         full: true,
       },
+      {
+        name: 'verdictText',
+        label: 'شرح الإجابة (بعد التصحيح)',
+        type: 'textarea',
+        value: q.verdictText || '',
+        hint: 'أفرغ الحقل لحذف الشرح (لا يُحذف عند رفع صورة في نفس الطلب).',
+        full: true,
+      },
       { name: 'image', label: 'صورة السؤال', type: 'file', full: true },
     ],
     {
       submitLabel: 'حفظ',
       onSubmit: async (v) => {
+        // an emptied box is dropped by readForm — send an explicit null so the
+        // school can clear the explanation
+        if (q.verdictText && v.verdictText === undefined) v.verdictText = null;
         if (v.image) {
           await api.patchForm('/curriculum/school/questions/' + q.id, toFormData(v));
         } else {

@@ -8,6 +8,11 @@ export class SolvingStartLessonDto {
   lessonId: UUID;
 }
 
+export class SolvingStartSavedDto {
+  @IsUUID()
+  courseId: UUID;
+}
+
 export class SolvingSnapshotDto {
   @IsUUID()
   snapshotId: UUID;

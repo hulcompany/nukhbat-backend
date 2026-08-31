@@ -142,6 +142,7 @@ function buildVerdict(question: any) {
       type: question.type,
       verdict: true,
       isSkipped: false,
+      verdictText: question.verdictText ?? null,
       result: {
         verdict: true,
         skipped: false,
@@ -156,6 +157,7 @@ function buildVerdict(question: any) {
       type: question.type,
       verdict: true,
       isSkipped: false,
+      verdictText: question.verdictText ?? null,
       result: {
         answered: question.trueOrFalse.value,
         verdict: true,
@@ -239,6 +241,7 @@ function completeVerdict(question: any, verdicts: any[]) {
     type: question.type,
     verdict: true,
     isSkipped: false,
+    verdictText: question.verdictText ?? null,
     result: { verdict: true, skipped: false, verdicts },
   };
 }

@@ -321,25 +321,16 @@ function renderReview(root, verdicts, opts = {}) {
         <div class="rev-title">
           <span>${i + 1}. ${esc(vd.title)} <span class="q-type">${qTypeLabel(vd.type)}</span></span>
           <span class="row">
-            ${opts.canSave ? '<button class="btn ghost sm save-q">☆ حفظ</button>' : ''}
             <span class="tag ${state.cls}">${state.label}</span>
           </span>
         </div>
         <div class="rev-body"></div>
       </div>`);
-    const save = $('.save-q', box);
-    if (save)
-      save.onclick = async () => {
-        try {
-          await api.post('/learning/saved-questions', { questionId: vd.id });
-          save.textContent = '★ محفوظ';
-          save.disabled = true;
-          toast('تم حفظ السؤال', 'good');
-        } catch (e) {
-          toast(e.message, 'bad');
-        }
-      };
     renderVerdictBody($('.rev-body', box), vd);
+    if (vd.verdictText)
+      $('.rev-body', box).appendChild(
+        el(`<div class="tips">📝 ${esc(vd.verdictText)}</div>`),
+      );
     root.appendChild(box);
   });
 }
@@ -437,6 +428,8 @@ function questionBuilder(ctx) {
         <div class="hint" id="qb-title-hint"></div></label>
       <label class="field" style="grid-column:1/-1"><span>تلميحات (مفصولة بفواصل)</span>
         <input id="qb-tips" placeholder="تلميح ١, تلميح ٢"/></label>
+      <label class="field" style="grid-column:1/-1"><span>شرح الإجابة (يظهر للطالب بعد التصحيح)</span>
+        <textarea id="qb-verdict-text" placeholder="اختياري — يُخفى أثناء الحل ويعود مع النتيجة"></textarea></label>
     </div>`);
   wrap.appendChild(top);
 
@@ -504,6 +497,8 @@ function questionBuilder(ctx) {
     if (state.purpose === 'lesson') dto.lessonId = target;
     else dto.courseId = target;
     if (tips.length) dto.tips = tips;
+    const verdictText = $('#qb-verdict-text', wrap).value.trim();
+    if (verdictText) dto.verdictText = verdictText;
     Object.assign(dto, current.value());
     return dto;
   };
@@ -849,6 +844,7 @@ function questionPreview(q) {
       ${q.imageId ? `<img class="q-image" src="${fileUrl(q.imageId)}"/>` : ''}
       <div class="q-body"></div>
       ${q.tips?.length ? `<div class="tips">💡 ${q.tips.map(esc).join(' • ')}</div>` : ''}
+      ${q.verdictText ? `<div class="tips">📝 ${esc(q.verdictText)}</div>` : ''}
     </div>`);
   const body = $('.q-body', box);
 

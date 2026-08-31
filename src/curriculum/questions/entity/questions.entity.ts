@@ -122,4 +122,10 @@ export class Question {
   // ids — an edit replaces the whole list wholesale (empty array clears it).
   @Column('text', { array: true, default: () => "'{}'" })
   tips: string[];
+
+  // the school's explanation of the answer, shown to the student only after
+  // grading: it is stripped from every question handed out to solve and comes
+  // back attached to that question's verdict. Nullable — most questions have none.
+  @Column('text', { nullable: true })
+  verdictText: string | null;
 }
