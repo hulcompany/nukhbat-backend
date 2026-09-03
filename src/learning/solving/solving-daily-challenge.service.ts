@@ -43,8 +43,10 @@ export class SolvingDailyChallengeService {
     }
 
     const questions = await this.loadChallengeQuestions(challenge);
+    // Shuffle before snapshotting so the frozen copy matches what is returned
+    const shuffled = this.curriculum.shuffleQuestions(questions);
 
-    const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
+    const snapshotId = await this.snapshots.addQuestionSnapshot(shuffled, {
       dailyChallengeId: challenge.id,
       lessonId: null,
       unitId: null,
@@ -57,7 +59,7 @@ export class SolvingDailyChallengeService {
       // A daily challenge is not bound to a lesson, but the key stays present
       // so clients can reuse the lesson-solving response handler verbatim.
       lesson: null,
-      questions: this.curriculum.hideQuestionAnswers(questions),
+      questions: this.curriculum.hideQuestionAnswers(shuffled),
     };
   }
 
@@ -169,7 +171,9 @@ export class SolvingDailyChallengeService {
     return {
       snapshotId: null,
       lesson: null,
-      questions: this.curriculum.hideQuestionAnswers(questions),
+      questions: this.curriculum.hideQuestionAnswers(
+        this.curriculum.shuffleQuestions(questions),
+      ),
       verdict: attempt?.verdict ?? null,
     };
   }

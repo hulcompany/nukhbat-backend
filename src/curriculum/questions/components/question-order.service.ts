@@ -11,6 +11,7 @@ import {
 } from '.././types/question-order.types';
 import { QuestionOrderDto } from '.././dto/question-order.dto';
 import { Question } from '../entity/questions.entity';
+import { shuffle } from '../utils/shuffle';
 
 @Injectable()
 export class QuestionOrderService extends QuestionComponentService {
@@ -115,24 +116,18 @@ export class QuestionOrderService extends QuestionComponentService {
     };
   }
 
+  shuffle(question: Question): Question {
+    return {
+      ...question,
+      orderItems: shuffle(question.orderItems ?? []),
+    } as Question;
+  }
+
   hideAnswers(question: Question) {
     return {
       ...question,
-      orderItems: this.shuffle(question.orderItems ?? []).map(
-        ({ sort, ...item }) => item,
-      ),
+      // `sort` is the answer key - the student only gets the items
+      orderItems: question.orderItems?.map(({ sort, ...item }) => item),
     };
-  }
-
-  shuffle(items: QuestionOrder[]): QuestionOrder[] {
-    const shuffled = [...items];
-    for (let index = shuffled.length - 1; index > 0; index--) {
-      const randomIndex = Math.floor(Math.random() * (index + 1));
-      [shuffled[index], shuffled[randomIndex]] = [
-        shuffled[randomIndex],
-        shuffled[index],
-      ];
-    }
-    return shuffled;
   }
 }

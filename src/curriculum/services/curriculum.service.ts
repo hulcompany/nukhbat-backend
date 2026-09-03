@@ -261,6 +261,10 @@ export class CurriculumService {
     return await this.questionService.checkAnswerHelper(data);
   }
 
+  shuffleQuestions(questions: Question[]) {
+    return this.questionService.shuffleQuestions(questions);
+  }
+
   hideQuestionAnswers(questions: Question[]) {
     return this.questionService.hideAnswers(questions);
   }

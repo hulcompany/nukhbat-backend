@@ -11,6 +11,7 @@ import {
   QuestionClassVerdict,
 } from '../types/question-class.types';
 import { Question } from '../entity/questions.entity';
+import { shuffle } from '../utils/shuffle';
 
 @Injectable()
 export class QuestionClassifyService extends QuestionComponentService {
@@ -167,6 +168,23 @@ export class QuestionClassifyService extends QuestionComponentService {
       skipped: !answer?.length,
       verdicts: result,
     };
+  }
+
+  shuffle(question: Question): Question {
+    const data = question.classifyItems ?? [];
+    // Categories are the drop targets - they keep their authored order. Only
+    // the draggable items move, and they move within the slots they already
+    // occupy so the array stays a valid categories+items mix.
+    const itemSlots = data
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => entry.type === QuestionClassifyType.item);
+    const shuffledItems = shuffle(itemSlots.map(({ entry }) => entry));
+    const classifyItems = [...data];
+    itemSlots.forEach(({ index }, slot) => {
+      classifyItems[index] = shuffledItems[slot];
+    });
+
+    return { ...question, classifyItems } as Question;
   }
 
   hideAnswers(question: Question) {

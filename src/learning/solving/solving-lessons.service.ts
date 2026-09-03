@@ -60,11 +60,13 @@ export class SolvingLessonsService {
       throw new NotFoundException('Lesson has no questions');
     }
     assertFullQuestionComponents(questions);
+    // Shuffle before snapshotting so the frozen copy matches what is returned
+    const shuffled = this.curriculum.shuffleQuestions(questions);
 
     await transaction(this.dataSource, async (manager) => {
       await this.curriculum.markLessonUsed(lesson.id, manager);
     });
-    const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
+    const snapshotId = await this.snapshots.addQuestionSnapshot(shuffled, {
       dailyChallengeId: null,
       lessonId: lesson.id,
       unitId: lesson.unitId,
@@ -79,7 +81,7 @@ export class SolvingLessonsService {
         title: lesson.title,
         description: lesson.description || '',
       },
-      questions: this.curriculum.hideQuestionAnswers(questions),
+      questions: this.curriculum.hideQuestionAnswers(shuffled),
     };
   }
 

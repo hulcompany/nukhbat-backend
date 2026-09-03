@@ -50,7 +50,9 @@ export class SolvingSavedService {
       throw new NotFoundException('Saved question not found');
     }
     assertFullQuestionComponents(questions);
-    const snapshotId = await this.snapshots.addQuestionSnapshot(questions, {
+    // Shuffle before snapshotting so the frozen copy matches what is returned
+    const shuffled = this.curriculum.shuffleQuestions(questions);
+    const snapshotId = await this.snapshots.addQuestionSnapshot(shuffled, {
       dailyChallengeId: null,
       // courseId alone (no lesson/unit) marks this as a saved-questions run:
       // the questions come from many lessons of that one course.
@@ -65,7 +67,7 @@ export class SolvingSavedService {
       // Saved questions span many lessons, so there is no single lesson to
       // report; the key stays present to match the lesson-solving response.
       lesson: null,
-      questions: this.curriculum.hideQuestionAnswers(questions),
+      questions: this.curriculum.hideQuestionAnswers(shuffled),
     };
   }
 

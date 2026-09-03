@@ -10,6 +10,7 @@ import {
 import { Question } from '../entity/questions.entity';
 import { QuestionOptionGroupDto } from '../dto/question-option-group.dto';
 import { QuestionOptionGroup } from '../entity/question-options-group.entity';
+import { shuffle } from '../utils/shuffle';
 
 @Injectable()
 export class QuestionOptionsService extends QuestionComponentService {
@@ -101,6 +102,18 @@ export class QuestionOptionsService extends QuestionComponentService {
       skipped: !answer?.length,
       verdicts: result,
     };
+  }
+
+  shuffle(question: Question): Question {
+    return {
+      ...question,
+      // groups keep their authored order (they are numbered for the student);
+      // only the options inside each group move
+      optionsGroups: question.optionsGroups?.map((group) => ({
+        ...group,
+        options: shuffle(group.options ?? []),
+      })),
+    } as Question;
   }
 
   hideAnswers(question: Question) {

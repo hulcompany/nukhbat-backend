@@ -11,6 +11,7 @@ import { QuestionComponentService } from '.././components/question-component.ser
 import { QuestionMatchType } from '.././entity/enum/question-match.type';
 import { QuestionMatchDto } from '../dto/question-match.dto';
 import { Question } from '../entity/questions.entity';
+import { shuffle } from '../utils/shuffle';
 
 @Injectable()
 export class QuestionMatchService extends QuestionComponentService {
@@ -131,6 +132,15 @@ export class QuestionMatchService extends QuestionComponentService {
       skipped: !answer?.length,
       verdicts,
     };
+  }
+
+  shuffle(question: Question): Question {
+    return {
+      ...question,
+      // bases and matches are one array split by type on the client, so a
+      // single shuffle randomises both columns at once
+      matchingItems: shuffle(question.matchingItems ?? []),
+    } as Question;
   }
 
   hideAnswers(question: Question) {

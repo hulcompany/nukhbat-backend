@@ -343,6 +343,15 @@ export class QuestionService {
     };
   }
 
+  // Randomises item order per question type (options inside each group,
+  // match rows, classify items, order items). Call it once at solve-start and
+  // snapshot the result, so what the student sees is what gets graded.
+  shuffleQuestions(questions: Question[]) {
+    return questions.map((question) =>
+      this.getComponent(question.type).shuffle(question),
+    );
+  }
+
   // Strips the answer key of the question's own type, and — for every type —
   // the verdictText: it explains the answer, so the student may only see it
   // once the answer is graded.
