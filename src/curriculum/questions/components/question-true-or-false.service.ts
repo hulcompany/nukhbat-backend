@@ -3,10 +3,8 @@ import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { QuestionComponentService } from '.././components/question-component.service';
 import { QuestionTrueOrFalse } from '.././entity/question-true-or-false.entity';
-import {
-  TrueOrFalseAnswer,
-  TrueOrFalseVerdict,
-} from '.././types/question-true-or-false.types';
+import { TrueOrFalseAnswer } from '.././types/question-true-or-false.types';
+import { QuestionComponentVerdict } from '../types/question-verdict.type';
 import { Question } from '.././entity/questions.entity';
 
 @Injectable()
@@ -24,26 +22,13 @@ export class QuestionTrueOrFalseService extends QuestionComponentService {
   async verdict(
     question: Question,
     answer?: TrueOrFalseAnswer | null,
-  ): Promise<TrueOrFalseVerdict> {
+  ): Promise<QuestionComponentVerdict> {
     if (!question.trueOrFalse) {
       throw new BadRequestException('Question has no true-or-false answer');
     }
-    const correctAnswer = question.trueOrFalse.value;
-
     return {
-      answered: answer?.answered,
-      verdict: answer?.answered === correctAnswer,
+      correct: answer?.answered === question.trueOrFalse.value,
       skipped: answer?.answered === undefined,
-      correctAnswer,
-    };
-  }
-
-  hideAnswers(question: Question) {
-    return {
-      ...question,
-      trueOrFalse: question.trueOrFalse
-        ? (({ value, ...answer }) => answer)(question.trueOrFalse)
-        : question.trueOrFalse,
     };
   }
 

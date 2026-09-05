@@ -5,11 +5,8 @@ import { QuestionComponentService } from './question-component.service';
 import { QuestionClassifyDto } from '../dto/question-classify.dto';
 import { QuestionClassifyType } from '../entity/enum/question-classify.type';
 import { QuestionClassify } from '../entity/question-class.entity';
-import {
-  QuestionClassAnswer,
-  QuestionClassResult,
-  QuestionClassVerdict,
-} from '../types/question-class.types';
+import { QuestionClassAnswer } from '../types/question-class.types';
+import { QuestionComponentVerdict } from '../types/question-verdict.type';
 import { Question } from '../entity/questions.entity';
 import { shuffle } from '../utils/shuffle';
 
@@ -102,7 +99,7 @@ export class QuestionClassifyService extends QuestionComponentService {
   async verdict(
     question: Question,
     answer?: QuestionClassAnswer[] | null,
-  ): Promise<QuestionClassResult> {
+  ): Promise<QuestionComponentVerdict> {
     const data = question.classifyItems ?? [];
     const categories = data.filter(
       (e) => e.type === QuestionClassifyType.category,
@@ -139,35 +136,23 @@ export class QuestionClassifyService extends QuestionComponentService {
       }
     }
 
-    const result: QuestionClassVerdict[] = [];
-
-    for (const category of categories) {
-      const answeredItemIds = (answer ?? [])
-        .filter((submitted) => submitted.categoryId === category.id)
-        .flatMap((submitted) => submitted.items);
+    // every category must hold exactly the items authored into it
+    const correct = categories.every((category) => {
+      const answeredItemIds = new Set(
+        (answer ?? [])
+          .filter((submitted) => submitted.categoryId === category.id)
+          .flatMap((submitted) => submitted.items),
+      );
       const correctItems = items.filter(
         (item) => item.correctCategoryIndex === category.index,
       );
-      const answeredItems = answeredItemIds.map(
-        (itemId) => itemsById.get(itemId)!,
+      return (
+        answeredItemIds.size === correctItems.length &&
+        correctItems.every((item) => answeredItemIds.has(item.id))
       );
-      const answeredItemsIds = new Set(answeredItems.map((item) => item.id));
+    });
 
-      const verdict =
-        answeredItems.length == correctItems.length &&
-        correctItems.every((item) => answeredItemsIds.has(item.id));
-
-      result.push({
-        verdict,
-        answered: { category, items: answeredItems },
-        correctAnswer: { category, items: correctItems },
-      });
-    }
-    return {
-      verdict: result.every((item) => item.verdict),
-      skipped: !answer?.length,
-      verdicts: result,
-    };
+    return { correct, skipped: !answer?.length };
   }
 
   shuffle(question: Question): Question {
@@ -185,14 +170,5 @@ export class QuestionClassifyService extends QuestionComponentService {
     });
 
     return { ...question, classifyItems } as Question;
-  }
-
-  hideAnswers(question: Question) {
-    return {
-      ...question,
-      classifyItems: question.classifyItems?.map(
-        ({ correctCategoryIndex, ...item }) => item,
-      ),
-    };
   }
 }

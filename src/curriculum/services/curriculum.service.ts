@@ -265,10 +265,6 @@ export class CurriculumService {
     return this.questionService.shuffleQuestions(questions);
   }
 
-  hideQuestionAnswers(questions: Question[]) {
-    return this.questionService.hideAnswers(questions);
-  }
-
   async findQuestions(
     params: FindOptionsWhere<Question>,
     select?: FindOptionsSelect<Question>,

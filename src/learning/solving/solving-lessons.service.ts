@@ -81,7 +81,7 @@ export class SolvingLessonsService {
         title: lesson.title,
         description: lesson.description || '',
       },
-      questions: this.curriculum.hideQuestionAnswers(shuffled),
+      questions: shuffled,
     };
   }
 
@@ -175,10 +175,10 @@ export class SolvingLessonsService {
           verdict.verdicts.map((questionVerdict) => ({
             lessonAttemptId: attempt.id,
             studentId: student.id,
-            questionId: questionVerdict.id,
-            questionType: questionVerdict.type,
+            questionId: questionVerdict.question.id,
+            questionType: questionVerdict.question.type,
             result: questionVerdict,
-            isSkipped: questionVerdict.isSkipped,
+            isSkipped: questionVerdict.skipped,
             ...this.getQuestionScore(questionVerdict),
           })),
           manager,
@@ -187,8 +187,8 @@ export class SolvingLessonsService {
         await this.savedQuestions.saveMany(
           student.id,
           verdict.verdicts
-            .filter((questionVerdict) => !questionVerdict.verdict)
-            .map((questionVerdict) => questionVerdict.id),
+            .filter((questionVerdict) => !questionVerdict.correct)
+            .map((questionVerdict) => questionVerdict.question.id),
           manager,
         );
         await this.students.updateDailyStreak(student.id, manager);
@@ -277,12 +277,14 @@ export class SolvingLessonsService {
     }));
   }
 
+  // Grading is all-or-nothing per question now that the per-item breakdown is
+  // gone, so `total` is always 1 and `score` is the correct flag as a number.
+  // The columns stay so existing aggregates keep working.
   private getQuestionScore(verdict: QuestionVerdict) {
-    const itemVerdicts = verdict.result?.verdicts ?? [verdict.result];
     return {
-      score: itemVerdicts.filter((item) => item?.verdict).length,
-      total: itemVerdicts.length,
-      isCorrect: verdict.verdict,
+      score: verdict.correct ? 1 : 0,
+      total: 1,
+      isCorrect: verdict.correct,
     };
   }
 }

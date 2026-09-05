@@ -1,10 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { QuestionMatch } from '.././entity/question-match.entity';
-import {
-  QuestionMatchAnswer,
-  QuestionMatchResult,
-  QuestionMatchVerdict,
-} from './../types/question-match.types';
+import { QuestionMatchAnswer } from './../types/question-match.types';
+import { QuestionComponentVerdict } from '../types/question-verdict.type';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { QuestionComponentService } from '.././components/question-component.service';
@@ -62,7 +59,7 @@ export class QuestionMatchService extends QuestionComponentService {
   async verdict(
     question: Question,
     answer?: QuestionMatchAnswer[] | null,
-  ): Promise<QuestionMatchResult> {
+  ): Promise<QuestionComponentVerdict> {
     const data = question.matchingItems ?? [];
 
     const bases = data.filter((e) => e.type === QuestionMatchType.base);
@@ -95,43 +92,17 @@ export class QuestionMatchService extends QuestionComponentService {
       submittedMatchIds.add(a.matchId);
     }
 
-    const verdicts: QuestionMatchVerdict[] = bases.map((base) => {
+    // every base must be paired with the match at its correctIndex
+    const correct = bases.every((base) => {
       const submitted = (answer ?? []).find((a) => a.baseId === base.id);
-
-      const correctMatch =
-        base.correctIndex == null
-          ? undefined
-          : matches.find((m) => m.index === base.correctIndex);
-
       if (!submitted) {
-        return {
-          verdict: false,
-          answeredBase: base,
-          baseCorrectMatch: correctMatch,
-        };
+        return false;
       }
-
       const answeredMatch = matches.find((m) => m.id === submitted.matchId);
-
-      const matchCorrectBase = answeredMatch
-        ? bases.find((b) => b.correctIndex === answeredMatch.index)
-        : undefined;
-
-      return {
-        verdict: !!answeredMatch && answeredMatch.index === base.correctIndex,
-
-        answeredBase: base,
-        answeredMatch,
-        baseCorrectMatch: correctMatch,
-        matchCorrectBase,
-      };
+      return !!answeredMatch && answeredMatch.index === base.correctIndex;
     });
 
-    return {
-      verdict: verdicts.every((item) => item.verdict),
-      skipped: !answer?.length,
-      verdicts,
-    };
+    return { correct, skipped: !answer?.length };
   }
 
   shuffle(question: Question): Question {
@@ -141,15 +112,6 @@ export class QuestionMatchService extends QuestionComponentService {
       // single shuffle randomises both columns at once
       matchingItems: shuffle(question.matchingItems ?? []),
     } as Question;
-  }
-
-  hideAnswers(question: Question) {
-    return {
-      ...question,
-      matchingItems: question.matchingItems?.map(
-        ({ correctIndex, ...item }) => item,
-      ),
-    };
   }
 
   async create(

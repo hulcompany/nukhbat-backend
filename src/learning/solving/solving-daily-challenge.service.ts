@@ -59,7 +59,7 @@ export class SolvingDailyChallengeService {
       // A daily challenge is not bound to a lesson, but the key stays present
       // so clients can reuse the lesson-solving response handler verbatim.
       lesson: null,
-      questions: this.curriculum.hideQuestionAnswers(shuffled),
+      questions: shuffled,
     };
   }
 
@@ -171,9 +171,7 @@ export class SolvingDailyChallengeService {
     return {
       snapshotId: null,
       lesson: null,
-      questions: this.curriculum.hideQuestionAnswers(
-        this.curriculum.shuffleQuestions(questions),
-      ),
+      questions: this.curriculum.shuffleQuestions(questions),
       verdict: attempt?.verdict ?? null,
     };
   }

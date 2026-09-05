@@ -2,11 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { UUID } from 'crypto';
 import { QuestionComponentService } from './question-component.service';
-import {
-  QuestionOptionAnswer,
-  QuestionOptionVerdict,
-  QuestionOptionsResult,
-} from '../types/question-options.types';
+import { QuestionOptionAnswer } from '../types/question-options.types';
+import { QuestionComponentVerdict } from '../types/question-verdict.type';
 import { Question } from '../entity/questions.entity';
 import { QuestionOptionGroupDto } from '../dto/question-option-group.dto';
 import { QuestionOptionGroup } from '../entity/question-options-group.entity';
@@ -50,7 +47,7 @@ export class QuestionOptionsService extends QuestionComponentService {
   async verdict(
     question: Question,
     answer?: QuestionOptionAnswer[] | null,
-  ): Promise<QuestionOptionsResult> {
+  ): Promise<QuestionComponentVerdict> {
     const groups = [...(question.optionsGroups ?? [])].sort(
       (left, right) => left.index - right.index,
     );
@@ -77,31 +74,16 @@ export class QuestionOptionsService extends QuestionComponentService {
       answersByIndex.set(submitted.index, submitted);
     }
 
-    const result: QuestionOptionVerdict[] = [];
-    for (const group of groups) {
+    // every group must be answered with a correct option - one wrong or
+    // unanswered group makes the whole question wrong
+    const correct = groups.every((group) => {
       const submitted = answersByIndex.get(group.index);
-      if (!submitted) {
-        result.push({
-          verdict: false,
-          correctOption: group.options.filter((option) => option.isCorrect),
-        });
-        continue;
-      }
-
-      const option = group.options.find(
-        (candidate) => candidate.id === submitted.answered,
-      );
-      result.push({
-        verdict: option?.isCorrect || false,
-        answered: option,
-        correctOption: group.options.filter((candidate) => candidate.isCorrect),
-      });
-    }
-    return {
-      verdict: result.every((item) => item.verdict),
-      skipped: !answer?.length,
-      verdicts: result,
-    };
+      const option = submitted
+        ? group.options.find((candidate) => candidate.id === submitted.answered)
+        : undefined;
+      return option?.isCorrect === true;
+    });
+    return { correct, skipped: !answer?.length };
   }
 
   shuffle(question: Question): Question {
@@ -114,16 +96,6 @@ export class QuestionOptionsService extends QuestionComponentService {
         options: shuffle(group.options ?? []),
       })),
     } as Question;
-  }
-
-  hideAnswers(question: Question) {
-    return {
-      ...question,
-      optionsGroups: question.optionsGroups?.map((group) => ({
-        ...group,
-        options: group.options?.map(({ isCorrect, ...option }) => option),
-      })),
-    };
   }
 
   async create(

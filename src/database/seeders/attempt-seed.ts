@@ -76,14 +76,14 @@ export async function seedAttempts(ds: DataSource) {
     });
 
     for (let q = 0; q < lesson.questions.length; q++) {
-      const itemVerdicts = verdicts[q].result.verdicts ?? [verdicts[q].result];
       await qAttemptRepo.save({
         lessonAttemptId: attempt.id,
         studentId: profile.id,
         questionId: lesson.questions[q].id,
         questionType: lesson.questions[q].type,
-        score: itemVerdicts.length,
-        total: itemVerdicts.length,
+        // all-or-nothing per question — no partial credit any more
+        score: 1,
+        total: 1,
         isCorrect: true,
         result: verdicts[q],
         isSkipped: false,
@@ -126,45 +126,29 @@ export async function seedAttempts(ds: DataSource) {
 
 // A fully-correct QuestionVerdict for a seeded question, matching the shape
 // SolveLessonsService freezes into QuestionAttempt.result.
+// The fully-correct QuestionVerdict for a question: the uniform
+// { correct, skipped, question, answered } shape checkAnswerHelper produces,
+// with `answered` built as the raw answer DTO a student would have submitted.
 function buildVerdict(question: any) {
+  return {
+    correct: true,
+    skipped: false,
+    question,
+    answered: buildCorrectAnswer(question),
+  };
+}
+
+function buildCorrectAnswer(question: any): Record<string, any> {
   if (question.type === QuestionType.OPTIONS) {
-    const verdicts = question.optionsGroups.map((group: any) => {
-      const correct = group.options.find((option: any) => option.isCorrect);
-      return {
-        answered: correct,
-        verdict: true,
-        correctOption: [correct],
-      };
-    });
     return {
-      id: question.id,
-      title: question.title,
-      type: question.type,
-      verdict: true,
-      isSkipped: false,
-      verdictText: question.verdictText ?? null,
-      result: {
-        verdict: true,
-        skipped: false,
-        verdicts,
-      },
+      options: question.optionsGroups.map((group: any) => ({
+        index: group.index,
+        answered: group.options.find((option: any) => option.isCorrect)?.id,
+      })),
     };
   }
   if (question.type === QuestionType.TRUE_FALSE) {
-    return {
-      id: question.id,
-      title: question.title,
-      type: question.type,
-      verdict: true,
-      isSkipped: false,
-      verdictText: question.verdictText ?? null,
-      result: {
-        answered: question.trueOrFalse.value,
-        verdict: true,
-        skipped: false,
-        correctAnswer: question.trueOrFalse.value,
-      },
-    };
+    return { boolAnswer: question.trueOrFalse.value };
   }
   if (question.type === QuestionType.MATCH) {
     const bases = question.matchingItems.filter(
@@ -173,20 +157,14 @@ function buildVerdict(question: any) {
     const matches = question.matchingItems.filter(
       (m: any) => m.type === QuestionMatchType.match,
     );
-    return completeVerdict(
-      question,
-      bases.map((base: any) => {
-        const pair = matches.find(
+    return {
+      matches: bases.map((base: any) => ({
+        baseId: base.id,
+        matchId: matches.find(
           (match: any) => match.index === base.correctIndex,
-        );
-        return {
-          answeredBase: base,
-          answeredMatch: pair,
-          verdict: true,
-          baseCorrectMatch: pair,
-        };
-      }),
-    );
+        )?.id,
+      })),
+    };
   }
   if (question.type === QuestionType.classify) {
     const categories = question.classifyItems.filter(
@@ -195,53 +173,30 @@ function buildVerdict(question: any) {
     const items = question.classifyItems.filter(
       (item: any) => item.type === QuestionClassifyType.item,
     );
-    return completeVerdict(
-      question,
-      categories.map((category: any) => {
-        const correctItems = items.filter(
-          (item: any) => item.correctCategoryIndex === category.index,
-        );
-        const answer = { category, items: correctItems };
-        return { verdict: true, answered: answer, correctAnswer: answer };
-      }),
-    );
+    return {
+      classify: categories.map((category: any) => ({
+        categoryId: category.id,
+        items: items
+          .filter((item: any) => item.correctCategoryIndex === category.index)
+          .map((item: any) => item.id),
+      })),
+    };
   }
   if (question.type === QuestionType.order) {
-    return completeVerdict(
-      question,
-      [...question.orderItems]
-        .sort((left: any, right: any) => left.sort - right.sort)
-        .map((item: any) => ({
-          answered: item,
-          correctAnswer: item,
-          verdict: true,
-        })),
-    );
+    return {
+      orders: question.orderItems.map((item: any) => ({
+        id: item.id,
+        order: item.sort,
+      })),
+    };
   }
   if (question.type === QuestionType.fillBlanks) {
-    return completeVerdict(
-      question,
-      [...question.fillBlanks]
-        .sort((left: any, right: any) => left.index - right.index)
-        .map((blank: any) => ({
-          index: blank.index,
-          answer: blank.answers[0],
-          correctAnswer: blank.answers,
-          verdict: true,
-        })),
-    );
+    return {
+      fillBlanks: question.fillBlanks.map((blank: any) => ({
+        index: blank.index,
+        answer: blank.answers[0],
+      })),
+    };
   }
   throw new Error(`Unsupported seeded question type: ${question.type}`);
-}
-
-function completeVerdict(question: any, verdicts: any[]) {
-  return {
-    id: question.id,
-    title: question.title,
-    type: question.type,
-    verdict: true,
-    isSkipped: false,
-    verdictText: question.verdictText ?? null,
-    result: { verdict: true, skipped: false, verdicts },
-  };
 }

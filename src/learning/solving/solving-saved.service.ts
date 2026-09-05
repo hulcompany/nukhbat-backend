@@ -67,7 +67,7 @@ export class SolvingSavedService {
       // Saved questions span many lessons, so there is no single lesson to
       // report; the key stays present to match the lesson-solving response.
       lesson: null,
-      questions: this.curriculum.hideQuestionAnswers(shuffled),
+      questions: shuffled,
     };
   }
 
@@ -112,8 +112,8 @@ export class SolvingSavedService {
       // Only a correct answer retires a saved question. Anything answered
       // wrong (or skipped) stays in the saved list to be practised again.
       const solvedIds = verdict.verdicts
-        .filter((questionVerdict) => questionVerdict.verdict)
-        .map((questionVerdict) => questionVerdict.id);
+        .filter((questionVerdict) => questionVerdict.correct)
+        .map((questionVerdict) => questionVerdict.question.id);
       if (solvedIds.length) {
         await transaction(this.dataSource, async (manager) => {
           await this.savedQuestions.removeByQuestionIds(

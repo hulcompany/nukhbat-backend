@@ -83,10 +83,6 @@ describe('QuestionFillBlankService', () => {
       { index: 0, answer: '  cOrReCt AnSwEr  ' },
     ]);
 
-    expect(result.verdict).toBe(true);
-    expect(result.verdicts[0]).toMatchObject({
-      answer: 'cOrReCt AnSwEr',
-      verdict: true,
-    });
+    expect(result).toEqual({ correct: true, skipped: false });
   });
 });

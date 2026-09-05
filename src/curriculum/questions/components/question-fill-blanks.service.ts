@@ -5,11 +5,8 @@ import { QuestionComponentService } from './question-component.service';
 import { QuestionFillBlankDto } from '../dto/question-blank.dto';
 import { QuestionFillBlank } from '../entity/question-fill-blank.entity';
 import { Question } from '../entity/questions.entity';
-import {
-  QuestionFillBlanksAnswer,
-  QuestionFillBlanksResult,
-  QuestionFillBlanksVerdict,
-} from '../types/question-fill-blanks.types';
+import { QuestionFillBlanksAnswer } from '../types/question-fill-blanks.types';
+import { QuestionComponentVerdict } from '../types/question-verdict.type';
 
 /**
  * خصائص الـ text-field المطلوبة (بحروف صغيرة للمقارنة غير الحساسة لحالة الأحرف)
@@ -209,7 +206,7 @@ export class QuestionFillBlankService extends QuestionComponentService {
   async verdict(
     question: Question,
     answer?: QuestionFillBlanksAnswer[] | null,
-  ): Promise<QuestionFillBlanksResult> {
+  ): Promise<QuestionComponentVerdict> {
     const blanks = [...(question.fillBlanks ?? [])].sort(
       (left, right) => left.index - right.index,
     );
@@ -227,32 +224,21 @@ export class QuestionFillBlankService extends QuestionComponentService {
       answersByIndex.set(submitted.index, submitted);
     }
 
-    const result: QuestionFillBlanksVerdict[] = [];
-    for (const blank of blanks) {
-      const submitted = answersByIndex.get(blank.index);
-      const normalizedAnswer = submitted?.answer.trim().toLowerCase();
-      result.push({
-        answer: submitted?.answer.trim(),
-        correctAnswer: blank.answers,
-        index: blank.index,
-        verdict:
-          normalizedAnswer !== undefined &&
-          blank.answers.some(
-            (answer) => answer.trim().toLowerCase() === normalizedAnswer,
-          ),
-      });
-    }
-    return {
-      verdict: result.every((item) => item.verdict),
-      skipped: !answer?.length,
-      verdicts: result,
-    };
-  }
+    // every blank must be filled with one of its accepted answers
+    // (case-insensitive, trimmed)
+    const correct = blanks.every((blank) => {
+      const normalizedAnswer = answersByIndex
+        .get(blank.index)
+        ?.answer.trim()
+        .toLowerCase();
+      return (
+        normalizedAnswer !== undefined &&
+        blank.answers.some(
+          (accepted) => accepted.trim().toLowerCase() === normalizedAnswer,
+        )
+      );
+    });
 
-  hideAnswers(question: Question) {
-    return {
-      ...question,
-      fillBlanks: question.fillBlanks?.map(({ answers, ...blank }) => blank),
-    };
+    return { correct, skipped: !answer?.length };
   }
 }

@@ -321,23 +321,22 @@ export class QuestionService {
         this.getComponentAnswer(question.type, answer),
       );
       verdicts.push({
-        id: question.id,
-        title: question.title,
-        type: question.type,
-        verdict: result.verdict,
-        isSkipped: result.skipped,
-        // hidden while solving, handed back with the verdict
-        verdictText: question.verdictText ?? null,
-        result,
+        correct: result.correct,
+        skipped: result.skipped,
+        // the whole question, answer key included - the client diffs
+        // `answered` against it to render "your answer vs. correct"
+        question,
+        // the raw payload the student submitted, `{}` when nothing was sent
+        answered: answer ?? {},
       });
     }
-    let passed = verdicts.filter((item) => item.verdict).length;
+    let passed = verdicts.filter((item) => item.correct).length;
     let total = verdicts.length;
     return {
       verdicts: verdicts,
       correct: passed,
       total: total,
-      skipped: verdicts.filter((item) => item.isSkipped).length,
+      skipped: verdicts.filter((item) => item.skipped).length,
       score: passed / total,
       passed: passed === total,
     };
@@ -350,18 +349,6 @@ export class QuestionService {
     return questions.map((question) =>
       this.getComponent(question.type).shuffle(question),
     );
-  }
-
-  // Strips the answer key of the question's own type, and — for every type —
-  // the verdictText: it explains the answer, so the student may only see it
-  // once the answer is graded.
-  hideAnswers(questions: Question[]) {
-    return questions.map((question) => {
-      const { verdictText, ...hidden } = this.getComponent(
-        question.type,
-      ).hideAnswers(question);
-      return hidden;
-    });
   }
 
   private async createQuestion(

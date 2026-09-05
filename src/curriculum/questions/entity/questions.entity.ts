@@ -123,9 +123,9 @@ export class Question {
   @Column('text', { array: true, default: () => "'{}'" })
   tips: string[];
 
-  // the school's explanation of the answer, shown to the student only after
-  // grading: it is stripped from every question handed out to solve and comes
-  // back attached to that question's verdict. Nullable — most questions have none.
+  // the school's explanation of the answer. Nothing is stripped from questions
+  // handed out to solve any more, so this ships with the question itself -
+  // the client decides when to reveal it. Nullable — most questions have none.
   @Column('text', { nullable: true })
   verdictText: string | null;
 }

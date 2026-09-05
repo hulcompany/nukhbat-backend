@@ -4,11 +4,8 @@ import { UUID } from 'crypto';
 
 import { QuestionComponentService } from '.././components/question-component.service';
 import { QuestionOrder } from '.././entity/question-order.entity';
-import {
-  QuestionOrderAnswer,
-  QuestionOrderResult,
-  QuestionOrderVerdict,
-} from '.././types/question-order.types';
+import { QuestionOrderAnswer } from '.././types/question-order.types';
+import { QuestionComponentVerdict } from '../types/question-verdict.type';
 import { QuestionOrderDto } from '.././dto/question-order.dto';
 import { Question } from '../entity/questions.entity';
 import { shuffle } from '../utils/shuffle';
@@ -62,7 +59,7 @@ export class QuestionOrderService extends QuestionComponentService {
   async verdict(
     question: Question,
     answer?: QuestionOrderAnswer[] | null,
-  ): Promise<QuestionOrderResult> {
+  ): Promise<QuestionComponentVerdict> {
     const items = [...(question.orderItems ?? [])].sort(
       (left, right) => left.sort - right.sort,
     );
@@ -97,23 +94,12 @@ export class QuestionOrderService extends QuestionComponentService {
     const submittedByOrder = new Map(
       (answer ?? []).map((submitted) => [submitted.order, submitted]),
     );
-    const verdicts: QuestionOrderVerdict[] = items.map((correctAnswer) => {
-      const submitted = submittedByOrder.get(correctAnswer.sort);
-      const answered = submitted
-        ? items.find((item) => item.id === submitted.id)
-        : undefined;
-      return {
-        answered,
-        correctAnswer,
-        verdict: answered?.id === correctAnswer.id,
-      };
-    });
+    // every item must sit at its authored `sort` position
+    const correct = items.every(
+      (item) => submittedByOrder.get(item.sort)?.id === item.id,
+    );
 
-    return {
-      verdict: verdicts.every((item) => item.verdict),
-      skipped: !answer?.length,
-      verdicts,
-    };
+    return { correct, skipped: !answer?.length };
   }
 
   shuffle(question: Question): Question {
@@ -121,13 +107,5 @@ export class QuestionOrderService extends QuestionComponentService {
       ...question,
       orderItems: shuffle(question.orderItems ?? []),
     } as Question;
-  }
-
-  hideAnswers(question: Question) {
-    return {
-      ...question,
-      // `sort` is the answer key - the student only gets the items
-      orderItems: question.orderItems?.map(({ sort, ...item }) => item),
-    };
   }
 }
