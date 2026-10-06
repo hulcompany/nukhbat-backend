@@ -1,11 +1,10 @@
 import 'reflect-metadata';
-import { DataSource } from 'typeorm';
-import { SeederOptions } from 'typeorm-extension';
 import { AppDataSource } from './ds';
 import { seedUsers } from './seeders/users-seed';
 import { seedContent } from './seeders/content-seed';
 import { seedFaqs } from './seeders/faq-seed';
 import { seedInfo } from './seeders/info-seed';
+import { DataSource } from 'typeorm';
 // import { UserFactory } from '../user.factory';
 
 
@@ -34,8 +33,9 @@ export async function seed() {
   await ds.initialize();
   await ds.runMigrations();
 
-  // ordered by dependency: identities → global content (tracks + courses)
-  // → public content
+  // ordered by dependency: identities → school → global content →
+  // school access → school-scoped tree → public content → student →
+  // that student's solving history (attempts + ledger)
   await seedUsers(ds);
   await seedContent(ds);
   await seedFaqs(ds);
