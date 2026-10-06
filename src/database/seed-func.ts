@@ -3,17 +3,9 @@ import { DataSource } from 'typeorm';
 import { SeederOptions } from 'typeorm-extension';
 import { AppDataSource } from './ds';
 import { seedUsers } from './seeders/users-seed';
-import { seedSchool } from './seeders/school-seed';
 import { seedContent } from './seeders/content-seed';
-import { seedSchoolAccess } from './seeders/school-access-seed';
-import { seedUnits } from './seeders/unit-seed';
-import { seedLessons } from './seeders/lesson-seed';
-import { seedQuestions } from './seeders/question-seed';
 import { seedFaqs } from './seeders/faq-seed';
 import { seedInfo } from './seeders/info-seed';
-import { seedDailyWisements } from './seeders/daily-wisement-seed';
-import { seedStudents } from './seeders/student-seed';
-import { seedAttempts } from './seeders/attempt-seed';
 // import { UserFactory } from '../user.factory';
 
 
@@ -42,21 +34,12 @@ export async function seed() {
   await ds.initialize();
   await ds.runMigrations();
 
-  // ordered by dependency: identities → school → global content →
-  // school access → school-scoped tree → public content → student →
-  // that student's solving history (attempts + ledger)
+  // ordered by dependency: identities → global content (tracks + courses)
+  // → public content
   await seedUsers(ds);
-  await seedSchool(ds);
   await seedContent(ds);
-  await seedSchoolAccess(ds);
-  await seedUnits(ds);
-  await seedLessons(ds);
-  await seedQuestions(ds);
   await seedFaqs(ds);
   await seedInfo(ds);
-  await seedDailyWisements(ds);
-  await seedStudents(ds);
-  await seedAttempts(ds);
 
   await ds.destroy();
   console.log('✅ Seed');
